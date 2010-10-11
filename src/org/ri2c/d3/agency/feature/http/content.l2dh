@@ -1,0 +1,53 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns='http://www.w3.org/1999/xhtml'>
+	<head>
+		<title>L2D : Agency $agency_id$</title>
+		<style>
+		<!--
+body {
+	font-family: Verdana;
+}
+ul {
+	list-style-type: square;
+}
+#title {
+	font-size: 20pt;
+	text-weight: bold;
+	padding: 5px;
+	background: black;
+	color: white;
+	text-align: center;
+}
+.block {
+	padding: 10px;
+}
+.blocktitle {
+	font-size: 16pt;
+	text-weight: bold;
+	border-bottom: solid 1px black;
+}
+#content {
+	margin-left: 25%;
+	width: 50%;
+	height: 90%;
+	border: solid 1px black;
+}
+		-->
+		</style>
+	</head>
+	<body>
+		<div id='content'>
+			<div id='title'>Agency "$agency_id$"</div>
+
+			<div class='block'>
+				<div class='blocktitle'>Entities:</div>
+				$entities_list$
+			</div>
+
+			<div class='block'>
+				<div class='blocktitle'>Known agencies:</div>
+				$agencies_list$
+			</div>
+		</div>
+	</body>
+</html>

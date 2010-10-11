@@ -1,0 +1,15 @@
+ATLAS_REQUEST_ENTITY_MIGRATION:
+-------------------------------
+
+	< ATLAS_REQUEST_ENTITY_MIGRATION phase='request' entityId='?' />
+
+	< ATLAS_REQUEST_ENTITY_MIGRATION phase='response' entityId='?' status='accepted|rejected|error'/>
+	
+	< ATLAS_REQUEST_ENTITY_MIGRATION phase='receive' entityId='?' adn='#object_data#' >
+		( < call callId='?' args='#object_array_data#' [ futureId='?' ] source-id='' source-type='' source-agency='' /> )*
+	</ ATLAS_REQUEST_ENTITY_MIGRATION >
+	
+	A ---- [ request  ] ---> B
+	A <--- [ response ] ---- B
+	A ---- [ receive  ] ---> B
+	A <--- [ response ] ---- B

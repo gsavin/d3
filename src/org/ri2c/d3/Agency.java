@@ -1,0 +1,348 @@
+/*
+ * This file is part of d3.
+ * 
+ * d3 is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * d3 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with d3.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright 2010 Guilhelm Savin
+ */
+package org.ri2c.d3;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import org.ri2c.d3.agency.AgencyListener;
+import org.ri2c.d3.agency.ApplicationExecutor;
+import org.ri2c.d3.agency.Feature;
+import org.ri2c.d3.agency.FeatureManager;
+import org.ri2c.d3.agency.IdentifiableObjectManager;
+import org.ri2c.d3.agency.IpTables;
+import org.ri2c.d3.agency.RemoteAgencyDescription;
+import org.ri2c.d3.agency.IdentifiableObjectManager.RegistrationStatus;
+import org.ri2c.d3.atlas.internal.D3Atlas;
+import org.ri2c.d3.protocol.Protocols;
+import org.ri2c.d3.request.RequestListener;
+import org.ri2c.d3.request.RequestService;
+//import org.ri2c.l2d.request.DefaultRequestInterpreter;
+//import org.ri2c.l2d.request.ExtendableRequestInterpreter;
+//import org.ri2c.l2d.request.RequestInterpreter;
+
+public class Agency
+	implements IdentifiableObject, RequestListener
+{
+	private static Agency 	localAgency;
+	private static Args		localArgs;
+	
+	public static String getArg( String key )
+	{
+		return localArgs.get(key);
+	}
+	
+	public static void enableAgency( Args args )
+	{
+		if( localAgency == null )
+		{
+			localArgs = args;
+			localAgency = new Agency();
+			
+			System.out.printf("[agency] create agency%n");
+			
+			if( localArgs.has("l2d.protocols") )
+			{
+				String [] protocols = localArgs.get("l2d.protocols").split(",");
+				
+				for( String protocol: protocols )
+					Protocols.initProtocol(protocol);
+			}
+			
+			if( localArgs.has("l2d.features") )
+			{
+				String [] features = localArgs.get("l2d.features").split(",");
+				
+				for( String feature: features )
+				{
+					String r = loadFeature(feature);
+					
+					if( r != null )
+						System.err.printf("[agency] error while loading feature \"%s\": %s%n",feature,r);
+				}
+			}
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private static String loadFeature( String name )
+	{
+		try
+		{
+			String classname = "org.ri2c.l2d.agency.feature." + name.trim();
+			Class<? extends Feature> featureClass = (Class<? extends Feature>) Class.forName(classname);
+			Feature feature = featureClass.newInstance();
+			localAgency.addFeature(feature);
+		}
+		catch (ClassNotFoundException e)
+		{
+			return e.getMessage();
+		}
+		catch (InstantiationException e)
+		{
+			return e.getMessage();
+		}
+		catch (IllegalAccessException e)
+		{
+			return e.getMessage();
+		}
+		
+		return null;
+	}
+	
+	public static Agency getLocalAgency()
+	{
+		return localAgency;
+	}
+
+	//ExtendableRequestInterpreter						requestInterpreter;
+	private String												agencyId;
+	private ConcurrentHashMap<String,RemoteAgencyDescription> 	remoteAgencies;
+	private FeatureManager										featureManager;
+	private IpTables											ipTables;
+	private RequestService										requestService;
+	private Atlas												atlas;
+	private ConcurrentLinkedQueue<AgencyListener>				agencyListeners;
+	private IdentifiableObjectManager							identifiableObjects;
+	
+	private Agency()
+	{
+		try {
+			agencyId   = InetAddress.getLocalHost().getHostName();
+			
+			if( agencyId.equals("localhost") )
+				throw new UnknownHostException();
+			
+		} catch (UnknownHostException e) {
+			agencyId   = String.format("%X:%X", System.nanoTime(), (long) ( Math.random() * Long.MAX_VALUE ) );
+		}
+		
+		identifiableObjects	= new IdentifiableObjectManager();
+		
+		remoteAgencies  	= new ConcurrentHashMap<String,RemoteAgencyDescription>();
+		featureManager  	= new FeatureManager(this);
+		ipTables			= new IpTables();
+		
+		agencyListeners		= new ConcurrentLinkedQueue<AgencyListener>();
+
+		//requestInterpreter 	= new DefaultRequestInterpreter();
+		requestService		= new RequestService();
+		requestService.init(Collections.unmodifiableCollection(agencyListeners),
+				localArgs.getArgs("l2d.request.service"));
+		
+		atlas				= new D3Atlas();
+		atlas.init(this);
+		
+		registerIdentifiableObject(this);
+		registerIdentifiableObject(atlas);
+		
+		identifiableObjects.alias(atlas,"default");
+	}
+	
+	public String getId()
+	{
+		return agencyId;
+	}
+	
+	public Args getArgs()
+	{
+		return localArgs;
+	}
+	
+	public IpTables getIpTables()
+	{
+		return ipTables;
+	}
+	
+	public Atlas getAtlas()
+	{
+		return atlas;
+	}
+	
+	public void requestReceived(Request r)
+	{
+		requestService.executeRequest(r);
+	}
+	/*
+	public void addRequestInterpreter( String requestName, RequestInterpreter ri )
+	{
+		requestInterpreter.addInterpreter(requestName,ri);
+	}
+	*/
+	
+	public void launch( Application app )
+	{
+		registerIdentifiableObject(app);
+		addAgencyListener(app);
+		
+		new ApplicationExecutor(app);
+	}
+	
+	public void registerAgency( String remoteId, String address, String protocols )
+	{
+		if( ! remoteAgencies.containsKey(remoteId) && ! ipTables.isBlacklisted(address) )
+		{
+			try
+			{
+				InetAddress inet = InetAddress.getByName(address);
+				if( ! inet.isReachable(400) )
+				{
+					ipTables.declareErrorOn(address);
+					System.err.printf("[agency] remote agency %s not reachable%n",remoteId);
+					return;
+				}
+			}
+			catch (UnknownHostException e)
+			{
+				ipTables.declareErrorOn(address);
+				System.err.printf("[agency] remote agency %s not reachable%n",remoteId);
+				return;
+			}
+			catch (IOException e)
+			{
+				ipTables.declareErrorOn(address);
+				System.err.printf("[agency] remote agency %s not reachable%n",remoteId);
+				return;
+			}
+			
+			Console.info("register new agency: %s %s@%s", remoteId, address, protocols);
+			
+			RemoteAgencyDescription rad = new RemoteAgencyDescription(remoteId,address,protocols);
+			remoteAgencies.put(remoteId,rad);
+			ipTables.registerId(remoteId,address);
+			
+			for( AgencyListener l: agencyListeners )
+				l.newAgencyRegistered(rad);
+		}
+	}
+	
+	public void unregisterAgency( RemoteAgencyDescription rad )
+	{
+		remoteAgencies.remove(rad.getRemoteAgencyId());
+		Console.info("unregister agency %s", rad.getRemoteAgencyId());
+	}
+	
+	public boolean registerIdentifiableObject( IdentifiableObject idObject )
+	{
+		if( identifiableObjects.register(idObject) != RegistrationStatus.accepted )
+		{
+			System.err.printf("[agency] object not registered%n");
+			return false;
+		}
+		
+		for( AgencyListener l: agencyListeners )
+			l.identifiableObjectRegistered(idObject);
+		
+		return true;
+	}
+	
+	public void unregisterIdentifiableObject( IdentifiableObject idObject )
+	{
+		identifiableObjects.unregister(idObject);
+		
+		for( AgencyListener l: agencyListeners )
+			l.identifiableObjectUnregistered(idObject);
+	}
+	
+	public <T extends IdentifiableObject> T getIdentifiableObject( IdentifiableObject source )
+	{
+		return null;
+	}
+	
+	public IdentifiableObject getIdentifiableObject( IdentifiableType type, String id )
+	{
+		return identifiableObjects.get(type,id);
+	}
+	
+	public void addFeature( Feature f )
+	{
+		featureManager.addFeature(f);
+	}
+	
+	public Iterable<RemoteAgencyDescription> eachRemoteAgency()
+	{
+		return remoteAgencies.values();
+	}
+	
+	public RemoteAgencyDescription getRemoteAgencyDescription( String agencyId )
+	{
+		return remoteAgencies.get(agencyId);
+	}
+	
+	public void remoteAgencyDescriptionChanged( String agencyId )
+	{
+		if( remoteAgencies.get(agencyId) != null )
+		{
+			RemoteAgencyDescription rad =
+				remoteAgencies.get(agencyId);
+			
+			for( AgencyListener l: agencyListeners )
+				l.remoteAgencyDescriptionUpdated(rad);
+		}
+	}
+	
+	public void addAgencyListener( AgencyListener listener )
+	{
+		agencyListeners.add(listener);
+	}
+	
+	public void removeAgencyListener( AgencyListener listener )
+	{
+		agencyListeners.remove(listener);
+	}
+
+	public <T extends Description> T getDescription() {
+		return null;
+	}
+
+	public IdentifiableType getType()
+	{
+		return IdentifiableType.agency;
+	}
+
+	public void handleRequest(IdentifiableObject source,
+			IdentifiableObject target, Request r)
+	{
+		if( r.getName().startsWith("entity:") )
+			atlas.handleRequest(source, target, r);
+	}
+	
+	public void interceptRequest( IdentifiableObject handler, String requestName )
+	{
+		switch(handler.getType())
+		{
+		case atlas:
+		case feature:
+			requestService.interceptRequest(handler,requestName);
+			break;
+		default:
+			System.err.printf("[agency] %s/%s not allowed to intercept requests%n",handler.getId(),handler.getType());
+		}
+	}
+	
+	public void lazyCheckEntitiesOn( RemoteAgencyDescription rad )
+	{
+		Request r = Protocols.createRequestTo(this,rad,"entity:getlist");
+		Protocols.sendRequest(rad,r);
+	}
+}
