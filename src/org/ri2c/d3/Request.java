@@ -18,21 +18,203 @@
  */
 package org.ri2c.d3;
 
-public interface Request
-{
-	String getSource();
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.ri2c.d3.IdentifiableObject.IdentifiableType;
+import org.ri2c.d3.request.ObjectCoder;
+import org.ri2c.d3.request.ObjectCoder.CodingMethod;
+
+import static org.ri2c.d3.IdentifiableObject.Tools.getURI;
+
+public class Request {
+	public static final String ENCODING = "UTF-8";
+
+	public static final String CALLABLE = "callable";
+	public static final String DATA_ENCODING = "data_encoding";
+	public static final String ARGUMENTS = "args";
+	public static final String SOURCE = "source";
+	public static final String FUTURE = "future";
+
+	protected final URI source;
+	protected final URI target;
+
+	public Request(IdentifiableObject source, IdentifiableObject target,
+			String callable, Object[] args) {
+		this(source, target, callable, args, null);
+	}
+
+	public Request(IdentifiableObject source, IdentifiableObject target,
+			String callable, Object[] args, IdentifiableObject future) {
+		this.source = getURI(source);
+
+		String query = null;
+
+		try {
+			query = String.format("%s=%s", SOURCE,
+					URLEncoder.encode(this.source.toString(), ENCODING));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		CodingMethod cm = CodingMethod.HEXABYTES;
+
+		query = String.format("%s%s%s=%s", query,
+				query.length() > 0 ? "&" : "", CALLABLE, callable);
+		query = String.format("%s%s%s=%s", query,
+				query.length() > 0 ? "&" : "", DATA_ENCODING, cm);
+
+		if (args != null) {
+			query = String.format("%s%s%s=%s", query, query.length() > 0 ? "&"
+					: "", ARGUMENTS, ObjectCoder.encode(cm, args));
+		}
+
+		if (future != null) {
+			try {
+				query = String.format("%s%s%s=%s", query,
+						query.length() > 0 ? "&" : "", FUTURE,
+						URLEncoder.encode(future.toString(), ENCODING));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		this.target = getURI(target, query);
+	}
+
+	public Request(String target) throws URISyntaxException {
+		if (target == null)
+			throw new NullPointerException("target is null");
+
+		this.target = new URI(target);
+
+		if (targetQueryContains(SOURCE)) {
+			URI decoded = null;
+			try {
+				decoded = new URI(URLDecoder.decode(
+						getTargetQueryArgument(SOURCE), ENCODING));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			this.source = decoded;
+		} else {
+			this.source = null;
+		}
+	}
+
+	public Request(URI target) {
+		if (target == null)
+			throw new NullPointerException("target is null");
+
+		this.target = target;
+
+		if (targetQueryContains(SOURCE)) {
+			URI decoded = null;
+			try {
+				decoded = new URI(URLDecoder.decode(
+						getTargetQueryArgument(SOURCE), ENCODING));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			this.source = decoded;
+		} else {
+			this.source = null;
+		}
+	}
+
+	public URI getSourceURI() {
+		return source;
+	}
+
+	public URI getTargetURI() {
+		return target;
+	}
+
+	public IdentifiableType getTargetType() {
+		return IdentifiableType.valueOf(target.getScheme());
+	}
 	
-	String getName();
+	public String getSourceAgency() {
+		return source == null ? null : source.getHost();
+	}
 	
-	String getAttribute( String key );
+	public String getTargetAgency() {
+		return target.getHost();
+	}
+
+	public boolean isLocalTarget() {
+		return target.getHost().equals(Agency.getLocalAgency().getId());
+	}
+
+	public boolean targetQueryContains(String key) {
+		return target.getQuery().matches(String.format("(^|.*\\&)%s=.*", key));
+	}
+
+	public String getTargetQueryArgument(String key) {
+		Pattern p = Pattern.compile(String.format("(?:^|.*\\&)%s=([^\\&]*).*",
+				key));
+		Matcher m = p.matcher(target.getQuery());
+
+		if (m.matches()) {
+			return m.group(1);
+		} else {
+			return null;
+		}
+	}
+
+	public boolean hasCallable() {
+		return targetQueryContains(CALLABLE);
+	}
+
+	public String getCallable() {
+		return getTargetQueryArgument(CALLABLE);
+	}
+
+	public boolean hasCallableArguments() {
+		return targetQueryContains(ARGUMENTS);
+	}
+
+	public Object[] getCallableArguments() {
+		if (!targetQueryContains(ARGUMENTS))
+			return null;
+
+		CodingMethod method = CodingMethod
+				.valueOf(getTargetQueryArgument(DATA_ENCODING));
+		Object data = ObjectCoder.decode(method,
+				getTargetQueryArgument(ARGUMENTS));
+
+		if (data == null) {
+			return null;
+		}
+
+		if (data.getClass().isArray()) {
+			return (Object[]) data;
+		} else {
+			return new Object[] { data };
+		}
+	}
+
+	public boolean hasFuture() {
+		return targetQueryContains(FUTURE);
+	}
+
+	public URI getFutureURI() {
+		try {
+			return new URI(URLDecoder.decode(getTargetQueryArgument(FUTURE), ENCODING));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
 	
-	void addAttribute( String key, String val );
-	
-	Iterable<String> attributeKeySet();
-	
-	int getSubRequestCount();
-	
-	Request getSubRequest( int index );
-	
-	void addSubRequest( Request r );
+	public String toString() {
+		return target.toString();
+	}
 }

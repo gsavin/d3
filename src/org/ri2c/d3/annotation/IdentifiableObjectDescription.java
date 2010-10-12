@@ -16,18 +16,17 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.ri2c.d3.agency;
+package org.ri2c.d3.annotation;
 
-import org.ri2c.d3.Agency;
-import org.ri2c.d3.Args;
-import org.ri2c.d3.IdentifiableObject;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface Feature
-	extends IdentifiableObject
-{
-	String getId();
-	
-	IdentifiableType getType();
-	
-	boolean initFeature( Agency agency, Args args );
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface IdentifiableObjectDescription {
+	String value() default "";
 }

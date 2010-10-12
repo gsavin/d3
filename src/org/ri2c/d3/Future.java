@@ -18,11 +18,74 @@
  */
 package org.ri2c.d3;
 
-public interface Future 
-{
-	boolean isAvailable();
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.ri2c.d3.annotation.IdentifiableObjectPath;
+import org.ri2c.d3.annotation.RequestCallable;
+
+@IdentifiableObjectPath("/d3/futures")
+public class Future implements IdentifiableObject {
+	private static long futureIdGenerator = 0;
+	private static String newFutureId() {
+		return String.format("%016X%016X", System.nanoTime(),
+				futureIdGenerator++);
+	}
+
+	Object value;
+	AtomicBoolean available;
+	Thread thread2interrupt;
+	protected final String id;
 	
-	void interruptMeWhenDone();
-	
-	Object getValue();
+	public Future() {
+		this.value = null;
+		this.available = new AtomicBoolean(false);
+		this.id = newFutureId();
+	}
+
+	public Object getValue() {
+		synchronized (available) {
+			try {
+				if (!available.get())
+					available.wait();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		return value;
+	}
+
+	@RequestCallable("init")
+	public void init(Object value) {
+		this.value = value;
+
+		synchronized (available) {
+			available.set(true);
+			available.notifyAll();
+		}
+
+		if (thread2interrupt != null) {
+			try {
+				thread2interrupt.interrupt();
+			} catch (Exception e) {
+
+			}
+		}
+	}
+
+	public boolean isAvailable() {
+		return available.get();
+	}
+
+	public void interruptMeWhenDone() {
+		thread2interrupt = Thread.currentThread();
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public IdentifiableType getType() {
+		return IdentifiableType.future;
+	}
 }

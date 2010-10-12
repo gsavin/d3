@@ -31,150 +31,122 @@ import java.util.concurrent.TimeUnit;
 
 import org.ri2c.d3.Agency;
 
-public abstract class UDPInterface
-{
-	protected DatagramSocket 		socket;
-	protected Thread				service;
-	protected ThreadPoolExecutor	packetHandlerExecutor;
-	
-	public UDPInterface()
-	{
-		
+public abstract class UDPInterface {
+	protected DatagramSocket socket;
+	protected Thread service;
+	protected ThreadPoolExecutor packetHandlerExecutor;
+
+	public UDPInterface() {
+
 	}
-	
-	public void init( String networkIf, int port )
-		throws SocketException
-	{
+
+	public void init(String networkIf, int port) throws SocketException {
 		/*
-		NetworkInterface networkInterface = networkIf == null ? null : NetworkInterface.getByName( networkIf );
-		
-		if(networkInterface == null)
-		{
-			Enumeration<NetworkInterface> nie = NetworkInterface.getNetworkInterfaces();
-			
-			while( nie.hasMoreElements() )
-			{
-				NetworkInterface tmp = nie.nextElement();
-				
-				if( networkInterface == null )
-					networkInterface = tmp;
-				else if( networkInterface.isLoopback() )
-					networkInterface = tmp;
-			}
-		}
-		
-		InetAddress local = null;
-		
-		Enumeration<InetAddress> enu = networkInterface.getInetAddresses();
-		System.out.printf("[udp] available address for interface %s:%n",networkInterface.getDisplayName());
+		 * NetworkInterface networkInterface = networkIf == null ? null :
+		 * NetworkInterface.getByName( networkIf );
+		 * 
+		 * if(networkInterface == null) { Enumeration<NetworkInterface> nie =
+		 * NetworkInterface.getNetworkInterfaces();
+		 * 
+		 * while( nie.hasMoreElements() ) { NetworkInterface tmp =
+		 * nie.nextElement();
+		 * 
+		 * if( networkInterface == null ) networkInterface = tmp; else if(
+		 * networkInterface.isLoopback() ) networkInterface = tmp; } }
+		 * 
+		 * InetAddress local = null;
+		 * 
+		 * Enumeration<InetAddress> enu = networkInterface.getInetAddresses();
+		 * System.out.printf("[udp] available address for interface %s:%n",
+		 * networkInterface.getDisplayName());
+		 * 
+		 * while( enu.hasMoreElements() ) { InetAddress tmp = enu.nextElement();
+		 * 
+		 * if( local == null && ! tmp.isLoopbackAddress() ) {
+		 * System.out.printf(" (x) %s%n", tmp.getHostAddress() ); local = tmp; }
+		 * else { System.out.printf(" ( ) %s%n", tmp.getHostAddress() ); }
+		 * 
+		 * if( local.isLoopbackAddress() ) local = null; }
+		 */
+		socket = new DatagramSocket(port);
+		packetHandlerExecutor = new ThreadPoolExecutor(1, 10, 200,
+				TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
 
-		while( enu.hasMoreElements() )
-		{
-			InetAddress tmp = enu.nextElement();
-			
-			if( local == null && ! tmp.isLoopbackAddress() )
-			{
-				System.out.printf(" (x) %s%n", tmp.getHostAddress() );
-				local = tmp;
-			}
-			else
-			{
-				System.out.printf(" ( ) %s%n", tmp.getHostAddress() );
-			}
-			
-			if( local.isLoopbackAddress() )
-				local = null;
-		}
-		*/
-		socket 					= new DatagramSocket(port);
-		packetHandlerExecutor 	= new ThreadPoolExecutor(1,10,200,TimeUnit.MILLISECONDS,new LinkedBlockingQueue<Runnable>());
-		
-		if( ! socket.isBound() )
+		if (!socket.isBound())
 			System.err.printf("[udp] socket not bound%n");
-		else System.out.printf("[udp] listening on %s%n",socket.getLocalSocketAddress());
+		else
+			System.out.printf("[udp] listening on %s%n",
+					socket.getLocalSocketAddress());
 	}
-	
-	public void sendUDPRequest( InetAddress address, int port, UDPRequest r )
-		throws IOException
-	{
-		byte [] data = r.convertToBytes();
-		
-		//if( data.length > socket.getSendBufferSize() )
-		//	throw new IOException( "too much data" );
 
-		DatagramPacket packet = new DatagramPacket(data,data.length,address,port);
-		
-		if( ! socket.isBound() )
+	public void sendUDPRequest(InetAddress address, int port, byte[] data)
+			throws IOException {
+		// byte [] data = r.convertToBytes();
+
+		// if( data.length > socket.getSendBufferSize() )
+		// throw new IOException( "too much data" );
+
+		DatagramPacket packet = new DatagramPacket(data, data.length, address,
+				port);
+
+		if (!socket.isBound())
 			System.err.printf("[udp] socket not bound%n");
-		
+
 		socket.send(packet);
 	}
-	
-	protected synchronized void runService()
-	{
-		if( service != null )
+
+	protected synchronized void runService() {
+		if (service != null)
 			return;
-		
+
 		PacketListener pl = new PacketListener();
-		service = new Thread(pl,"udp-socket-listener");
+		service = new Thread(pl, "udp-socket-listener");
 		service.setDaemon(true);
 		service.start();
 	}
-	
-	class PacketListener
-		implements Runnable
-	{
-		public void run()
-		{
-			try
-			{
-				System.out.printf("[udp] max size is: %d%n",socket.getReceiveBufferSize());
+
+	class PacketListener implements Runnable {
+		public void run() {
+			try {
+				System.out.printf("[udp] max size is: %d%n",
+						socket.getReceiveBufferSize());
+			} catch (Exception e) {
+
 			}
-			catch( Exception e )
-			{
-				
-			}
-			
-			while( socket.isBound() )
-			{
-				try
-				{
-					byte [] 		data 	= new byte [socket.getReceiveBufferSize()];
-					DatagramPacket 	rec 	= new DatagramPacket(data,data.length);
-					
-					do
-					{
+
+			while (socket.isBound()) {
+				try {
+					byte[] data = new byte[socket.getReceiveBufferSize()];
+					DatagramPacket rec = new DatagramPacket(data, data.length);
+
+					do {
 						socket.receive(rec);
-					//dataReceived(rec.getAddress(),rec.getData(),rec.getLength());
-					}
-					while( Agency.getLocalAgency().getIpTables().isBlacklisted(rec.getAddress()) && socket.isBound() );
+						// dataReceived(rec.getAddress(),rec.getData(),rec.getLength());
+					} while (Agency.getLocalAgency().getIpTables()
+							.isBlacklisted(rec.getAddress())
+							&& socket.isBound());
 					packetHandlerExecutor.execute(new PacketHandler(rec));
-				}
-				catch (IOException e)
-				{
+				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
-			
+
 			System.out.printf("[udp] socket not bound%n");
 		}
 	}
-	
-	class PacketHandler
-		implements Runnable
-	{
+
+	class PacketHandler implements Runnable {
 		DatagramPacket packet;
-		
-		public PacketHandler( DatagramPacket packet )
-		{
+
+		public PacketHandler(DatagramPacket packet) {
 			this.packet = packet;
 		}
-		
-		public void run()
-		{
-			dataReceived(packet.getAddress(),packet.getData(),packet.getLength());
+
+		public void run() {
+			dataReceived(packet.getAddress(), packet.getData(),
+					packet.getLength());
 		}
 	}
-	
-	public abstract void dataReceived( InetAddress from, byte [] data, int length );
+
+	public abstract void dataReceived(InetAddress from, byte[] data, int length);
 }

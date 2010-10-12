@@ -18,14 +18,12 @@
  */
 package org.ri2c.d3.protocol.xml;
 
+import org.ri2c.d3.Request;
 import org.ri2c.d3.agency.IpTables;
 import org.ri2c.d3.request.RequestListener;
 
-public interface XMLInterface
-{
-	void init( RequestListener bridge, IpTables iptables );
-	
-	void sendXMLRequest( String remoteId, XMLRequest request );
-	
-	XMLRequest getXMLRequest( String name );
+public interface XMLInterface {
+	void init(RequestListener bridge, IpTables iptables);
+
+	void sendXMLRequest(String remoteId, Request request);
 }

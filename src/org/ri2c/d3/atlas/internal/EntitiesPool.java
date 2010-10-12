@@ -23,95 +23,83 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.ri2c.d3.Console;
 import org.ri2c.d3.entity.Entity;
-import org.ri2c.d3.entity.EntityDescription;
 
-public class EntitiesPool
-{
-	public static class PoolEntry
-	{
-		Entity 				entity;
-		EntityDescription	description;
-		Body				body;
-		
-		public PoolEntry( Entity entity, Body body, EntityDescription desc )
-		{
-			this.body 	= body;
+import static org.ri2c.d3.IdentifiableObject.Tools.getFullPath;
+
+public class EntitiesPool {
+	public static class PoolEntry {
+		Entity entity;
+		Body body;
+
+		public PoolEntry(Entity entity, Body body) {
+			this.body = body;
 			this.entity = entity;
-			this.description = desc;
 		}
 	}
-	
-	private ConcurrentHashMap<String,PoolEntry> entities;
-	
-	public EntitiesPool()
-	{
-		this.entities = new ConcurrentHashMap<String,PoolEntry>();
+
+	private ConcurrentHashMap<String, PoolEntry> entities;
+
+	public EntitiesPool() {
+		this.entities = new ConcurrentHashMap<String, PoolEntry>();
 	}
-	
-	void host( String entityId, Body body )
-	{
-		if( entities.containsKey(entityId) )
+
+	void host(String entityPath, Body body) {
+		if (entities.containsKey(entityPath))
 			return;
-		
-		entities.put(entityId,new PoolEntry(null,body,null));
+
+		entities.put(entityPath, new PoolEntry(null, body));
 	}
-	
-	void update( String entityId, Entity entity )
-	{
-		if( entities.containsKey(entityId) )
-		{
+/*
+	void update(String entityId, Entity entity) {
+		if (entities.containsKey(entityId)) {
 			entities.get(entityId).entity = entity;
 		}
 	}
-	
-	public void host( Entity e, Body body, EntityDescription desc )
-	{
-		if( entities.containsKey(e.getId()) )
+*/
+	public void host(Entity e, Body body) {
+		String entityPath = getFullPath(e);
+		if (entities.containsKey(entityPath)) {
+			Console.error("want to host entity already hosted");
 			return;
-		
-		entities.put(e.getId(),new PoolEntry(e,body,desc));
+		}
+
+		entities.put(entityPath, new PoolEntry(e, body));
 	}
-	
-	public Entity getEntity( String entityId )
-	{
-		if( entities.containsKey(entityId) )
-			return entities.get(entityId).entity;
-		
-		return null;
-	}
-	
-	public Body getBody( String entityId )
-	{
-		if( entities.containsKey(entityId) )
-			return entities.get(entityId).body;
-		
+
+	public Entity getEntity(String entityPath) {
+		if (entities.containsKey(entityPath))
+			return entities.get(entityPath).entity;
+
 		return null;
 	}
 
-	public boolean hasEntity( String entityId )
-	{
-		return entities.containsKey(entityId);
+	public Body getBody(String entityPath) {
+		if (entities.containsKey(entityPath))
+			return entities.get(entityPath).body;
+
+		return null;
 	}
-	
-	public String [] list()
-	{
+
+	public boolean hasEntity(String entityPath) {
+		return entities.containsKey(entityPath);
+	}
+
+	public String[] list() {
 		ArrayList<String> list = new ArrayList<String>(entities.size());
 		list.addAll(entities.keySet());
 		list.trimToSize();
-		
-		return list.toArray( new String [list.size()] );
+
+		return list.toArray(new String[list.size()]);
 	}
-	
-	public void unhost( String entityId )
-	{
-		PoolEntry pe = entities.get(entityId);
-		
-		if( pe != null )
-		{
-			if( pe.body.isRunning() )
+
+	public void unhost(String entityPath) {
+		PoolEntry pe = entities.get(entityPath);
+
+		if (pe != null) {
+			if (pe.body.isRunning())
 				Console.warning("remove running body");
-			
-			entities.remove(entityId);
+
+			entities.remove(entityPath);
 		}
 	}
 }

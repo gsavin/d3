@@ -46,11 +46,11 @@ public class MigrationManager
 	public static interface MigrationManagerBridge
 	{
 		boolean prepareBodyForEntityReception( String entityId );
-		boolean receiveEntityContent( String entityId, EntityADN adn, Collection<EntityCall> calls );
+		boolean receiveEntityContent( Entity entity, Collection<Request> calls );
 		void migrationRejectedByRemoteAgency( String entityId );
 		void entityIsBeingMigrated( String entityId );
 		void migrationDone( String entityId );
-		Iterable<EntityCall> getEntityCalls( String entityId );
+		Iterable<Request> getEntityCalls( String entityId );
 	}
 	
 	private ConcurrentHashMap<String,EntityMigrationStatus>	pending;

@@ -22,147 +22,78 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 
 import org.ri2c.d3.Agency;
-import org.ri2c.d3.Future;
-import org.ri2c.d3.IdentifiableObject;
 import org.ri2c.d3.Protocol;
-import org.ri2c.d3.RemoteIdentifiableObject;
 import org.ri2c.d3.Request;
 import org.ri2c.d3.agency.RemoteAgencyDescription;
 
+import static org.ri2c.d3.IdentifiableObject.Tools.getFullPath;
+
 @SuppressWarnings("unchecked")
-public class Protocols
-{
-	private static final HashMap<String,Protocol> knownProtocols =
-		new HashMap<String,Protocol>();
-	private static final HashMap<String,Protocol> protocols =
-		new HashMap<String,Protocol>();
-	
-	static
-	{
-		String [] map = {
-				"org.ri2c.l2d.protocol.XMLProtocol"	
-		};
-		
-		for( String entry: map )
+public class Protocols {
+	private static final HashMap<String, Protocol> knownProtocols = new HashMap<String, Protocol>();
+	private static final HashMap<String, Protocol> protocols = new HashMap<String, Protocol>();
+
+	static {
+		String[] map = { "org.ri2c.d3.protocol.XMLProtocol" };
+
+		for (String entry : map)
 			enableProtocol(entry);
 	}
-	
-	public static void enableProtocol( String classname )
-	{
-		try
-		{
-			Class<? extends Protocol> cls = (Class<? extends Protocol>) Class.forName(classname);
+
+	public static void enableProtocol(String classname) {
+		try {
+			Class<? extends Protocol> cls = (Class<? extends Protocol>) Class
+					.forName(classname);
 			Method m = cls.getMethod("getDefault");
-			Protocol p = (Protocol) m.invoke(null); 
-			
-			if( p != null )
-			{
-				System.out.printf("[protocols] enable %s --> %s%n", p.getDescription().getId(), classname );
-				knownProtocols.put(p.getDescription().getId(),p);
-			}
-			else System.err.printf("[protocols] error getting protocol %s%n", classname );
-		} 
-		catch(Exception e)
-		{
-			System.err.printf("[protocols] error while loading \"%s\"%n",classname);
+			Protocol p = (Protocol) m.invoke(null);
+
+			if (p != null) {
+				System.out.printf("[protocols] enable %s --> %s%n",
+						getFullPath(p), classname);
+				knownProtocols.put(getFullPath(p), p);
+			} else
+				System.err.printf("[protocols] error getting protocol %s%n",
+						classname);
+		} catch (Exception e) {
+			System.err.printf("[protocols] error while loading \"%s\"%n",
+					classname);
+			e.printStackTrace();
 		}
 	}
-	
-	public static void initProtocol( String id )
-	{
-		if( knownProtocols.containsKey(id) )
-		{
-			Protocol p = knownProtocols.get(id);
-			
-			if( Agency.getLocalAgency().registerIdentifiableObject(p) )
-			{
+
+	public static void initProtocol(String path) {
+		if (knownProtocols.containsKey(path)) {
+			Protocol p = knownProtocols.get(path);
+
+			if (Agency.getLocalAgency().registerIdentifiableObject(p)) {
 				p.init();
-				knownProtocols.remove(id);
-				protocols.put(id,p);
-				
-				System.out.printf("[protocols] %s ready%n", id );
+				knownProtocols.remove(path);
+				protocols.put(path, p);
+
+				System.out.printf("[protocols] %s ready%n", path);
 			}
 		}
 	}
-	
-	private static final Protocol getProtocol( String id )
-	{
-		if( knownProtocols.containsKey(id) )
+
+	private static final Protocol getProtocol(String id) {
+		if (knownProtocols.containsKey(id))
 			initProtocol(id);
-		
+
 		return protocols.get(id);
 	}
-	
-	private static final Protocol getProtocolTo( RemoteAgencyDescription rad )
-	{
+
+	private static final Protocol getProtocolTo(RemoteAgencyDescription rad) {
 		return getProtocol(rad.getFirstProtocol());
 	}
-	
-	public static final Request createRequestTo( IdentifiableObject source,
-			IdentifiableObject target, String name )
-	{
-		if( target == null || source == null )
-		{
-			System.err.printf("[protocols] error: null target or source%n");
-			return null;
+
+	public static final void sendRequest(Request r) {
+		if (!r.isLocalTarget()) {
+			RemoteAgencyDescription rad = Agency.getLocalAgency()
+					.getRemoteAgencyDescription(r.getTargetAgency());
+
+			getProtocolTo(rad).sendRequest(r);
+		} else {
+			InternalProtocol.getInternalProtocol().sendRequest(r);
 		}
-		
-		Request r;
-		
-		if( target instanceof RemoteIdentifiableObject )
-		{
-			RemoteIdentifiableObject rid = (RemoteIdentifiableObject) target;
-			
-			RemoteAgencyDescription rad =
-				Agency.getLocalAgency().getRemoteAgencyDescription(rid.getRemoteAgencyId());
-		
-			r = getProtocolTo(rad).newRequest(source, target, name);
-			
-			r.addAttribute( "source-agency-id", Agency.getLocalAgency().getId() );
-		}
-		else
-		{
-			r = InternalProtocol.getInternalProtocol().newRequest(source, target, name);
-		}
-		
-		r.addAttribute("source-id", 	source.getId() );
-		r.addAttribute("source-type", 	source.getType().name() );
-		
-		r.addAttribute("target-id", 	target.getId() );
-		r.addAttribute("target-type", 	target.getType().name() );
-		
-		return r;
-	}
-	
-	public static final Future sendRequestWithFuture( IdentifiableObject target, Request r )
-	{
-		final Future f = Agency.getLocalAgency().getAtlas().addFutureRequest(r);
-		
-		sendRequest(target,r);
-		
-		return f;
-	}
-	
-	public static final void sendRequest( IdentifiableObject target, Request r )
-	{
-		if( target instanceof RemoteIdentifiableObject )
-		{
-			RemoteIdentifiableObject rid = (RemoteIdentifiableObject) target;
-			
-			RemoteAgencyDescription rad =
-				Agency.getLocalAgency().getRemoteAgencyDescription(rid.getRemoteAgencyId());
-		
-			getProtocolTo(rad).sendRequest(target,r);
-		}
-		else
-		{
-			InternalProtocol.getInternalProtocol().sendRequest(target,r);
-		}
-	}
-	
-	public static void reply( IdentifiableObject replyTo, IdentifiableObject replyFrom,
-			Request r, Object futureValue )
-	{
-		Agency.getLocalAgency().getAtlas().reply(replyTo, replyFrom, r, futureValue);
 	}
 }

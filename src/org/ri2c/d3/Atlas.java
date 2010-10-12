@@ -18,40 +18,33 @@
  */
 package org.ri2c.d3;
 
+import org.ri2c.d3.Migration.MigrationStatus;
 import org.ri2c.d3.agency.RemoteAgencyDescription;
-import org.ri2c.d3.atlas.AtlasDescription;
+import org.ri2c.d3.annotation.IdentifiableObjectPath;
 import org.ri2c.d3.atlas.AtlasListener;
 import org.ri2c.d3.entity.Entity;
-import org.ri2c.d3.entity.EntityCall;
-import org.ri2c.d3.entity.EntityDescription;
-import org.ri2c.d3.entity.EntityMigrationStatus;
 
-public interface Atlas
-	extends IdentifiableObject
+@IdentifiableObjectPath("/d3")
+public abstract class Atlas
+	implements IdentifiableObject
 {
-	void init( Agency agency );
+	public final String getId() {
+		return "atlas";
+	}
+
+	public final IdentifiableType getType() {
+		return IdentifiableType.atlas;
+	}
 	
-	@SuppressWarnings("unchecked")
-	AtlasDescription getDescription();
+	public abstract void init( Agency agency );
 	
-	void addAtlasListener( AtlasListener listener );
+	public abstract void addAtlasListener( AtlasListener listener );
 	
-	void removeAtlasListener( AtlasListener listener );
+	public abstract void removeAtlasListener( AtlasListener listener );
 	
-	Entity createEntity( EntityDescription desc );
+	public abstract Entity createEntity( Class<? extends Entity> desc );
 	
-	Entity getEntity( String entityId );
+	public abstract void entityCall( Request r );
 	
-	EntityMigrationStatus migrateEntity( String entityId, RemoteAgencyDescription rad );
-	
-	Future addFutureRequest( Request r );
-	
-	void reply( IdentifiableObject replyTo, IdentifiableObject replyFrom,
-			Request r, Object futureValue );
-	
-	void entityCall( IdentifiableObject source, String entityId, EntityCall call );
-	
-	String [] listEntities();
-	
-	Future remoteEntityCall( IdentifiableObject source, IdentifiableObject target, String callId, boolean createFuture, Object ... args );
+	public abstract MigrationStatus migrateEntity( Entity entity, RemoteAgencyDescription rad );
 }

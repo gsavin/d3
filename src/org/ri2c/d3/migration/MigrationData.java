@@ -16,18 +16,28 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.ri2c.d3.agency;
+package org.ri2c.d3.migration;
 
-import org.ri2c.d3.Agency;
-import org.ri2c.d3.Args;
-import org.ri2c.d3.IdentifiableObject;
+import java.util.Collection;
 
-public interface Feature
-	extends IdentifiableObject
-{
-	String getId();
+import org.ri2c.d3.Request;
+import org.ri2c.d3.entity.Entity;
+
+public class MigrationData {
+
+	protected Entity entity;
+	protected Collection<Request> requests;
 	
-	IdentifiableType getType();
+	public MigrationData(Entity entity, Collection<Request> requests) {
+		this.entity = entity;
+		this.requests = requests;
+	}
 	
-	boolean initFeature( Agency agency, Args args );
+	public Entity getEntity() {
+		return entity;
+	}
+	
+	public Collection<Request> getRequests() {
+		return requests;
+	}
 }

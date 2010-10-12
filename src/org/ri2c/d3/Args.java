@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.ri2c.d3.IdentifiableObject.Tools.getArgsPrefix;
+
 public class Args
 {
 	private HashMap<String,String> 	innerMap;
@@ -92,6 +94,10 @@ public class Args
 		else return innerMap.containsKey(key);
 	}
 	
+	public Args getArgs( IdentifiableObject idObject ) {
+		return getArgs(getArgsPrefix(idObject));
+	}
+	
 	public Args getArgs( String key )
 	{
 		if( key.indexOf('.') != -1 )
@@ -100,7 +106,7 @@ public class Args
 			
 			if( children.containsKey(sub) )
 				return children.get(sub).getArgs(key.substring(key.indexOf('.')+1));
-			else return null;
+			else return new Args();
 		}
 		else return children.containsKey(key) ? children.get(key) : this;
 	}

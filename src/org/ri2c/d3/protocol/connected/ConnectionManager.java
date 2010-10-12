@@ -19,8 +19,6 @@
 package org.ri2c.d3.protocol.connected;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
@@ -36,372 +34,322 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * A generic connection manager.
- * It uses SocketChannel and Selector to handle data reception.
+ * A generic connection manager. It uses SocketChannel and Selector to handle
+ * data reception.
  * 
  * @author Guilhelm Savin
- *
+ * 
  */
-public class ConnectionManager
-{
-	public static ConnectionFactory getDefaultConnectionFactory()
-	{
+public class ConnectionManager {
+	public static ConnectionFactory getDefaultConnectionFactory() {
 		return new ConnectionFactory() {
-			public Connection createConnection( SocketChannel channel )
-			{
+			public Connection createConnection(SocketChannel channel) {
 				return new Connection(channel);
 			}
 		};
 	}
-	
-	class ConnectionEntry
-	{
-		Connection 		connection;
-		SelectionKey	selectionKey;
-		long			bytes = 0;
-		SocketAddress	socketAddress;
+
+	class ConnectionEntry {
+		Connection connection;
+		SelectionKey selectionKey;
+		long bytes = 0;
+		SocketAddress socketAddress;
 	}
-	
-	class ConnectionSelector
-		implements Runnable
-	{
-		Selector 							selector;
-		ConcurrentLinkedQueue<Connection>	waitingForRegistration;
-		AtomicBoolean						running;
-		ByteBuffer 							buffer;
-		
-		public ConnectionSelector()
-			throws IOException
-		{
-			selector 				= Selector.open();
-			waitingForRegistration	= new ConcurrentLinkedQueue<Connection>();
-			running					= new AtomicBoolean(false);
-			buffer 					= ByteBuffer.allocate(bufferStepSize);
+
+	class ConnectionSelector implements Runnable {
+		Selector selector;
+		ConcurrentLinkedQueue<Connection> waitingForRegistration;
+		AtomicBoolean running;
+		ByteBuffer buffer;
+
+		public ConnectionSelector() throws IOException {
+			selector = Selector.open();
+			waitingForRegistration = new ConcurrentLinkedQueue<Connection>();
+			running = new AtomicBoolean(false);
+			buffer = ByteBuffer.allocate(bufferStepSize);
 		}
-		
-		public void enqueueConnection( Connection conn )
-		{
+
+		public void enqueueConnection(Connection conn) {
 			waitingForRegistration.add(conn);
-			
-			if( running.compareAndSet(false,true) )
-			{
+
+			if (running.compareAndSet(false, true)) {
 				Thread t = threadFactory.newThread(this);
 				t.setDaemon(true);
 				t.start();
 			}
 		}
-		
-		public void register( Connection connection )
-			throws IOException
-		{
-			SocketChannel 	channel 	= connection.getChannel();
-			
-			if( channel.isConnectionPending() )
+
+		public void register(Connection connection) throws IOException {
+			SocketChannel channel = connection.getChannel();
+
+			if (channel.isConnectionPending())
 				channel.finishConnect();
-			
+
 			channel.configureBlocking(false);
-			
-			ConnectionEntry	entry = new ConnectionEntry();
-			entry.connection 	= connection;
-			entry.selectionKey	= channel.register(selector,SelectionKey.OP_READ,entry);
-			entry.socketAddress	= channel.socket().getRemoteSocketAddress();
-			
+
+			ConnectionEntry entry = new ConnectionEntry();
+			entry.connection = connection;
+			entry.selectionKey = channel.register(selector,
+					SelectionKey.OP_READ, entry);
+			entry.socketAddress = channel.socket().getRemoteSocketAddress();
+
 			entries.add(entry);
-			
-			System.out.printf("[+] %d connections%n",entries.size());
+
+			System.out.printf("[+] %d connections%n", entries.size());
 		}
-		
-		public void run()
-		{	
-			while( true )
-			{
-				while( waitingForRegistration.size() > 0 )
-				{
-					try
-					{
-						register( waitingForRegistration.poll() );
-					}
-					catch( Exception e )
-					{
+
+		public void run() {
+			while (true) {
+				while (waitingForRegistration.size() > 0) {
+					try {
+						register(waitingForRegistration.poll());
+					} catch (Exception e) {
 						e.printStackTrace();
 					}
 				}
-				
-				try
-				{
+
+				try {
 					checkData();
-				}
-				catch( IOException ioe )
-				{
-					
+				} catch (IOException ioe) {
+
 				}
 			}
 		}
-		
-		protected void checkData()
-			throws IOException
-		{
-			selector.select(1000);
-			
-			{
-				Set<SelectionKey> keys	= selector.selectedKeys();
 
-				for( SelectionKey key: keys )
-				{
-					if( key.isValid() && key.isReadable() &&
-							! lostConnections.contains(key.attachment()) )
-					{
-						ReadableByteChannel in =
-							(ReadableByteChannel) key.channel();
+		protected void checkData() throws IOException {
+			selector.select(1000);
+
+			{
+				Set<SelectionKey> keys = selector.selectedKeys();
+
+				for (SelectionKey key : keys) {
+					if (key.isValid() && key.isReadable()
+							&& !lostConnections.contains(key.attachment())) {
+						ReadableByteChannel in = (ReadableByteChannel) key
+								.channel();
 
 						int read = 0;
 
-						while( ( read = in.read(buffer) ) >= 0 )
-						{
-							if( buffer.remaining() <= 0 )
-							{
+						while ((read = in.read(buffer)) >= 0) {
+							if (buffer.remaining() <= 0) {
 								buffer.flip();
-								ByteBuffer tmp = ByteBuffer.allocate(buffer.capacity()+bufferStepSize);
+								ByteBuffer tmp = ByteBuffer.allocate(buffer
+										.capacity() + bufferStepSize);
 								tmp.put(buffer);
 								buffer = tmp;
-							}
-							else if( read == 0 )
-							{
+							} else if (read == 0) {
 								break;
 							}
 						}
 
 						buffer.flip();
 
-						if( buffer.limit() > 0 )
-						{
-							byte [] data 	= new byte [buffer.limit()];
-							int 	i 		= 0;
-							
-							while( buffer.position() < buffer.limit() )
-								data [i++] = buffer.get();
-							
+						if (buffer.limit() > 0) {
+							byte[] data = new byte[buffer.limit()];
+							int i = 0;
+
+							while (buffer.position() < buffer.limit())
+								data[i++] = buffer.get();
+
 							buffer.clear();
-							
-							ConnectionEntry entry = (ConnectionEntry) key.attachment();
+
+							ConnectionEntry entry = (ConnectionEntry) key
+									.attachment();
 							entry.bytes += data.length;
-							
-							System.out.printf("%s: %dbytes%n",entry,entry.bytes);// new String(data));
-							
-							if( connectedInterface != null )
-								connectedInterface.receiveData(entry.connection,data);
+
+							System.out.printf("%s: %dbytes%n", entry,
+									entry.bytes);// new String(data));
+
+							if (connectedInterface != null)
+								connectedInterface.receiveData(
+										entry.connection, data);
 						}
 
-						if( read < 0 )
-						{
+						if (read < 0) {
 							System.out.printf("connection lost%n");
-							connectionLost( (ConnectionEntry) key.attachment() );
+							connectionLost((ConnectionEntry) key.attachment());
 						}
 					}
 				}
 			}
 		}
 	}
-	
-	class ConnectionPurge
-		implements Runnable
-	{
+
+	class ConnectionPurge implements Runnable {
 		Thread thread;
-		
-		public void run()
-		{
-			if( thread == null )
+
+		public void run() {
+			if (thread == null)
 				thread = Thread.currentThread();
-			else return;
-			
-			while( true )
-			{
-				for( ConnectionEntry entry: entries )
-				{
-					if( ! entry.connection.getChannel().isConnected() )
-					{
+			else
+				return;
+
+			while (true) {
+				for (ConnectionEntry entry : entries) {
+					if (!entry.connection.getChannel().isConnected()) {
 						System.out.printf("channel not connected anymore%n");
 						lostConnections.add(entry);
 					}
 				}
-				
-				while( lostConnections.size() > 0 )
-				{
+
+				while (lostConnections.size() > 0) {
 					ConnectionEntry entry = lostConnections.poll();
 
-					try
-					{
+					try {
 						mappingInetConn.remove(entry.socketAddress);
-						
+
 						entry.selectionKey.cancel();
 						entry.connection.getChannel().close();
-						
+
 						entries.remove(entry);
 
-						System.out.printf("[-] %d connections%n",entries.size());
-					}
-					catch( IOException e )
-					{
+						System.out.printf("[-] %d connections%n",
+								entries.size());
+					} catch (IOException e) {
 						e.printStackTrace();
 						// Nothing to do
 					}
 				}
-				
-				try
-				{
+
+				try {
 					Thread.sleep(1000);
-				}
-				catch( InterruptedException e )
-				{
-					
+				} catch (InterruptedException e) {
+
 				}
 			}
 		}
 	}
-	
+
 	/**
 	 * Active connections.
 	 */
-	ConcurrentLinkedQueue<ConnectionEntry> 		entries;
+	ConcurrentLinkedQueue<ConnectionEntry> entries;
 	/**
 	 * Connections which have been closed or lost.
 	 */
-	ConcurrentLinkedQueue<ConnectionEntry>		lostConnections;
-	
-	ConcurrentHashMap<SocketAddress,Connection>	mappingInetConn;
-	
-	ReentrantLock								connectionLock;
-	
-	int											bufferStepSize = 64;
-	
-	ConnectionSelector []						selectors;
-	
-	ConnectionPurge								connectionPurge;
-	
-	int											nextSelector;
-	
-	ThreadFactory								threadFactory;
-	
-	ConnectedInterface							connectedInterface;
-	
-	int											port;
-	
-	ConnectionServer							server;
-	
-	ConnectionFactory							connectionFactory;
-	
-	public ConnectionManager()
-	{
+	ConcurrentLinkedQueue<ConnectionEntry> lostConnections;
+
+	ConcurrentHashMap<SocketAddress, Connection> mappingInetConn;
+
+	ReentrantLock connectionLock;
+
+	int bufferStepSize = 64;
+
+	ConnectionSelector[] selectors;
+
+	ConnectionPurge connectionPurge;
+
+	int nextSelector;
+
+	ThreadFactory threadFactory;
+
+	ConnectedInterface connectedInterface;
+
+	int port;
+
+	ConnectionServer server;
+
+	ConnectionFactory connectionFactory;
+
+	public ConnectionManager() {
 		this(1);
 	}
-	
-	public ConnectionManager( int port )
-	{
-		this( getDefaultConnectionFactory(), Executors.defaultThreadFactory(), port, 1 );
+
+	public ConnectionManager(int port) {
+		this(getDefaultConnectionFactory(), Executors.defaultThreadFactory(),
+				port, 1);
 	}
-	
-	public ConnectionManager( int port, int selectorCount )
-	{
-		this( getDefaultConnectionFactory(), Executors.defaultThreadFactory(), port, selectorCount );
+
+	public ConnectionManager(int port, int selectorCount) {
+		this(getDefaultConnectionFactory(), Executors.defaultThreadFactory(),
+				port, selectorCount);
 	}
-	
-	public ConnectionManager( ConnectionFactory connectionFactory, ThreadFactory threadFactory, int port, int selectorCount )
-	{
-		entries 				= new ConcurrentLinkedQueue<ConnectionEntry>();
-		lostConnections 		= new ConcurrentLinkedQueue<ConnectionEntry>();
-		mappingInetConn			= new ConcurrentHashMap<SocketAddress,Connection>();
-		nextSelector			= 0;
-		
-		connectionPurge			= new ConnectionPurge();
-		selectors				= new ConnectionSelector [selectorCount];
-		
-		this.connectionFactory	= connectionFactory;
-		
-		this.port				= port;
-		
-		connectionLock			= new ReentrantLock();
-		
-		this.threadFactory		= threadFactory;
-		
-		for( int i = 0; i < selectorCount; i++ )
-		{
-			try
-			{
-				selectors [i] = new ConnectionSelector();
-			}
-			catch( IOException ioe )
-			{
+
+	public ConnectionManager(ConnectionFactory connectionFactory,
+			ThreadFactory threadFactory, int port, int selectorCount) {
+		entries = new ConcurrentLinkedQueue<ConnectionEntry>();
+		lostConnections = new ConcurrentLinkedQueue<ConnectionEntry>();
+		mappingInetConn = new ConcurrentHashMap<SocketAddress, Connection>();
+		nextSelector = 0;
+
+		connectionPurge = new ConnectionPurge();
+		selectors = new ConnectionSelector[selectorCount];
+
+		this.connectionFactory = connectionFactory;
+
+		this.port = port;
+
+		connectionLock = new ReentrantLock();
+
+		this.threadFactory = threadFactory;
+
+		for (int i = 0; i < selectorCount; i++) {
+			try {
+				selectors[i] = new ConnectionSelector();
+			} catch (IOException ioe) {
 				ioe.printStackTrace();
 			}
 		}
-		
+
 		Thread t = threadFactory.newThread(connectionPurge);
 		t.setDaemon(true);
 		t.start();
-		
-		server					= new ConnectionServer(this,connectionFactory,port);
-		
+
+		server = new ConnectionServer(this, connectionFactory, port);
+
 		t = threadFactory.newThread(server);
 		t.setDaemon(true);
 		t.start();
 	}
-	
-	void register( Connection connection )
-	{
+
+	void register(Connection connection) {
 		connectionLock.lock();
-		
-		if( ! mappingInetConn.containsKey(connection.channel.socket().getRemoteSocketAddress()) )
-		{
-			mappingInetConn.put(connection.channel.socket().getRemoteSocketAddress(),connection);
-			selectors [nextSelector].enqueueConnection(connection);
-			nextSelector = ( nextSelector + 1 ) % selectors.length;
-		}
-		else
-		{
-			try
-			{
+
+		if (!mappingInetConn.containsKey(connection.channel.socket()
+				.getRemoteSocketAddress())) {
+			mappingInetConn.put(connection.channel.socket()
+					.getRemoteSocketAddress(), connection);
+			selectors[nextSelector].enqueueConnection(connection);
+			nextSelector = (nextSelector + 1) % selectors.length;
+		} else {
+			try {
 				connection.channel.close();
-			}
-			catch( Exception e )
-			{
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
-		
+
 		connectionLock.unlock();
 	}
-	
-	private void connectionLost( ConnectionEntry entry )
-	{
+
+	private void connectionLost(ConnectionEntry entry) {
 		lostConnections.add(entry);
-		
-		if( connectionPurge.thread != null )
+
+		if (connectionPurge.thread != null)
 			connectionPurge.thread.interrupt();
 	}
-	
-	public void send( SocketAddress address, byte [] data )
-		throws IOException
-	{
+
+	public void send(SocketAddress address, byte[] data) throws IOException {
 		connectionLock.lock();
-		
+
 		Connection conn = mappingInetConn.get(address);
-		
-		if( conn == null )
-		{
-			SocketChannel sc = SocketChannel.open( address );
+
+		if (conn == null) {
+			SocketChannel sc = SocketChannel.open(address);
 			conn = connectionFactory.createConnection(sc);
-			
+
 			register(conn);
 		}
-		
+
 		connectionLock.unlock();
-		
-		conn.channel.write( ByteBuffer.wrap(data) );
+
+		conn.channel.write(ByteBuffer.wrap(data));
 	}
-	
-	public static void main( String ... args ) throws InterruptedException
-	{
+
+	public static void main(String... args) throws InterruptedException {
 		ConnectionManager cm = new ConnectionManager(6010);
-		synchronized(cm) { cm.wait(); }
+		synchronized (cm) {
+			cm.wait();
+		}
 	}
 }

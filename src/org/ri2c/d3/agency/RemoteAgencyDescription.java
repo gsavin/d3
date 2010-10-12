@@ -18,72 +18,49 @@
  */
 package org.ri2c.d3.agency;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.ri2c.d3.RemoteIdentifiableObject;
-import org.ri2c.d3.entity.RemoteEntityDescription;
+import org.ri2c.d3.annotation.IdentifiableObjectPath;
 
-public class RemoteAgencyDescription
-	extends RemoteIdentifiableObject
-{
-	String		agencyId;
-	String		address;
-	String[]	protocols;
-	long		lastPresenceDate;
-	
-	ConcurrentHashMap<String,RemoteEntityDescription>	knownRemoteEntities;
-	
-	public RemoteAgencyDescription( String agencyId, String address, String protocols )
-	{
-		super(agencyId,agencyId,IdentifiableType.agency);
-		
-		this.agencyId    = agencyId;
-		this.address 	 = address;
-		this.protocols   = protocols.trim().split("\\s*,\\s*");
-		lastPresenceDate = System.currentTimeMillis();
-		knownRemoteEntities = new ConcurrentHashMap<String,RemoteEntityDescription>();
+@IdentifiableObjectPath("/d3/remotes")
+public class RemoteAgencyDescription extends RemoteIdentifiableObject {
+	protected final String agencyId;
+	protected String address;
+	protected String[] protocols;
+	protected long lastPresenceDate;
+	protected RemoteIdentifiableObject remoteAtlas;
+
+	public RemoteAgencyDescription(String agencyId, String address,
+			String protocols) {
+		super(agencyId, agencyId, IdentifiableType.agency);
+
+		this.agencyId = agencyId;
+		this.address = address;
+		this.protocols = protocols.trim().split("\\s*,\\s*");
+		this.lastPresenceDate = System.currentTimeMillis();
+		this.remoteAtlas = new RemoteIdentifiableObject(agencyId, "/d3/atlas",
+				IdentifiableType.atlas);
 	}
-	
-	public void udpatePresence( long date )
-	{
+
+	public void udpatePresence(long date) {
 		this.lastPresenceDate = date;
 	}
-	
-	public String getId()
-	{
+
+	public final String getId() {
 		return agencyId;
 	}
-	
-	public String getAddress()
-	{
+
+	public String getAddress() {
 		return address;
 	}
 	
-	public String getFirstProtocol()
-	{
-		if( protocols == null || protocols.length == 0 )
-			return null;
-		
-		return protocols [0];
+	public RemoteIdentifiableObject getRemoteAtlas() {
+		return remoteAtlas;
 	}
 
-	public void addRemoteEntityDescription( RemoteEntityDescription red )
-	{
-		knownRemoteEntities.put(red.getEntityId(),red);
-	}
-	
-	public void removeRemoteEntityDescription( String entityId )
-	{
-		knownRemoteEntities.remove(entityId);
-	}
-	
-	public RemoteEntityDescription getRemoteEntityDescription( String entityId )
-	{
-		return knownRemoteEntities.get(entityId);
-	}
-	
-	public Iterable<RemoteEntityDescription> eachRemoteEntityDescription()
-	{
-		return knownRemoteEntities.values();
+	public String getFirstProtocol() {
+		if (protocols == null || protocols.length == 0)
+			return null;
+
+		return protocols[0];
 	}
 }

@@ -45,16 +45,16 @@ public class FeatureManager
 			
 			features.put(f.getId(),f);
 			
-			if( ! f.initFeature(agency,agency.getArgs().getArgs(f.getDescription().getId())) )
+			if( ! f.initFeature(agency,agency.getArgs().getArgs(f)) )
 			{
 				features.remove(f.getId());
 				agency.unregisterIdentifiableObject(f);
 				
-				Console.error("failed to init feature \"%s\"",f.getDescription().getName());
+				Console.error("failed to init feature \"%s\"",f.getId());
 			}
 			else
 			{
-				Console.info("succeed to init feature \"%s\"",f.getDescription().getName());
+				Console.info("succeed to init feature \"%s\"",f.getId());
 				
 				if( f instanceof RunnableFeature )
 					runnableFeatureExecutor.submitRunnableFeatureCommand( ((RunnableFeature) f).getRunnableFeatureCommand() );
@@ -62,7 +62,7 @@ public class FeatureManager
 		}
 		else
 		{
-			Console.warning("feature already active: \"%s\"", f.getDescription().getName() );
+			Console.warning("feature already active: \"%s\"", f.getId() );
 		}
 	}
 	

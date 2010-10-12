@@ -38,18 +38,15 @@ import org.ri2c.d3.Agency;
 import org.ri2c.d3.Args;
 import org.ri2c.d3.IdentifiableObject;
 import org.ri2c.d3.RemoteIdentifiableObject;
-import org.ri2c.d3.Request;
 import org.ri2c.d3.agency.AgencyListener;
 import org.ri2c.d3.agency.Feature;
-import org.ri2c.d3.agency.FeatureDescription;
 import org.ri2c.d3.agency.RemoteAgencyDescription;
+import org.ri2c.d3.annotation.IdentifiableObjectPath;
 
+@IdentifiableObjectPath("/d3/features/model")
 public class Model
 	implements Feature, AgencyListener
 {
-	protected static FeatureDescription modelDescription =
-		new FeatureDescription( "l2d.features.model", "L2D Execution Model", "" );
-	
 	protected static long MODEL_ID_GENERATOR = 0;
 	
 	protected static class ResizableView
@@ -154,13 +151,7 @@ public class Model
 	
 	public Model()
 	{
-		modelId = String.format("l2d.features.model.%x", MODEL_ID_GENERATOR++);
-	}
-	
-	@SuppressWarnings("unchecked")
-	public FeatureDescription getDescription()
-	{
-		return modelDescription;
+		modelId = String.format("model%x", MODEL_ID_GENERATOR++);
 	}
 
 	public String getId()
@@ -290,12 +281,6 @@ public class Model
 			w *= 1.25;
 			e.changeAttribute("weight",w);
 		}
-	}
-	
-	public void handleRequest( IdentifiableObject source,
-			IdentifiableObject target, Request r )
-	{
-		
 	}
 
 	public void identifiableObjectRegistered(IdentifiableObject idObject) {

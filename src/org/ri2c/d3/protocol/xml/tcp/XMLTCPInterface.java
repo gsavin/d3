@@ -18,9 +18,9 @@
  */
 package org.ri2c.d3.protocol.xml.tcp;
 
+import java.net.URI;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
 
 import javax.management.modelmbean.XMLParseException;
@@ -33,126 +33,105 @@ import org.ri2c.d3.protocol.connected.Connection;
 import org.ri2c.d3.protocol.connected.ConnectionFactory;
 import org.ri2c.d3.protocol.connected.ConnectionManager;
 import org.ri2c.d3.protocol.xml.XMLInterface;
-import org.ri2c.d3.protocol.xml.XMLRequest;
 import org.ri2c.d3.protocol.xml.XMLStanza;
 import org.ri2c.d3.protocol.xml.XMLStanzaBuilder;
 import org.ri2c.d3.protocol.xml.XMLStanzaFactory;
 import org.ri2c.d3.request.RequestListener;
 
-public class XMLTCPInterface
-	implements XMLInterface, ConnectedInterface
-{
+public class XMLTCPInterface implements XMLInterface, ConnectedInterface {
 	public static final int XML_TCP_PORT = 6003;
-	
-	private class InnerXMLStanzaFactory
-		implements XMLStanzaFactory
-	{
-		public XMLStanza newXMLStanza(String name)
-		{
-			return new XMLRequest(name);
+
+	private class InnerXMLStanzaFactory implements XMLStanzaFactory {
+		public XMLStanza newXMLStanza(String name) {
+			return new XMLStanza(name);
 		}
 	}
-	
-	class XMLConnection
-		extends Connection
-	{
-		String 	buffer;
-		Charset	cs;
-		
-		public XMLConnection(SocketChannel channel)
-		{
+
+	class XMLConnection extends Connection {
+		String buffer;
+		Charset cs;
+
+		public XMLConnection(SocketChannel channel) {
 			super(channel);
-			
-			buffer 	= "";
-			cs		= Charset.defaultCharset();
+
+			buffer = "";
+			cs = Charset.defaultCharset();
 		}
-		
-		public void addData( byte [] data )
-		{
-			String str = new String( data, cs );
+
+		public void addData(byte[] data) {
+			String str = new String(data, cs);
 			buffer += str;
-			
+
 			int index = XMLStanzaBuilder.stanzaEndPosition(buffer);
-			
-			if( index > 0 )
-			{
-				str 	= buffer.substring(0,index);
-				buffer 	= buffer.substring(index);
-				
-				try
-				{
-					String sourceId = iptables.getId(channel.socket().getInetAddress());
-					
-					if( sourceId == null )
-					{
-						Console.error("unknown address: %s",channel.socket().getInetAddress());
+
+			if (index > 0) {
+				str = buffer.substring(0, index);
+				buffer = buffer.substring(index);
+
+				try {
+					String sourceId = iptables.getId(channel.socket()
+							.getInetAddress());
+
+					if (sourceId == null) {
+						Console.error("unknown address: %s", channel.socket()
+								.getInetAddress());
 						return;
 					}
-					
-					XMLRequest xr = (XMLRequest) XMLStanzaBuilder.string2stanza(stanzaFactory, str);
-					xr.setSource(sourceId);
-					
-					xprb.requestReceived(xr);
-				}
-				catch( XMLParseException e )
-				{
-					Console.error( e.getMessage() );
+
+					XMLStanza xr = XMLStanzaBuilder.string2stanza(
+							stanzaFactory, str);
+
+					try {
+						URI uri = new URI(xr.getContent());
+						Request r = new Request(uri);
+
+						xprb.requestReceived(r);
+					} catch (Exception e) {
+						Console.error(e.getMessage());
+					}
+				} catch (XMLParseException e) {
+					Console.error(e.getMessage());
 				}
 			}
 		}
 	}
-	
-	class XMLConnectionFactory
-		implements ConnectionFactory
-	{
-		public Connection createConnection(SocketChannel channel)
-		{
+
+	class XMLConnectionFactory implements ConnectionFactory {
+		public Connection createConnection(SocketChannel channel) {
 			return new XMLConnection(channel);
 		}
 	}
-	
 
-	static ThreadGroup group = new ThreadGroup( "xml-tcp-threads" );
-	
-	class InnerThreadFactory
-		implements ThreadFactory
-	{
-		public Thread newThread( Runnable r )
-		{
-			Thread t = new Thread(group,r);
+	static ThreadGroup group = new ThreadGroup("xml-tcp-threads");
+
+	class InnerThreadFactory implements ThreadFactory {
+		public Thread newThread(Runnable r) {
+			Thread t = new Thread(group, r);
 			return t;
 		}
 	}
-	
-	private RequestListener			xprb;
-	private IpTables				iptables;
-	private XMLStanzaFactory		stanzaFactory;
-	private XMLConnectionFactory	xmlConnectionFactory;
-	private ConnectionManager		connectionManager;
-	
-	public void init( RequestListener bridge, IpTables iptables )
-	{
-		this.stanzaFactory			= new InnerXMLStanzaFactory();
-		this.xprb 					= bridge;
-		this.iptables 				= iptables;
-		this.xmlConnectionFactory	= new XMLConnectionFactory();
-		this.connectionManager		= new ConnectionManager( xmlConnectionFactory,
-				new InnerThreadFactory(), XML_TCP_PORT, 2 );
+
+	private RequestListener xprb;
+	private IpTables iptables;
+	private XMLStanzaFactory stanzaFactory;
+	private XMLConnectionFactory xmlConnectionFactory;
+	private ConnectionManager connectionManager;
+
+	public void init(RequestListener bridge, IpTables iptables) {
+		this.stanzaFactory = new InnerXMLStanzaFactory();
+		this.xprb = bridge;
+		this.iptables = iptables;
+		this.xmlConnectionFactory = new XMLConnectionFactory();
+		this.connectionManager = new ConnectionManager(xmlConnectionFactory,
+				new InnerThreadFactory(), XML_TCP_PORT, 2);
 	}
 
-	public XMLRequest getXMLRequest(String name) {
-		// TODO Auto-generated method stub
-		return null;
+	public void sendXMLRequest(String remoteId, Request request) {
+
 	}
 
-	public void sendXMLRequest(String remoteId, XMLRequest request)
-	{
-		
-	}
-
-	public void receiveData(Connection conn, byte[] data)
-	{
-		if( conn instanceof XMLConnection )
+	public void receiveData(Connection conn, byte[] data) {
+		if (conn instanceof XMLConnection)
 			((XMLConnection) conn).addData(data);
 	}
 

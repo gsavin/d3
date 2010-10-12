@@ -34,66 +34,9 @@ import org.ri2c.d3.entity.EntityDescription;
 
 public class D3Entity
 	implements Entity
-{
-	private class MethodCallable
-		implements EntityCallable
-	{
-		Method method;
-		
-		public MethodCallable( String name )
-			throws NoSuchMethodException
-		{
-			Method [] methods = adn.getClass().getMethods();
-			
-			for( Method m : methods )
-			{
-				if( m.getName().equals(name) && 
-						Modifier.isPublic(m.getModifiers()) )
-				{
-					method = m;
-					break;
-				}
-			}
-			
-			if( method == null )
-				throw new NoSuchMethodException( name );
-		}
-		
-		public Object call(Object... args)
-		{
-			Class<?> [] argsTypes = method.getParameterTypes();
-			
-			if( args == null && argsTypes != null && argsTypes.length > 0 )
-				return new Exception( "need some arguments" );
-			
-			if( args != null && argsTypes != null && args.length != argsTypes.length )
-				return new Exception( "invalid arguments count" );
-			
-			if( args != null )
-			{
-				for( int i = 0; i < args.length; i++ )
-				{
-					if( ! argsTypes [i].isAssignableFrom(args [i].getClass()) )
-						return new Exception( "invalid argument" );
-				}
-			}
-			
-			try
-			{
-				return method.invoke(adn,args);
-			}
-			catch( Exception e )
-			{
-				return e;
-			}
-		}
-	}
-	
+{	
 	protected String 						entityId;
-	protected Map<String,EntityCallable> 	calls;
-	protected EntityDescription				entityDescription;
 	protected Atlas							atlas;
-	protected EntityADN						adn;
 	
 	@SuppressWarnings("unused")
 	private D3Entity()
@@ -101,60 +44,14 @@ public class D3Entity
 		throw new Error("forbidden creation" );
 	}
 	
-	D3Entity( String entityId, EntityADN adn )
+	D3Entity( String entityId )
 	{
 		this.entityId 			= entityId;
-		this.calls	  			= new HashMap<String,EntityCallable>();
-		this.entityDescription	= adn.getEntityDescription();
-		this.adn				= adn;
-		
-		for( String m: entityDescription.getCallableMethod() )
-			turnMethodCallable(m);
-	}
-	
-	@SuppressWarnings("unchecked")
-	D3Entity( String entityId, EntityDescription desc )
-		throws InstantiationException
-	{
-		this.entityId 			= entityId;
-		this.calls	  			= new HashMap<String,EntityCallable>();
-		this.entityDescription	= desc;
-		
-		try
-		{
-			Class<? extends EntityADN> cls =
-				(Class<? extends EntityADN>) Class.forName(desc.getADNClassname());
-
-			Constructor<? extends EntityADN> cons =
-				cls.getConstructor(String.class);
-			
-			this.adn = cons.newInstance(entityId);
-		}
-		catch( Exception e )
-		{
-			throw new InstantiationException(e.getMessage());
-		}
-		
-		for( String m: desc.getCallableMethod() )
-			turnMethodCallable(m);
 	}
 
 	protected void turnMethodCallable( String methodName )
 	{
 		turnMethodCallable(methodName,methodName);
-	}
-	
-	protected void turnMethodCallable( String callId, String methodName )
-	{
-		try
-		{
-			EntityCallable ec = new MethodCallable(methodName);
-			calls.put(callId,ec);
-		}
-		catch( Exception e )
-		{
-			System.err.printf("[entity] no such method: %s%n", methodName);
-		}
 	}
 	
 	public void setAtlas( Atlas atlas )
@@ -171,28 +68,5 @@ public class D3Entity
 	public IdentifiableType getType()
 	{
 		return IdentifiableType.entity;
-	}
-	
-	public EntityADN getEntityADN()
-	{
-		return adn;
-	}
-	
-	@SuppressWarnings("unchecked")
-	public EntityDescription getDescription()
-	{
-		return entityDescription;
-	}
-
-	public EntityCallable getCallable(String callId)
-	{
-		return calls.get(callId);
-	}
-
-	public void handleRequest( IdentifiableObject source,
-			IdentifiableObject target, Request r )
-	{
-		if( atlas != null )
-			atlas.handleRequest(source, target, r);
 	}
 }

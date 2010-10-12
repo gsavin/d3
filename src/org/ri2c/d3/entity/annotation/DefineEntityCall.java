@@ -16,18 +16,8 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.ri2c.d3.agency;
+package org.ri2c.d3.entity.annotation;
 
-import org.ri2c.d3.Agency;
-import org.ri2c.d3.Args;
-import org.ri2c.d3.IdentifiableObject;
-
-public interface Feature
-	extends IdentifiableObject
-{
-	String getId();
+public @interface DefineEntityCall {
 	
-	IdentifiableType getType();
-	
-	boolean initFeature( Agency agency, Args args );
 }

@@ -18,6 +18,7 @@
  */
 package org.ri2c.d3.test;
 
+import java.net.URI;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -25,67 +26,51 @@ import org.ri2c.d3.Agency;
 import org.ri2c.d3.IdentifiableObject;
 import org.ri2c.d3.RemoteIdentifiableObject;
 import org.ri2c.d3.IdentifiableObject.IdentifiableType;
-import org.ri2c.d3.entity.EntityADN;
-import org.ri2c.d3.entity.EntityDescription;
+import org.ri2c.d3.annotation.IdentifiableObjectPath;
+import org.ri2c.d3.annotation.RequestCallable;
+import org.ri2c.d3.entity.Entity;
 
-public class TestEntity
-	implements EntityADN
-{
+@IdentifiableObjectPath("/d3/test/entities")
+public class TestEntity extends Entity {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 4661324109912888393L;
 
 	static Random random = new Random();
-	
+
 	ConcurrentLinkedQueue<IdentifiableObject> idObjects;
-	String entityId;
-	
-	public TestEntity( String entityId )
-	{
-		this.entityId = entityId;
+
+	public TestEntity(String entityId) {
+		super(entityId);
 		idObjects = new ConcurrentLinkedQueue<IdentifiableObject>();
 	}
-	
-	public String getMyId()
-	{
-		//System.out.printf("get my id ! (%s)\n",entityId);
-		return entityId;
-	}
-	
-	public void addFriend( String friendId, String agencyId )
-	{
-		IdentifiableObject idObject;
-		
-		if( agencyId.equals(Agency.getLocalAgency().getId()) )
-		{
-			idObject = Agency.getLocalAgency().getIdentifiableObject(IdentifiableType.entity,friendId);
-		}
-		else
-		{
-			idObject = new RemoteIdentifiableObject(agencyId,friendId,IdentifiableType.entity);
-		}
-		
-		if( idObject != null )
+
+	@RequestCallable("beMyFriend")
+	public void addFriend(URI uri) {
+		IdentifiableObject idObject = Agency.getLocalAgency().getIdentifiableObject(uri);
+
+		if (idObject != null)
 			idObjects.add(idObject);
 	}
 	
-	public void step()
-	{
-		int i = random.nextInt(idObjects.size());
+	@RequestCallable("ping")
+	public void ping() {
 		
-		for( IdentifiableObject idObject: idObjects )
-		{
-			if( i-- == 0 )
-			{
-				Agency.getLocalAgency().getAtlas().remoteEntityCall(
-						Agency.getLocalAgency().getIdentifiableObject(IdentifiableType.entity,entityId),
-						idObject,"getMyId",false);
-			}
-		}
 	}
 
-	public EntityDescription getEntityDescription() {
-		return TestEntityDescription.def;
+	@RequestCallable("pong")
+	public void pong() {
+		
+	}
+
+	public void step() {
+		int i = random.nextInt(idObjects.size());
+
+		for (IdentifiableObject idObject : idObjects) {
+			if (i-- == 0) {
+				
+			}
+		}
 	}
 }

@@ -19,11 +19,22 @@
 package org.ri2c.d3.entity;
 
 import org.ri2c.d3.IdentifiableObject;
+import org.ri2c.d3.annotation.IdentifiableObjectPath;
 
-public interface Entity
-	extends IdentifiableObject
-{
-	EntityADN getEntityADN();
+@IdentifiableObjectPath("/d3/entity/default")
+public class Entity implements IdentifiableObject {
+	protected final String id;
 	
-	EntityCallable getCallable( String callId );
+	protected Entity(String id) {
+		this.id = id;
+	}
+
+	public final String getId() {
+		return id;
+	}
+
+	public final IdentifiableType getType() {
+		return IdentifiableType.entity;
+	}
+
 }

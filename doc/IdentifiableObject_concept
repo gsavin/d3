@@ -1,0 +1,22 @@
+============================
+ IdentifiableObject Concept
+============================
+
+Identifiable objects are composed of :
+- a type (agency,feature,entity,...)
+- a full path
+- an host
+
+The full path of each object is composed of a path defined for
+the class of the object, and an id unique for each instances.
+Class-path can be defined with the IdentifiableObjectPath annotation.
+
+Each identifiable object can be represented by the following URI :
+	
+	type://host/path/id
+
+Some methods of an identifiable object can be annotated as
+'RequestAccessible'. In such case, these methods can be executed
+with the following URI:
+
+	type://host/path/id?callable=name_of_the_callable

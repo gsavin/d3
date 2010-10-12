@@ -16,18 +16,19 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.ri2c.d3.agency;
+package org.ri2c.d3.migration;
 
-import org.ri2c.d3.Agency;
-import org.ri2c.d3.Args;
-import org.ri2c.d3.IdentifiableObject;
+public class BadMigrationSideException extends RuntimeException {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -740845585890772804L;
 
-public interface Feature
-	extends IdentifiableObject
-{
-	String getId();
+	public BadMigrationSideException() {
+		super();
+	}
 	
-	IdentifiableType getType();
-	
-	boolean initFeature( Agency agency, Args args );
+	public BadMigrationSideException( String format, Object ... args ) {
+		super( String.format(format,args) );
+	}
 }

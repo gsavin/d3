@@ -21,103 +21,94 @@ package org.ri2c.d3.protocol.xml.udp;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.URI;
 import java.nio.charset.Charset;
 
 import javax.management.modelmbean.XMLParseException;
 
 import org.ri2c.d3.Agency;
+import org.ri2c.d3.Console;
+import org.ri2c.d3.Request;
 import org.ri2c.d3.agency.IpTables;
 import org.ri2c.d3.protocol.udp.UDPInterface;
 import org.ri2c.d3.protocol.xml.XMLInterface;
-import org.ri2c.d3.protocol.xml.XMLRequest;
 import org.ri2c.d3.protocol.xml.XMLStanza;
 import org.ri2c.d3.protocol.xml.XMLStanzaBuilder;
 import org.ri2c.d3.protocol.xml.XMLStanzaFactory;
 import org.ri2c.d3.request.RequestListener;
 
-public class XMLUDPInterface
-	extends UDPInterface implements XMLInterface
-{
+public class XMLUDPInterface extends UDPInterface implements XMLInterface {
 	public static final int XML_UDP_PORT = 6002;
-	
-	private class InnerXMLStanzaFactory
-		implements XMLStanzaFactory
-	{
-		public XMLStanza newXMLStanza(String name)
-		{
-			return new XMLRequest(name);
+
+	private class InnerXMLStanzaFactory implements XMLStanzaFactory {
+		public XMLStanza newXMLStanza(String name) {
+			return new XMLStanza(name);
 		}
 	}
-	
-	private Charset 			cs;
-	private XMLStanzaFactory 	factory;
-	private RequestListener		xprb;
-	private IpTables			iptables;
-	
-	public XMLUDPInterface()
-		throws SocketException
-	{
+
+	private Charset cs;
+	private XMLStanzaFactory factory;
+	private RequestListener xprb;
+	private IpTables iptables;
+
+	public XMLUDPInterface() throws SocketException {
 		super();
-		cs = Charset.forName( Agency.getArg("l2d.system.cs.default") );
+		cs = Charset.forName(Agency.getArg("l2d.system.cs.default"));
 		factory = new InnerXMLStanzaFactory();
 	}
 
-	public void init( RequestListener bridge, IpTables iptables )
-	{
+	public void init(RequestListener bridge, IpTables iptables) {
 		try {
-			super.init(Agency.getArg("l2d.protocol.xml.udp.interface"),XML_UDP_PORT);
+			super.init(Agency.getArg("l2d.protocol.xml.udp.interface"),
+					XML_UDP_PORT);
 		} catch (SocketException e) {
 			e.printStackTrace();
 		}
-		
+
 		this.iptables = iptables;
-		this.xprb     = bridge;
+		this.xprb = bridge;
 		runService();
 	}
-	
-	public void sendXMLRequest( String remoteId, XMLRequest request )
-	{
+
+	public void sendXMLRequest(String remoteId, Request request) {
 		InetAddress inet = iptables.getAddress(remoteId);
-		
-		if( inet != null )
-		{
-			try
-			{
-				sendUDPRequest(inet,XML_UDP_PORT, (XMLUDPRequest) request);
-			}
-			catch (IOException e)
-			{
+
+		if (inet != null) {
+			XMLStanza stanza = factory.newXMLStanza("request");
+			stanza.appendContent(request.toString());
+			
+			try {
+				byte[] data = stanza.toString().getBytes(cs);
+				sendUDPRequest(inet, XML_UDP_PORT, data);
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}
-		else System.err.printf("[xml] unknown remote agency %s%n", remoteId);
+		} else
+			System.err.printf("[xml] unknown remote agency %s%n", remoteId);
 	}
-	
-	public XMLRequest getXMLRequest( String name )
-	{
-		return new XMLUDPRequest(name);
-	}
-	
-	public void dataReceived( InetAddress from, byte[] data, int length )
-	{
-		String content 	= new String( data, 0, length, cs );
+
+	public void dataReceived(InetAddress from, byte[] data, int length) {
+		String content = new String(data, 0, length, cs);
 		String sourceId = iptables.getId(from);
-		
-		if( sourceId == null )
-		{
+
+		if (sourceId == null) {
 			System.out.printf("[xml] unknown source: %s%n", from);
 			return;
 		}
-		
-		try
-		{
-			XMLRequest request = (XMLRequest) XMLStanzaBuilder.string2stanza(factory,content);
-			request.setSource(sourceId);
-			
-			xprb.requestReceived(request);
-		}
-		catch (XMLParseException e)
-		{
+
+		try {
+			XMLStanza stanza = XMLStanzaBuilder.string2stanza(
+					factory, content);
+
+			try {
+				URI uri = new URI(stanza.getContent());
+				Request r = new Request(uri);
+
+				xprb.requestReceived(r);
+			} catch (Exception e) {
+				Console.error(e.toString());
+			}
+		} catch (XMLParseException e) {
 			e.printStackTrace();
 		}
 	}

@@ -48,10 +48,6 @@ public class RemoteIdentifiableObject
 		return objectType;
 	}
 
-	public <T extends Description> T getDescription() {
-		return null;
-	}
-
 	public void handleRequest(IdentifiableObject source,
 			IdentifiableObject target, Request r) {
 		throw new UnsupportedOperationException("remote object not support request handling");

@@ -18,127 +18,130 @@
  */
 package org.ri2c.d3.agency;
 
+import java.net.URI;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.ri2c.d3.Agency;
 import org.ri2c.d3.Console;
 import org.ri2c.d3.IdentifiableObject;
 import org.ri2c.d3.IdentifiableObject.IdentifiableType;
+import org.ri2c.d3.RemoteIdentifiableObject;
 
-public class IdentifiableObjectManager
-{
-	private static class Pool
-		extends ConcurrentHashMap<String,IdentifiableObject>
-	{
+import static org.ri2c.d3.IdentifiableObject.Tools.getFullPath;
+
+public class IdentifiableObjectManager {
+	private static class Pool extends
+			ConcurrentHashMap<String, IdentifiableObject> {
 		/**
 		 * 
 		 */
 		private static final long serialVersionUID = -7397149209003613470L;
-		
+
 	}
-	
-	public static enum RegistrationStatus
-	{
-		accepted,
-		refused,
-		alreadyRegistered,
-		error
+
+	public static enum RegistrationStatus {
+		accepted, refused, alreadyRegistered, error
 	}
-	
-	private ConcurrentHashMap<IdentifiableType,Pool> 	pools;
-	private ReentrantLock								registrationLock;
-	
-	public IdentifiableObjectManager()
-	{
-		pools = new ConcurrentHashMap<IdentifiableType,Pool>();
-		
-		for( IdentifiableType t: IdentifiableType.values() )
-			pools.put(t,new Pool());
-		
+
+	private ConcurrentHashMap<IdentifiableType, Pool> pools;
+	private ReentrantLock registrationLock;
+
+	public IdentifiableObjectManager() {
+		pools = new ConcurrentHashMap<IdentifiableType, Pool>();
+
+		for (IdentifiableType t : IdentifiableType.values())
+			pools.put(t, new Pool());
+
 		registrationLock = new ReentrantLock();
 	}
-	
-	public void alias( String id, IdentifiableType type, String alias )
-	{
+
+	public void alias(String id, IdentifiableType type, String alias) {
 		registrationLock.lock();
-		
+
 		Pool pool = pools.get(type);
-		alias(pool.get(id),alias);
-		
+		alias(pool.get(id), alias);
+
 		registrationLock.unlock();
 	}
-	
-	public void alias( IdentifiableObject idObject, String alias )
-	{
-		if( idObject == null )
+
+	public void alias(IdentifiableObject idObject, String alias) {
+		if (idObject == null)
 			return;
-		
+
 		registrationLock.lock();
-		
+
 		Pool pool = pools.get(idObject.getType());
-		
-		if( ! pool.containsKey(alias) && pool.containsKey(idObject.getId()) )
-		{
-			pool.put(alias,idObject);
-			
-			Console.info("%s/%s --> %s/%s",
-					alias, idObject.getType(), idObject.getId(), idObject.getType() );
+
+		if (!pool.containsKey(alias) && pool.containsKey(idObject.getId())) {
+			pool.put(alias, idObject);
+
+			Console.info("%s/%s --> %s/%s", alias, idObject.getType(),
+					idObject.getId(), idObject.getType());
 		}
-		
+
 		registrationLock.unlock();
 	}
-	
-	public RegistrationStatus register( IdentifiableObject obj )
-	{
-		if( obj == null || obj.getId() == null || obj.getType() == null )
+
+	public RegistrationStatus register(IdentifiableObject obj) {
+		if (obj == null || obj.getId() == null || obj.getType() == null)
 			return RegistrationStatus.error;
-		
+
+		String path = getFullPath(obj);
+
 		registrationLock.lock();
-		
+
 		Pool p = pools.get(obj.getType());
-		
-		if( p == null )
-		{
+
+		if (p == null) {
 			registrationLock.unlock();
 			return RegistrationStatus.error;
 		}
-		
-		if( p.containsKey(obj.getId()) )
-		{
-			if( p.get(obj.getId()) == obj )
-			{
+
+		if (p.containsKey(path)) {
+			if (p.get(path) == obj) {
 				registrationLock.unlock();
 				return RegistrationStatus.alreadyRegistered;
-			}
-			else
-			{
+			} else {
 				registrationLock.unlock();
 				return RegistrationStatus.refused;
 			}
 		}
-		
-		p.put(obj.getId(),obj);
-		
-		Console.info("register %s", obj.getId() );
-		
+
+		p.put(path, obj);
+
+		Console.info("register %s", path);
+
 		registrationLock.unlock();
 		return RegistrationStatus.accepted;
 	}
-	
-	public void unregister( IdentifiableObject obj )
-	{
-		if( obj == null )
+
+	public void unregister(IdentifiableObject obj) {
+		if (obj == null)
 			return;
-		
+
 		registrationLock.lock();
-			pools.get(obj.getType()).remove(obj.getId());
+		pools.get(obj.getType()).remove(getFullPath(obj));
 		registrationLock.unlock();
-		
-		Console.info("unregister %s", obj.getId() );
+
+		Console.info("unregister %s", obj.getId());
 	}
-	
-	public IdentifiableObject get( IdentifiableType type, String id )
-	{
-		return pools.get(type).get(id);
+
+	public IdentifiableObject get(IdentifiableType type,
+			Class<? extends IdentifiableObject> cls, String id) {
+		return pools.get(type).get(getFullPath(cls, id));
+	}
+
+	public IdentifiableObject get(URI uri) {
+		if( uri == null )
+			throw new NullPointerException("uri is null");
+		
+		if (uri.getHost().equals(Agency.getLocalAgency().getId())) {
+			return pools.get(IdentifiableType.valueOf(uri.getScheme())).get(
+					uri.getPath());
+		} else {
+			return new RemoteIdentifiableObject(uri.getHost(), uri.getPath(),
+					IdentifiableType.valueOf(uri.getScheme()));
+		}
 	}
 }

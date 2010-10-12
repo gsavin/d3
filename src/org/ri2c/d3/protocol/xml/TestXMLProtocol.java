@@ -18,6 +18,10 @@
  */
 package org.ri2c.d3.protocol.xml;
 
+import java.net.URI;
+
+import org.ri2c.d3.Agency;
+import org.ri2c.d3.Args;
 import org.ri2c.d3.Request;
 import org.ri2c.d3.protocol.XMLProtocol;
 import org.ri2c.d3.request.RequestListener;
@@ -27,30 +31,36 @@ public class TestXMLProtocol
 	public static class FakeRequestListener
 		implements RequestListener
 	{
-		public void requestReceived(String source, Request r)
+		public void requestReceived(Request r)
 		{
-			System.out.printf( "[fake-rl] receive request from %s: %s%n", source, r.getName() );
+			System.out.printf( "[fake-rl] receive request %s%n", r );
 		}
 	}
 	
-	public static void main( String [] args )
+	public static void main( String [] args ) throws Exception
 	{
+		Agency.enableAgency(Args.processFile("org/ri2c/d3/resources/default.cfg"));
+		
 		if( "server".equals(args[0]) )
 		{
 			FakeRequestListener frl = new FakeRequestListener();
 			XMLProtocol protocol = XMLProtocol.getDefault();
+			protocol.init();
 			protocol.addRequestListener(frl);
+			
+			while(true) { try { Thread.sleep(1000); } catch( Exception e ) {} }
 		}
 		else
 		{
 			FakeRequestListener frl = new FakeRequestListener();
 			XMLProtocol protocol = XMLProtocol.getDefault();
 			protocol.addRequestListener(frl);
-			Request hello = protocol.newRequest("hello");
+			URI uri = new URI("agency://l2d-machineA/l2d-machineA?callable=ping");
+			Request hello = new Request(uri);
 
-			protocol.sendRequest(args[0],hello);
+			Thread.sleep(3000);
+			
+			protocol.sendRequest(hello);
 		}
-		
-		while(true) { try { Thread.sleep(1000); } catch( Exception e ) {} }
 	}
 }

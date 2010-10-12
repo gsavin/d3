@@ -18,50 +18,48 @@
  */
 package org.ri2c.d3;
 
-import org.ri2c.d3.protocol.ProtocolDescription;
 import org.ri2c.d3.request.RequestListener;
 
-public interface Protocol
-	extends IdentifiableObject
-{
-	/**
-	 * Init this protocol.
-	 */
-	void init();
+public abstract class Protocol implements IdentifiableObject {
+	
+	protected final String id;
+	
+	protected Protocol(String id) {
+		this.id = id;
+	}
+	
+	public final IdentifiableType getType() {
+		return IdentifiableType.protocol;
+	}
+	
+	public final String getId() {
+		return id;
+	}
 	
 	/**
-	 * Get a description of this protocol.
-	 * @return description of the protocol
+	 * Initialize this protocol.
 	 */
-	@SuppressWarnings("unchecked")
-	ProtocolDescription getDescription();
-	
+	public abstract void init();
+
 	/**
 	 * Send a request to an identifiable object.
 	 * 
 	 * @param target
 	 * @param r
 	 */
-	void sendRequest( IdentifiableObject target, Request r );
-	
+	public abstract void sendRequest(Request r);
+
 	/**
 	 * Add a listener to received requests.
+	 * 
 	 * @param listener
 	 */
-	void addRequestListener( RequestListener listener );
-	
+	public abstract void addRequestListener(RequestListener listener);
+
 	/**
 	 * Remove a listener.
+	 * 
 	 * @param listener
 	 */
-	void removeRequestListener( RequestListener listener );
-	
-	/**
-	 * Create a new request for this protocol.
-	 * @param source
-	 * @param target
-	 * @param name
-	 * @return
-	 */
-	Request newRequest( IdentifiableObject source, IdentifiableObject target, String name );
+	public abstract void removeRequestListener(RequestListener listener);
 }

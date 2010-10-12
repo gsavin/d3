@@ -20,6 +20,7 @@ package org.ri2c.d3;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,6 +34,9 @@ import org.ri2c.d3.agency.IdentifiableObjectManager;
 import org.ri2c.d3.agency.IpTables;
 import org.ri2c.d3.agency.RemoteAgencyDescription;
 import org.ri2c.d3.agency.IdentifiableObjectManager.RegistrationStatus;
+import org.ri2c.d3.annotation.IdentifiableObjectDescription;
+import org.ri2c.d3.annotation.IdentifiableObjectPath;
+import org.ri2c.d3.annotation.RequestCallable;
 import org.ri2c.d3.atlas.internal.D3Atlas;
 import org.ri2c.d3.protocol.Protocols;
 import org.ri2c.d3.request.RequestListener;
@@ -41,6 +45,8 @@ import org.ri2c.d3.request.RequestService;
 //import org.ri2c.l2d.request.ExtendableRequestInterpreter;
 //import org.ri2c.l2d.request.RequestInterpreter;
 
+@IdentifiableObjectDescription("Agency object.")
+@IdentifiableObjectPath("/")
 public class Agency
 	implements IdentifiableObject, RequestListener
 {
@@ -89,7 +95,7 @@ public class Agency
 	{
 		try
 		{
-			String classname = "org.ri2c.l2d.agency.feature." + name.trim();
+			String classname = "org.ri2c.d3.agency.feature." + name.trim();
 			Class<? extends Feature> featureClass = (Class<? extends Feature>) Class.forName(classname);
 			Feature feature = featureClass.newInstance();
 			localAgency.addFeature(feature);
@@ -264,14 +270,14 @@ public class Agency
 			l.identifiableObjectUnregistered(idObject);
 	}
 	
-	public <T extends IdentifiableObject> T getIdentifiableObject( IdentifiableObject source )
+	/*public <T extends IdentifiableObject> T getIdentifiableObject( IdentifiableObject source )
 	{
 		return null;
-	}
+	}*/
 	
-	public IdentifiableObject getIdentifiableObject( IdentifiableType type, String id )
+	public IdentifiableObject getIdentifiableObject( URI uri )
 	{
-		return identifiableObjects.get(type,id);
+		return identifiableObjects.get(uri);
 	}
 	
 	public void addFeature( Feature f )
@@ -311,38 +317,33 @@ public class Agency
 		agencyListeners.remove(listener);
 	}
 
-	public <T extends Description> T getDescription() {
-		return null;
-	}
-
 	public IdentifiableType getType()
 	{
 		return IdentifiableType.agency;
 	}
-
+/*
 	public void handleRequest(IdentifiableObject source,
 			IdentifiableObject target, Request r)
 	{
 		if( r.getName().startsWith("entity:") )
 			atlas.handleRequest(source, target, r);
 	}
-	
-	public void interceptRequest( IdentifiableObject handler, String requestName )
-	{
-		switch(handler.getType())
-		{
-		case atlas:
-		case feature:
-			requestService.interceptRequest(handler,requestName);
-			break;
-		default:
-			System.err.printf("[agency] %s/%s not allowed to intercept requests%n",handler.getId(),handler.getType());
-		}
-	}
+	*/
 	
 	public void lazyCheckEntitiesOn( RemoteAgencyDescription rad )
 	{
-		Request r = Protocols.createRequestTo(this,rad,"entity:getlist");
-		Protocols.sendRequest(rad,r);
+		Request r = new Request(this,rad,"getEntityList",null);
+			//Protocols.createRequestTo(this,rad,"entity:getlist");
+		Protocols.sendRequest(r);
+	}
+	
+	@RequestCallable("getEntityList")
+	public URI[] getEntityList() {
+		return null;
+	}
+	
+	@RequestCallable("ping")
+	public void ping() {
+		Console.info("ping");
 	}
 }

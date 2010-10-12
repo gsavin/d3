@@ -18,42 +18,179 @@
  */
 package org.ri2c.d3;
 
-public interface IdentifiableObject
-{
-	public static enum IdentifiableType
-	{
-		feature,
-		entity,
-		agency,
-		atlas,
-		protocol,
-		application
+import java.lang.reflect.Method;
+import java.net.URI;
+
+import org.ri2c.d3.annotation.IdentifiableObjectPath;
+import org.ri2c.d3.annotation.RequestCallable;
+import org.ri2c.d3.protocol.Protocols;
+
+@IdentifiableObjectPath("/d3")
+public interface IdentifiableObject {
+	public static enum IdentifiableType {
+		feature, entity, agency, atlas, protocol, application, future, migration
 	}
-	
+
+	public static class Tools {
+		public static String getArgsPrefix(IdentifiableObject idObject) {
+			String path = getPath(idObject.getClass());
+
+			if (path == null || path.length() == 0 || path.equals("/"))
+				return null;
+
+			if (path.startsWith("/"))
+				path = path.substring(1);
+
+			return path.replace("/", ".");
+		}
+
+		public static String getPath(IdentifiableObject idObject) {
+			return getPath(idObject.getClass());
+		}
+
+		public static String getPath(Class<? extends IdentifiableObject> idCls) {
+			IdentifiableObjectPath path = null;
+			Class<?> cls = idCls;
+			
+			while (cls != Object.class && path == null) {
+				path = cls.getAnnotation(IdentifiableObjectPath.class);
+
+				if (path == null) {
+					for (Class<?> i : cls.getInterfaces()) {
+						path = i.getAnnotation(IdentifiableObjectPath.class);
+						if (path != null)
+							break;
+					}
+				}
+				
+				cls = cls.getSuperclass();
+			}
+			
+			if (path != null)
+				return path.value();
+
+			return "/";
+		}
+
+		public static String getFullPath(
+				Class<? extends IdentifiableObject> cls, String id) {
+			String path = getPath(cls);
+
+			if (!path.startsWith("/")) {
+				path = "/" + path;
+			}
+
+			if (!path.endsWith("/")) {
+				path = path + "/";
+			}
+
+			return path + id;
+		}
+
+		public static String getFullPath(IdentifiableObject idObject) {
+			return getFullPath(idObject.getClass(), idObject.getId());
+		}
+
+		public static URI getURI(IdentifiableObject idObject) {
+			return getURI(idObject, null);
+		}
+
+		public static URI getURI(IdentifiableObject idObject, String query) {
+			String path = getFullPath(idObject);
+			String host;
+
+			if (idObject instanceof RemoteIdentifiableObject) {
+				host = ((RemoteIdentifiableObject) idObject)
+						.getRemoteAgencyId();
+			} else {
+				host = Agency.getLocalAgency().getId();
+			}
+
+			String uriString = String.format("%s://%s%s", idObject.getType()
+					.toString(), host, path);
+
+			if (query != null) {
+				uriString = String.format("%s?%s", uriString, query);
+			}
+
+			try {
+				return new URI(uriString);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			return null;
+		}
+
+		public static Object call(IdentifiableObject idObject, String name,
+				Object[] args) {
+			Class<?> cls = idObject.getClass();
+			Method callable = null;
+
+			while (callable == null && cls != Object.class) {
+				Method[] methods = cls.getMethods();
+
+				if (methods != null) {
+					for (Method m : methods) {
+						if (m.getAnnotation(RequestCallable.class) != null
+								&& m.getAnnotation(RequestCallable.class)
+										.value().equals(name)) {
+							callable = m;
+							break;
+						}
+					}
+				}
+
+				cls = cls.getSuperclass();
+			}
+
+			if (callable == null)
+				return new NullPointerException("callable is null");
+
+			try {
+				return callable.invoke(idObject, args);
+			} catch (Exception e) {
+				return e;
+			}
+		}
+
+		public static void handleRequest(Request r) {
+			IdentifiableObject idObject = Agency.getLocalAgency()
+					.getIdentifiableObject(r.getTargetURI());
+
+			Object ret = call(idObject, r.getCallable(),
+					r.getCallableArguments());
+
+			if (r.hasFuture()) {
+				URI future = r.getFutureURI();
+				Object[] args = ret == null ? null : new Object[] { ret };
+
+				Request back = new Request(idObject, Agency.getLocalAgency()
+						.getIdentifiableObject(future), "init", args);
+
+				Protocols.sendRequest(back);
+			}
+		}
+	}
+
 	/**
 	 * 
 	 * @return
 	 */
 	String getId();
-	
+
 	/**
 	 * 
 	 * @return
 	 */
 	IdentifiableType getType();
-	
-	/**
-	 * 
-	 * @param <T>
-	 * @return
-	 */
-	<T extends Description> T getDescription();
-	
+
 	/**
 	 * 
 	 * @param source
 	 * @param target
 	 * @param r
 	 */
-	void handleRequest( IdentifiableObject source, IdentifiableObject target, Request r );
+	// void handleRequest(IdentifiableObject source, IdentifiableObject target,
+	// Request r);
 }

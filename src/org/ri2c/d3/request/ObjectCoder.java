@@ -24,10 +24,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-import org.ri2c.d3.Request;
-
 public class ObjectCoder
 {
+	public static enum CodingMethod {
+		HEXABYTES,
+		BASE_64
+	}
+	
 	private static byte [] encodeObject( Serializable obj )
 	{
 		try
@@ -105,9 +108,22 @@ public class ObjectCoder
 		return byte2hexa(data);
 	}
 	
-	public static Object decode( Request r )
+	public static String encode( CodingMethod method, Serializable data ) {
+		switch(method) {
+		case HEXABYTES:
+			return encode(data);
+		}
+		
+		return null;
+	}
+	
+	public static Object decode( CodingMethod method, String data )
 	{
-		String data = r.getAttribute("data");
-		return decode(data);
+		switch(method) {
+		case HEXABYTES:
+			return decode(data);
+		}
+		
+		return data;
 	}
 }
