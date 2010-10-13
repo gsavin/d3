@@ -21,23 +21,14 @@ package org.ri2c.d3;
 import org.ri2c.d3.agency.AgencyListener;
 import org.ri2c.d3.agency.RemoteAgency;
 
-public abstract class Application
-	implements IdentifiableObject, AgencyListener
-{
-	protected String name;
-	
-	public Application( String name )
-	{
-		this.name = name;
+public abstract class Application extends IdentifiableObject implements
+		AgencyListener {
+
+	protected Application(String name) {
+		super(name);
 	}
 
-	public final String getId()
-	{
-		return name;
-	}
-
-	public final IdentifiableType getType()
-	{
+	public final IdentifiableType getType() {
 		return IdentifiableType.application;
 	}
 

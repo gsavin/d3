@@ -25,9 +25,9 @@ import org.ri2c.d3.atlas.AtlasListener;
 import org.ri2c.d3.entity.Entity;
 
 @IdentifiableObjectPath("/d3")
-public abstract class Atlas implements IdentifiableObject {
-	public final String getId() {
-		return "atlas";
+public abstract class Atlas extends IdentifiableObject {
+	protected Atlas() {
+		super("atlas");
 	}
 
 	public final IdentifiableType getType() {

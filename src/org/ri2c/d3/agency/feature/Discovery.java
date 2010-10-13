@@ -76,7 +76,7 @@ import org.ri2c.d3.annotation.IdentifiableObjectPath;
  */
 @IdentifiableObjectPath("/d3/features/discovery")
 @IdentifiableObjectDescription("Try to discover other agencies on the network.")
-public class Discovery implements RunnableFeature, Runnable {
+public class Discovery extends RunnableFeature implements Runnable {
 	/**
 	 * Prefix of discovery messages.
 	 */
@@ -209,13 +209,12 @@ public class Discovery implements RunnableFeature, Runnable {
 	 */
 	protected int averagePeriod;
 
-	protected String discoveryId;
-
 	protected String agencyDigest;
 
 	public Discovery() {
+		super(String.format("discovery%X", DISCOVERY_ID_GENERATOR++));
+		
 		unit = TimeUnit.MILLISECONDS;
-		discoveryId = String.format("discovery%X", DISCOVERY_ID_GENERATOR++);
 	}
 
 	/**
@@ -287,20 +286,12 @@ public class Discovery implements RunnableFeature, Runnable {
 				"%s %s id(%s) address(%s) protocol(%s) digest(%s)",
 				DISCOVERY_MESSAGE_PREFIX, DISCOVERY_AGENCY_AT,
 				localAgency.getId(), localAddress,
-				Agency.getArg("l2d.protocols"), agencyDigest);
-
+				Agency.getArg(Agency.Argument.PROTOCOLS.key), agencyDigest);
+		
 		byte[] messageData = message.getBytes();
 
 		thePacket = new DatagramPacket(messageData, 0, messageData.length,
 				discoveryGroup, discoveryPort);
-	}
-
-	public String getId() {
-		return discoveryId;
-	}
-
-	public IdentifiableType getType() {
-		return IdentifiableType.feature;
 	}
 
 	/**

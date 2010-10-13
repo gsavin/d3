@@ -20,22 +20,16 @@ package org.ri2c.d3;
 
 import org.ri2c.d3.request.RequestListener;
 
-public abstract class Protocol implements IdentifiableObject {
-	
-	protected final String id;
-	
+public abstract class Protocol extends IdentifiableObject {
+
 	protected Protocol(String id) {
-		this.id = id;
+		super(id);
 	}
-	
+
 	public final IdentifiableType getType() {
 		return IdentifiableType.protocol;
 	}
-	
-	public final String getId() {
-		return id;
-	}
-	
+
 	/**
 	 * Initialize this protocol.
 	 */

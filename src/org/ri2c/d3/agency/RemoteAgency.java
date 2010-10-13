@@ -23,7 +23,6 @@ import org.ri2c.d3.annotation.IdentifiableObjectPath;
 
 @IdentifiableObjectPath("/")
 public class RemoteAgency extends RemoteIdentifiableObject {
-	protected final String agencyId;
 	protected String address;
 	protected String[] protocols;
 	protected long lastPresenceDate;
@@ -34,7 +33,6 @@ public class RemoteAgency extends RemoteIdentifiableObject {
 			String digest) {
 		super(agencyId, agencyId, IdentifiableType.agency);
 
-		this.agencyId = agencyId;
 		this.address = address;
 		this.protocols = protocols.trim().split("\\s*,\\s*");
 		this.lastPresenceDate = System.currentTimeMillis();
@@ -49,10 +47,6 @@ public class RemoteAgency extends RemoteIdentifiableObject {
 
 	public void updateDigest(String digest) {
 		this.digest = digest;
-	}
-
-	public final String getId() {
-		return agencyId;
 	}
 
 	public String getAddress() {

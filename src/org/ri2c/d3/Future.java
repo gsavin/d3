@@ -23,11 +23,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.ri2c.d3.annotation.IdentifiableObjectPath;
 import org.ri2c.d3.annotation.RequestCallable;
 
-import static org.ri2c.d3.IdentifiableObject.Tools.register;
-import static org.ri2c.d3.IdentifiableObject.Tools.unregister;
-
 @IdentifiableObjectPath("/d3/futures")
-public class Future implements IdentifiableObject {
+public class Future extends IdentifiableObject {
 	public static enum SpecialReturn {
 		NULL, VOID
 	}
@@ -42,14 +39,14 @@ public class Future implements IdentifiableObject {
 	Object value;
 	AtomicBoolean available;
 	Thread thread2interrupt;
-	protected final String id;
 
 	public Future() {
+		super(newFutureId());
+		
 		this.value = null;
 		this.available = new AtomicBoolean(false);
-		this.id = newFutureId();
 
-		register(this);
+		register();
 	}
 
 	public Object getValue() {
@@ -82,7 +79,7 @@ public class Future implements IdentifiableObject {
 			}
 		}
 
-		unregister(this);
+		unregister();
 	}
 
 	public boolean isAvailable() {
@@ -118,11 +115,7 @@ public class Future implements IdentifiableObject {
 		}
 	}
 
-	public String getId() {
-		return id;
-	}
-
-	public IdentifiableType getType() {
+	public final IdentifiableType getType() {
 		return IdentifiableType.future;
 	}
 }

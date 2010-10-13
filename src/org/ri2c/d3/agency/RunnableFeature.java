@@ -18,8 +18,11 @@
  */
 package org.ri2c.d3.agency;
 
-public interface RunnableFeature
-	extends Feature
+public abstract class RunnableFeature extends Feature
 {
-	RunnableFeatureCommand getRunnableFeatureCommand();
+	protected RunnableFeature(String id) {
+		super(id);
+	}
+	
+	public abstract RunnableFeatureCommand getRunnableFeatureCommand();
 }

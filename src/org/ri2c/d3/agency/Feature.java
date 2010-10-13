@@ -22,12 +22,14 @@ import org.ri2c.d3.Agency;
 import org.ri2c.d3.Args;
 import org.ri2c.d3.IdentifiableObject;
 
-public interface Feature
-	extends IdentifiableObject
-{
-	String getId();
-	
-	IdentifiableType getType();
-	
-	boolean initFeature( Agency agency, Args args );
+public abstract class Feature extends IdentifiableObject {
+	protected Feature(String id) {
+		super(id);
+	}
+
+	public final IdentifiableType getType() {
+		return IdentifiableType.feature;
+	}
+
+	public abstract boolean initFeature(Agency agency, Args args);
 }

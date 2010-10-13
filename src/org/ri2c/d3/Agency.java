@@ -46,7 +46,7 @@ import static org.ri2c.d3.IdentifiableObject.Tools.getURI;
 
 @IdentifiableObjectDescription("Agency object.")
 @IdentifiableObjectPath("/")
-public class Agency implements IdentifiableObject, RequestListener {
+public class Agency extends IdentifiableObject implements RequestListener {
 	public static enum Argument {
 		PROTOCOLS("d3.protocols"),
 		FEATURES("d3.features"),
@@ -69,8 +69,21 @@ public class Agency implements IdentifiableObject, RequestListener {
 
 	public static void enableAgency(Args args) {
 		if (localAgency == null) {
+			String agencyId;
+			
+			try {
+				agencyId = InetAddress.getLocalHost().getHostName();
+
+				if (agencyId.equals("localhost"))
+					throw new UnknownHostException();
+
+			} catch (UnknownHostException e) {
+				agencyId = String.format("%X:%X", System.nanoTime(),
+						(long) (Math.random() * Long.MAX_VALUE));
+			}
+			
 			localArgs = args;
-			localAgency = new Agency();
+			localAgency = new Agency(agencyId);
 
 			System.out.printf("[agency] create agency%n");
 
@@ -120,7 +133,7 @@ public class Agency implements IdentifiableObject, RequestListener {
 	}
 
 	// ExtendableRequestInterpreter requestInterpreter;
-	private String agencyId;
+	//private String agencyId;
 	private ConcurrentHashMap<String, RemoteAgency> remoteAgencies;
 	private FeatureManager featureManager;
 	private IpTables ipTables;
@@ -129,7 +142,9 @@ public class Agency implements IdentifiableObject, RequestListener {
 	private ConcurrentLinkedQueue<AgencyListener> agencyListeners;
 	private IdentifiableObjectManager identifiableObjects;
 
-	private Agency() {
+	private Agency(String id) {
+		super(id);
+		/*
 		try {
 			agencyId = InetAddress.getLocalHost().getHostName();
 
@@ -140,7 +155,7 @@ public class Agency implements IdentifiableObject, RequestListener {
 			agencyId = String.format("%X:%X", System.nanoTime(),
 					(long) (Math.random() * Long.MAX_VALUE));
 		}
-
+		 */
 		identifiableObjects = new IdentifiableObjectManager();
 
 		remoteAgencies = new ConcurrentHashMap<String, RemoteAgency>();
@@ -163,11 +178,11 @@ public class Agency implements IdentifiableObject, RequestListener {
 
 		identifiableObjects.alias(atlas, "default");
 	}
-
+	/*
 	public final String getId() {
 		return agencyId;
 	}
-
+	*/
 	public final IdentifiableType getType() {
 		return IdentifiableType.agency;
 	}

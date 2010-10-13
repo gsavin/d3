@@ -21,41 +21,29 @@ package org.ri2c.d3;
 import org.ri2c.d3.annotation.IdentifiableObjectPath;
 
 @IdentifiableObjectPath("/")
-public class RemoteIdentifiableObject
-	implements IdentifiableObject
-{
-	protected String 			remoteAgencyId;
-	protected String 			objectId;
-	protected IdentifiableType	objectType;
-	
-	public RemoteIdentifiableObject( String agencyId,
-			String objectId, IdentifiableType objectType )
-	{
-		if( objectId.startsWith("/") )
-			objectId = objectId.substring(1);
-		
+public class RemoteIdentifiableObject extends IdentifiableObject {
+	protected String remoteAgencyId;
+	protected final IdentifiableType objectType;
+
+	public RemoteIdentifiableObject(String agencyId, String objectId,
+			IdentifiableType objectType) {
+		super(objectId.startsWith("/") ? objectId.substring(1) : objectId);
+
 		this.remoteAgencyId = agencyId;
-		this.objectId		= objectId;
-		this.objectType		= objectType;
+		this.objectType = objectType;
 	}
-	
-	public String getRemoteAgencyId()
-	{
+
+	public String getRemoteAgencyId() {
 		return remoteAgencyId;
 	}
-	
-	public String getId()
-	{
-		return objectId;
-	}
-	
-	public IdentifiableType getType()
-	{
+
+	public final IdentifiableType getType() {
 		return objectType;
 	}
 
 	public void handleRequest(IdentifiableObject source,
 			IdentifiableObject target, Request r) {
-		throw new UnsupportedOperationException("remote object not support request handling");
+		throw new UnsupportedOperationException(
+				"remote object not support request handling");
 	}
 }

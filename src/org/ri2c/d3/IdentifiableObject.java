@@ -26,19 +26,12 @@ import org.ri2c.d3.annotation.RequestCallable;
 import org.ri2c.d3.protocol.Protocols;
 
 @IdentifiableObjectPath("/d3")
-public interface IdentifiableObject {
+public abstract class IdentifiableObject {
 	public static enum IdentifiableType {
 		feature, entity, agency, atlas, protocol, application, future, migration
 	}
 
 	public static class Tools {
-		public static void register(IdentifiableObject idObject) {
-			Agency.getLocalAgency().registerIdentifiableObject(idObject);
-		}
-
-		public static void unregister(IdentifiableObject idObject) {
-			Agency.getLocalAgency().unregisterIdentifiableObject(idObject);
-		}
 
 		public static String getArgsPrefix(IdentifiableObject idObject) {
 			String path = getPath(idObject.getClass());
@@ -209,24 +202,31 @@ public interface IdentifiableObject {
 		}
 	}
 
+	protected final String id;
+	
+	protected IdentifiableObject( String id ) {
+		this.id = id;
+	}
+	
 	/**
 	 * 
 	 * @return
 	 */
-	String getId();
+	public final String getId() {
+		return id;
+	}
 
 	/**
 	 * 
 	 * @return
 	 */
-	IdentifiableType getType();
-
-	/**
-	 * 
-	 * @param source
-	 * @param target
-	 * @param r
-	 */
-	// void handleRequest(IdentifiableObject source, IdentifiableObject target,
-	// Request r);
+	public abstract IdentifiableType getType();
+	
+	public void register() {
+		Agency.getLocalAgency().registerIdentifiableObject(this);
+	}
+	
+	public void unregister() {
+		Agency.getLocalAgency().unregisterIdentifiableObject(this);
+	}
 }

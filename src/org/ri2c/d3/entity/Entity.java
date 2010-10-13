@@ -24,20 +24,14 @@ import org.ri2c.d3.IdentifiableObject;
 import org.ri2c.d3.annotation.IdentifiableObjectPath;
 
 @IdentifiableObjectPath("/d3/entity/default")
-public class Entity implements IdentifiableObject, Serializable {
+public class Entity extends IdentifiableObject implements Serializable {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -2008980313521087227L;
 	
-	protected final String id;
-	
 	protected Entity(String id) {
-		this.id = id;
-	}
-
-	public final String getId() {
-		return id;
+		super(id);
 	}
 
 	public final IdentifiableType getType() {

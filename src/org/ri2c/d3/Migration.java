@@ -31,11 +31,9 @@ import org.ri2c.d3.protocol.Protocols;
 
 import static org.ri2c.d3.IdentifiableObject.Tools.getURI;
 import static org.ri2c.d3.IdentifiableObject.Tools.getFullPath;
-import static org.ri2c.d3.IdentifiableObject.Tools.register;
-import static org.ri2c.d3.IdentifiableObject.Tools.unregister;
 
 @IdentifiableObjectPath("/d3/migrations")
-public class Migration implements IdentifiableObject {
+public class Migration extends IdentifiableObject {
 	public static enum MigrationStatus {
 		ERROR, PENDING, TRANSFERING, TRANSFERED, SUCCESS, CANCELED, REJECTED
 	}
@@ -51,7 +49,7 @@ public class Migration implements IdentifiableObject {
 				migrationIdGenerator++);
 	}
 
-	protected final String id;
+	//protected final String id;
 	protected final MigrationSide side;
 	protected final MigrationData data;
 	protected final URI sender;
@@ -60,7 +58,8 @@ public class Migration implements IdentifiableObject {
 	protected final Body body;
 
 	public Migration(URI sender, Body body) {
-		this.id = newMigrationId();
+		super(newMigrationId());
+		
 		this.side = MigrationSide.RECEIVER;
 		this.data = null;
 		this.sender = sender;
@@ -73,7 +72,8 @@ public class Migration implements IdentifiableObject {
 	}
 
 	public Migration(RemoteAgency remote, MigrationData data) {
-		this.id = newMigrationId();
+		super(newMigrationId());
+		
 		this.side = MigrationSide.SENDER;
 		this.data = data;
 		this.sender = null;
@@ -85,16 +85,12 @@ public class Migration implements IdentifiableObject {
 		init();
 	}
 
-	public final String getId() {
-		return id;
-	}
-
 	public final IdentifiableType getType() {
 		return IdentifiableType.migration;
 	}
 
 	public void init() {
-		register(this);
+		register();
 
 		switch (side) {
 		case SENDER: {
@@ -142,7 +138,7 @@ public class Migration implements IdentifiableObject {
 		if (side == MigrationSide.SENDER)
 			throw new BadMigrationSideException();
 		
-		register(data.getEntity());
+		data.getEntity().register();
 		body.receiveContent(data.getEntity(), data.getRequests());
 
 		IdentifiableObject target = Agency.getLocalAgency()
@@ -152,7 +148,7 @@ public class Migration implements IdentifiableObject {
 				new Object[] { MigrationStatus.SUCCESS });
 		Protocols.sendRequest(r);
 
-		unregister(this);
+		unregister();
 		setStatus(MigrationStatus.SUCCESS);
 	}
 
@@ -161,7 +157,7 @@ public class Migration implements IdentifiableObject {
 		if (side == MigrationSide.RECEIVER)
 			throw new BadMigrationSideException();
 		
-		unregister(this);
+		unregister();
 		setStatus(status == null ? MigrationStatus.ERROR : status);
 	}
 

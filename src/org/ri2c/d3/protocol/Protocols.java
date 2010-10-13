@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 
 import org.ri2c.d3.Agency;
+import org.ri2c.d3.Console;
 import org.ri2c.d3.Protocol;
 import org.ri2c.d3.Request;
 import org.ri2c.d3.agency.RemoteAgency;
@@ -91,7 +92,13 @@ public class Protocols {
 			RemoteAgency rad = Agency.getLocalAgency()
 					.getRemoteAgencyDescription(r.getTargetAgency());
 
-			getProtocolTo(rad).sendRequest(r);
+			Protocol protocol = getProtocolTo(rad);
+
+			if( protocol == null ) {
+				Console.error("no protocol to %s",rad.getId());
+			}
+
+			protocol.sendRequest(r);
 		} else {
 			InternalProtocol.getInternalProtocol().sendRequest(r);
 		}
