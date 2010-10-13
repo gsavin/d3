@@ -30,8 +30,6 @@ import org.ri2c.d3.IdentifiableObject.IdentifiableType;
 import org.ri2c.d3.request.ObjectCoder;
 import org.ri2c.d3.request.ObjectCoder.CodingMethod;
 
-import static org.ri2c.d3.IdentifiableObject.Tools.getURI;
-
 public class Request implements Serializable {
 	/**
 	 * 
@@ -56,7 +54,7 @@ public class Request implements Serializable {
 
 	public Request(IdentifiableObject source, IdentifiableObject target,
 			String callable, Object[] args, IdentifiableObject future) {
-		this.source = getURI(source);
+		this.source = source.getURI();
 
 		String query = null;
 
@@ -83,13 +81,13 @@ public class Request implements Serializable {
 			try {
 				query = String.format("%s%s%s=%s", query,
 						query.length() > 0 ? "&" : "", FUTURE,
-						URLEncoder.encode(getURI(future).toString(), ENCODING));
+						URLEncoder.encode(future.getURI().toString(), ENCODING));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
 
-		this.target = getURI(target, query);
+		this.target = target.getQueryURI(query);
 	}
 
 	public Request(IdentifiableObject source, String target) throws URISyntaxException {
@@ -109,7 +107,7 @@ public class Request implements Serializable {
 
 			this.source = decoded;
 		} else {
-			this.source = getURI(source);
+			this.source = source.getURI();
 		}
 	}
 
@@ -130,7 +128,7 @@ public class Request implements Serializable {
 
 			this.source = decoded;
 		} else {
-			this.source = getURI(source);
+			this.source = source.getURI();
 		}
 	}
 

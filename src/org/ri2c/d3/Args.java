@@ -100,6 +100,7 @@ public class Args
 	
 	public Args getArgs( String key )
 	{
+		Console.warning("get args for \"%s\"",key);
 		if( key.indexOf('.') != -1 )
 		{
 			String sub = key.substring(0,key.indexOf('.'));

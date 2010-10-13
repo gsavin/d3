@@ -34,7 +34,7 @@ public abstract class IdentifiableObject {
 	public static class Tools {
 
 		public static String getArgsPrefix(IdentifiableObject idObject) {
-			String path = getPath(idObject.getClass());
+			String path = idObject.getPath();// getPath(idObject.getClass());
 
 			if (path == null || path.length() == 0 || path.equals("/"))
 				return null;
@@ -45,21 +45,76 @@ public abstract class IdentifiableObject {
 			return path.replace("/", ".");
 		}
 
-		public static String getPath(IdentifiableObject idObject) {
-			return getPath(idObject.getClass());
+		/*
+		 * public static String getPath(IdentifiableObject idObject) { return
+		 * getPath(idObject.getClass()); }
+		 * 
+		 * public static String getPath(Class<? extends IdentifiableObject>
+		 * idCls) { IdentifiableObjectPath path = null; Class<?> cls = idCls;
+		 * 
+		 * while (cls != Object.class && path == null) { path =
+		 * cls.getAnnotation(IdentifiableObjectPath.class);
+		 * 
+		 * if (path == null) { for (Class<?> i : cls.getInterfaces()) { path =
+		 * i.getAnnotation(IdentifiableObjectPath.class); if (path != null)
+		 * break; } }
+		 * 
+		 * cls = cls.getSuperclass(); }
+		 * 
+		 * if (path != null) return path.value();
+		 * 
+		 * return "/"; }
+		 * 
+		 * public static String getFullPath( Class<? extends IdentifiableObject>
+		 * cls, String id) { String path = getPath(cls);
+		 * 
+		 * if (!path.startsWith("/")) { path = "/" + path; }
+		 * 
+		 * if (!path.endsWith("/")) { path = path + "/"; }
+		 * 
+		 * return path + id; }
+		 * 
+		 * public static String getFullPath(IdentifiableObject idObject) {
+		 * return getFullPath(idObject.getClass(), idObject.getId()); }
+		 * 
+		 * public static URI getURI(IdentifiableObject idObject) { return
+		 * getURI(idObject, null); }
+		 * 
+		 * public static URI getURI(IdentifiableObject idObject, String query) {
+		 * String path = getFullPath(idObject); String host;
+		 * 
+		 * if (idObject instanceof RemoteIdentifiableObject) { host =
+		 * ((RemoteIdentifiableObject) idObject) .getRemoteAgencyId(); } else {
+		 * host = Agency.getLocalAgency().getId(); }
+		 * 
+		 * String uriString = String.format("%s://%s%s", idObject.getType()
+		 * .toString(), host, path);
+		 * 
+		 * if (query != null) { uriString = String.format("%s?%s", uriString,
+		 * query); }
+		 * 
+		 * try { return new URI(uriString); } catch (Exception e) {
+		 * e.printStackTrace(); }
+		 * 
+		 * return null; }
+		 */
+		public static String getTypePath(Class<? extends IdentifiableObject> cls) {
+			return getTypePath(cls, null);
 		}
 
-		public static String getPath(Class<? extends IdentifiableObject> idCls) {
-			IdentifiableObjectPath path = null;
+		public static String getTypePath(
+				Class<? extends IdentifiableObject> idCls, String id) {
+			IdentifiableObjectPath idPath = null;
 			Class<?> cls = idCls;
 
-			while (cls != Object.class && path == null) {
-				path = cls.getAnnotation(IdentifiableObjectPath.class);
+			while (IdentifiableObject.class.isAssignableFrom(cls)
+					&& idPath == null) {
+				idPath = cls.getAnnotation(IdentifiableObjectPath.class);
 
-				if (path == null) {
+				if (idPath == null) {
 					for (Class<?> i : cls.getInterfaces()) {
-						path = i.getAnnotation(IdentifiableObjectPath.class);
-						if (path != null)
+						idPath = i.getAnnotation(IdentifiableObjectPath.class);
+						if (idPath != null)
 							break;
 					}
 				}
@@ -67,60 +122,17 @@ public abstract class IdentifiableObject {
 				cls = cls.getSuperclass();
 			}
 
-			if (path != null)
-				return path.value();
-
-			return "/";
-		}
-
-		public static String getFullPath(
-				Class<? extends IdentifiableObject> cls, String id) {
-			String path = getPath(cls);
+			String path = idPath == null ? "/" : idPath.value();
 
 			if (!path.startsWith("/")) {
 				path = "/" + path;
 			}
 
-			if (!path.endsWith("/")) {
+			if (!path.endsWith("/") && id != null) {
 				path = path + "/";
 			}
 
-			return path + id;
-		}
-
-		public static String getFullPath(IdentifiableObject idObject) {
-			return getFullPath(idObject.getClass(), idObject.getId());
-		}
-
-		public static URI getURI(IdentifiableObject idObject) {
-			return getURI(idObject, null);
-		}
-
-		public static URI getURI(IdentifiableObject idObject, String query) {
-			String path = getFullPath(idObject);
-			String host;
-
-			if (idObject instanceof RemoteIdentifiableObject) {
-				host = ((RemoteIdentifiableObject) idObject)
-						.getRemoteAgencyId();
-			} else {
-				host = Agency.getLocalAgency().getId();
-			}
-
-			String uriString = String.format("%s://%s%s", idObject.getType()
-					.toString(), host, path);
-
-			if (query != null) {
-				uriString = String.format("%s?%s", uriString, query);
-			}
-
-			try {
-				return new URI(uriString);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-			return null;
+			return path + (id == null ? "" : id);
 		}
 
 		public static Object call(IdentifiableObject source,
@@ -203,14 +215,19 @@ public abstract class IdentifiableObject {
 	}
 
 	protected final String id;
-	
-	protected IdentifiableObject( String id ) {
+	private final String path;
+	private transient URI uri;
+
+	protected IdentifiableObject(String id) {
 		this.id = id;
+		this.uri = null;
+		this.path = Tools.getTypePath(getClass());
 	}
-	
+
 	/**
+	 * Get the id which identify this object.
 	 * 
-	 * @return
+	 * @return object id
 	 */
 	public final String getId() {
 		return id;
@@ -221,12 +238,71 @@ public abstract class IdentifiableObject {
 	 * @return
 	 */
 	public abstract IdentifiableType getType();
-	
+
 	public void register() {
 		Agency.getLocalAgency().registerIdentifiableObject(this);
 	}
-	
+
 	public void unregister() {
 		Agency.getLocalAgency().unregisterIdentifiableObject(this);
+	}
+
+	public String getPath() {
+		return path;
+	}
+
+	public String getFullPath() {
+		String path = getPath();
+
+		if (!path.startsWith("/")) {
+			path = "/" + path;
+		}
+
+		if (!path.endsWith("/")) {
+			path = path + "/";
+		}
+
+		return path + id;
+	}
+
+	public URI getURI() {
+		if (uri == null) {
+			String path = getFullPath();
+			String host;
+
+			if (this instanceof RemoteIdentifiableObject) {
+				host = ((RemoteIdentifiableObject) this).getRemoteAgencyId();
+			} else {
+				host = Agency.getLocalAgency().getId();
+			}
+
+			String uriString = String.format("%s://%s%s", getType().toString(),
+					host, path);
+
+			try {
+				uri = new URI(uriString);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		return uri;
+	}
+
+	public URI getQueryURI(String query) {
+		getURI();
+
+		return URI.create(String.format("%s://%s%s?%s", uri.getScheme(),
+				uri.getHost(), uri.getPath(), query));
+	}
+
+	public Object synchroneCall(IdentifiableObject source, String name,
+			Object... args) {
+		return Tools.call(source, this, name, args, false);
+	}
+
+	public Object asynchroneCall(IdentifiableObject source, String name,
+			Object... args) {
+		return Tools.call(source, this, name, args, true);
 	}
 }

@@ -31,7 +31,7 @@ import org.ri2c.d3.IdentifiableObject.IdentifiableType;
 import org.ri2c.d3.RemoteIdentifiableObject;
 import org.ri2c.d3.request.ObjectCoder;
 
-import static org.ri2c.d3.IdentifiableObject.Tools.getFullPath;
+import static org.ri2c.d3.IdentifiableObject.Tools.getTypePath;
 
 public class IdentifiableObjectManager {
 	private static class Pool extends
@@ -100,7 +100,7 @@ public class IdentifiableObjectManager {
 		if (obj == null || obj.getId() == null || obj.getType() == null)
 			return RegistrationStatus.error;
 
-		String path = getFullPath(obj);
+		String path = obj.getFullPath();
 
 		registrationLock.lock();
 
@@ -135,7 +135,7 @@ public class IdentifiableObjectManager {
 			return;
 
 		registrationLock.lock();
-		pools.get(obj.getType()).remove(getFullPath(obj));
+		pools.get(obj.getType()).remove(obj.getFullPath());
 		lastChange = System.currentTimeMillis();
 		registrationLock.unlock();
 
@@ -144,7 +144,7 @@ public class IdentifiableObjectManager {
 
 	public IdentifiableObject get(IdentifiableType type,
 			Class<? extends IdentifiableObject> cls, String id) {
-		return pools.get(type).get(getFullPath(cls, id));
+		return pools.get(type).get(getTypePath(cls, id));
 	}
 
 	public IdentifiableObject get(IdentifiableType type, String path) {

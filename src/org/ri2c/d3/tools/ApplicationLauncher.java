@@ -48,6 +48,6 @@ public class ApplicationLauncher
 			System.exit(1);
 		}
 		
-		StartD3.l2dLoop();
+		StartD3.d3Loop();
 	}
 }

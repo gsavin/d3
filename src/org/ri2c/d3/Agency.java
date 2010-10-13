@@ -42,24 +42,20 @@ import org.ri2c.d3.protocol.Protocols;
 import org.ri2c.d3.request.RequestListener;
 import org.ri2c.d3.request.RequestService;
 
-import static org.ri2c.d3.IdentifiableObject.Tools.getURI;
-
 @IdentifiableObjectDescription("Agency object.")
 @IdentifiableObjectPath("/")
 public class Agency extends IdentifiableObject implements RequestListener {
 	public static enum Argument {
-		PROTOCOLS("d3.protocols"),
-		FEATURES("d3.features"),
-		DEFAULT_CHARSET("d3.system.cs.default"),
-		REQUEST_SERVICE("d3.request.service");
-		
+		PROTOCOLS("d3.protocols"), FEATURES("d3.features"), DEFAULT_CHARSET(
+				"d3.system.cs.default"), REQUEST_SERVICE("d3.request.service");
+
 		public final String key;
-		
+
 		Argument(String key) {
 			this.key = key;
 		}
 	}
-	
+
 	private static Agency localAgency;
 	private static Args localArgs;
 
@@ -70,7 +66,7 @@ public class Agency extends IdentifiableObject implements RequestListener {
 	public static void enableAgency(Args args) {
 		if (localAgency == null) {
 			String agencyId;
-			
+
 			try {
 				agencyId = InetAddress.getLocalHost().getHostName();
 
@@ -81,21 +77,23 @@ public class Agency extends IdentifiableObject implements RequestListener {
 				agencyId = String.format("%X:%X", System.nanoTime(),
 						(long) (Math.random() * Long.MAX_VALUE));
 			}
-			
+
 			localArgs = args;
 			localAgency = new Agency(agencyId);
 
 			System.out.printf("[agency] create agency%n");
 
 			if (localArgs.has(Argument.PROTOCOLS.key)) {
-				String[] protocols = localArgs.get(Argument.PROTOCOLS.key).split(",");
+				String[] protocols = localArgs.get(Argument.PROTOCOLS.key)
+						.split(",");
 
 				for (String protocol : protocols)
 					Protocols.initProtocol(protocol);
 			}
 
 			if (localArgs.has(Argument.FEATURES.key)) {
-				String[] features = localArgs.get(Argument.FEATURES.key).split(",");
+				String[] features = localArgs.get(Argument.FEATURES.key).split(
+						",");
 
 				for (String feature : features) {
 					String r = loadFeature(feature);
@@ -133,7 +131,7 @@ public class Agency extends IdentifiableObject implements RequestListener {
 	}
 
 	// ExtendableRequestInterpreter requestInterpreter;
-	//private String agencyId;
+	// private String agencyId;
 	private ConcurrentHashMap<String, RemoteAgency> remoteAgencies;
 	private FeatureManager featureManager;
 	private IpTables ipTables;
@@ -145,16 +143,12 @@ public class Agency extends IdentifiableObject implements RequestListener {
 	private Agency(String id) {
 		super(id);
 		/*
-		try {
-			agencyId = InetAddress.getLocalHost().getHostName();
-
-			if (agencyId.equals("localhost"))
-				throw new UnknownHostException();
-
-		} catch (UnknownHostException e) {
-			agencyId = String.format("%X:%X", System.nanoTime(),
-					(long) (Math.random() * Long.MAX_VALUE));
-		}
+		 * try { agencyId = InetAddress.getLocalHost().getHostName();
+		 * 
+		 * if (agencyId.equals("localhost")) throw new UnknownHostException();
+		 * 
+		 * } catch (UnknownHostException e) { agencyId = String.format("%X:%X",
+		 * System.nanoTime(), (long) (Math.random() * Long.MAX_VALUE)); }
 		 */
 		identifiableObjects = new IdentifiableObjectManager();
 
@@ -178,11 +172,10 @@ public class Agency extends IdentifiableObject implements RequestListener {
 
 		identifiableObjects.alias(atlas, "default");
 	}
+
 	/*
-	public final String getId() {
-		return agencyId;
-	}
-	*/
+	 * public final String getId() { return agencyId; }
+	 */
 	public final IdentifiableType getType() {
 		return IdentifiableType.agency;
 	}
@@ -244,7 +237,8 @@ public class Agency extends IdentifiableObject implements RequestListener {
 			Console.info("register new agency: %s %s@%s", remoteId, address,
 					protocols);
 
-			RemoteAgency rad = new RemoteAgency(remoteId, address, protocols, digest);
+			RemoteAgency rad = new RemoteAgency(remoteId, address, protocols,
+					digest);
 			remoteAgencies.put(remoteId, rad);
 			ipTables.registerId(remoteId, address);
 
@@ -252,11 +246,11 @@ public class Agency extends IdentifiableObject implements RequestListener {
 				l.newAgencyRegistered(rad);
 		} else if (!blacklisted) {
 			RemoteAgency remote = remoteAgencies.get(remoteId);
-			
-			if(!remote.getDigest().equals(digest)) {
+
+			if (!remote.getDigest().equals(digest)) {
 				remote.updateDigest(digest);
-				
-				for( AgencyListener l: agencyListeners)
+
+				for (AgencyListener l : agencyListeners)
 					l.remoteAgencyDescriptionUpdated(remote);
 			}
 		}
@@ -289,8 +283,9 @@ public class Agency extends IdentifiableObject implements RequestListener {
 	public IdentifiableObject getIdentifiableObject(URI uri) {
 		return identifiableObjects.get(uri);
 	}
-	
-	public IdentifiableObject getIdentifiableObject(IdentifiableType type, String path) {
+
+	public IdentifiableObject getIdentifiableObject(IdentifiableType type,
+			String path) {
 		return identifiableObjects.get(type, path);
 	}
 
@@ -346,7 +341,7 @@ public class Agency extends IdentifiableObject implements RequestListener {
 		URI[] uris = new URI[objects.length];
 
 		for (int i = 0; i < objects.length; i++)
-			uris[i] = getURI(objects[i]);
+			uris[i] = objects[i].getURI();
 
 		return uris;
 	}

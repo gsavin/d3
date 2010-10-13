@@ -19,8 +19,6 @@
 package org.ri2c.d3.request;
 
 import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -28,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.ri2c.d3.Agency;
 import org.ri2c.d3.Args;
-import org.ri2c.d3.IdentifiableObject;
 import org.ri2c.d3.Request;
 import org.ri2c.d3.agency.AgencyListener;
 
@@ -43,73 +40,6 @@ public class RequestService {
 		}
 
 		public void run() {
-			/*
-			 * IdentifiableObject source = null; IdentifiableObject target =
-			 * null; IdentifiableObject handler = null;
-			 * 
-			 * String sourceId = request.getAttribute("source-id"); String
-			 * sourceType = request.getAttribute("source-type"); String targetId
-			 * = request.getAttribute("target-id"); String targetType =
-			 * request.getAttribute("target-type");
-			 * 
-			 * if( ! Agency.getLocalAgency().getId().equals(request.getSource())
-			 * ) { source = new RemoteIdentifiableObject(request.getSource(),
-			 * sourceId,IdentifiableType.valueOf(sourceType)); } else { source =
-			 * Agency.getLocalAgency().getIdentifiableObject(
-			 * IdentifiableType.valueOf(sourceType),sourceId);
-			 * 
-			 * if( source == null ) {
-			 * System.err.printf("[request-service] error, unknown source: %s/%s%n"
-			 * , sourceId, sourceType); return; } }
-			 * 
-			 * target = Agency.getLocalAgency().getIdentifiableObject(
-			 * IdentifiableType.valueOf(targetType),targetId);
-			 * 
-			 * if( target == null ) {
-			 * //System.out.printf("[requests] (%s) %s/%s --> %s/%s%n",
-			 * request.getName(), sourceId, sourceType, targetId, targetType );
-			 * System.err.printf("[request-service] unknown target: %s%n",
-			 * targetId); return; }
-			 * 
-			 * if( handlers.containsKey(request.getName()) ) handler =
-			 * handlers.get(request.getName()); else handler = target;
-			 * 
-			 * if( handler != null ) { for( AgencyListener l: listeners )
-			 * l.requestReceived(source, target, request.getName());
-			 * 
-			 * handler.handleRequest(source,target,request); } else {
-			 * System.err.
-			 * printf("[request-service] no handler to %s%n",request.getName());
-			 * }
-			 */
-
-			//IdentifiableObject source = Agency.getLocalAgency()
-			//		.getIdentifiableObject(request.getSourceURI());
-			/*
-			IdentifiableObject target = Agency.getLocalAgency()
-					.getIdentifiableObject(request.getTargetURI());
-
-			if (request.targetQueryContains(Request.CALLABLE)) {
-				String callableName = request
-						.getTargetQueryArgument(Request.CALLABLE);
-				Object[] args = null;
-
-				if (request.targetQueryContains(Request.ARGUMENTS)) {
-					CodingMethod method = CodingMethod.valueOf(request
-							.getTargetQueryArgument(Request.DATA_ENCODING));
-					Object d = ObjectCoder.decode(method,
-							request.getTargetQueryArgument(Request.ARGUMENTS));
-					
-					if( d.getClass().isArray()) {
-						args = (Object[]) d;
-					} else {
-						args = new Object[] {d};
-					}
-				}
-
-				call(target, callableName, args);
-			}
-			*/
 			handleRequest(request);
 		}
 	}
@@ -123,12 +53,10 @@ public class RequestService {
 		}
 	}
 
-	// RequestInterpreter interpreter;
 	ThreadGroup requestServiceThreadGroup;
 	ThreadPoolExecutor pool;
 	ThreadFactory threadFactory;
 	Collection<AgencyListener> listeners;
-	Map<String, IdentifiableObject> handlers;
 
 	public RequestService() {
 		requestServiceThreadGroup = new ThreadGroup("request-service");
@@ -167,28 +95,25 @@ public class RequestService {
 		} else
 			keepTime = 200;
 
-		this.handlers = new ConcurrentHashMap<String, IdentifiableObject>();
 		this.listeners = listeners;
 		this.pool = new ThreadPoolExecutor(coreSize, maxSize, keepTime, unit,
 				new LinkedBlockingQueue<Runnable>(), threadFactory);
 	}
 
 	public void executeRequest(Request r) {
-		switch(r.getTargetType()) {
+		for (AgencyListener l : listeners)
+			l.requestReceived(
+					Agency.getLocalAgency().getIdentifiableObject(
+							r.getSourceURI()), Agency.getLocalAgency()
+							.getIdentifiableObject(r.getTargetURI()), r
+							.getCallable());
+
+		switch (r.getTargetType()) {
 		case entity:
 			Agency.getLocalAgency().getAtlas().entityCall(r);
 			break;
 		default:
 			pool.execute(new RequestCommand(r));
 		}
-	}
-
-	public void interceptRequest(IdentifiableObject handler, String name) {
-		if (!handlers.containsKey(name))
-			handlers.put(name, handler);
-		else
-			System.err
-					.printf("[request-service] conflict between handler for %s%n",
-							name);
 	}
 }

@@ -27,8 +27,6 @@ import org.ri2c.d3.Protocol;
 import org.ri2c.d3.Request;
 import org.ri2c.d3.agency.RemoteAgency;
 
-import static org.ri2c.d3.IdentifiableObject.Tools.getFullPath;
-
 @SuppressWarnings("unchecked")
 public class Protocols {
 	private static final HashMap<String, Protocol> knownProtocols = new HashMap<String, Protocol>();
@@ -50,8 +48,8 @@ public class Protocols {
 
 			if (p != null) {
 				System.out.printf("[protocols] enable %s --> %s%n",
-						getFullPath(p), classname);
-				knownProtocols.put(getFullPath(p), p);
+						p.getFullPath(), classname);
+				knownProtocols.put(p.getFullPath(), p);
 			} else
 				System.err.printf("[protocols] error getting protocol %s%n",
 						classname);

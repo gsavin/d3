@@ -57,18 +57,18 @@ public class TestEntity extends Entity {
 	
 	@RequestCallable("ping")
 	public void ping() {
-		Console.info("[%s] ping",getId());
+		//Console.info("[%s] ping",getId());
 	}
 
 	@RequestCallable("pong")
 	public void pong() {
-		Console.info("[%s] pong",getId());
+		//Console.info("[%s] pong",getId());
 	}
 
 	@RequestCallable("step")
 	public void step() {
 		int i = random.nextInt(idObjects.size());
-
+		
 		for (IdentifiableObject idObject : idObjects) {
 			if (i-- == 0) {
 				String action;

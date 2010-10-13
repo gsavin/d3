@@ -32,7 +32,6 @@ import org.ri2c.d3.entity.Entity;
 import org.ri2c.d3.tools.StartD3;
 
 import static org.ri2c.d3.IdentifiableObject.Tools.call;
-import static org.ri2c.d3.IdentifiableObject.Tools.getURI;
 
 public class TestMigration extends Application {
 	/**
@@ -78,10 +77,10 @@ public class TestMigration extends Application {
 	}
 
 	public void init() {
-		entitiesPath.add(getURI(Agency.getLocalAgency().getAtlas()
-				.createEntity(MigrationEntity.class)));
-		entitiesPath.add(getURI(Agency.getLocalAgency().getAtlas()
-				.createEntity(MigrationEntity.class)));
+		entitiesPath.add(Agency.getLocalAgency().getAtlas()
+				.createEntity(MigrationEntity.class).getURI());
+		entitiesPath.add(Agency.getLocalAgency().getAtlas()
+				.createEntity(MigrationEntity.class).getURI());
 
 		displayPosition();
 
@@ -121,9 +120,9 @@ public class TestMigration extends Application {
 
 			try {
 				URI uri = new URI(where);
-				
-				Console.warning("new uri: %s",uri);
-				
+
+				Console.warning("new uri: %s", uri);
+
 				entitiesPath.set(0, uri);
 			} catch (Exception ex) {
 				ex.printStackTrace();
@@ -136,7 +135,7 @@ public class TestMigration extends Application {
 	protected synchronized void checkMigration() {
 		if (migrate)
 			return;
-		
+
 		for (RemoteAgency rad : Agency.getLocalAgency().eachRemoteAgency()) {
 			Entity e = (Entity) Agency.getLocalAgency().getIdentifiableObject(
 					entitiesPath.get(0));
@@ -148,9 +147,9 @@ public class TestMigration extends Application {
 
 			try {
 				URI uri = new URI(where);
-				
-				Console.warning("new uri: %s",uri);
-				
+
+				Console.warning("new uri: %s", uri);
+
 				entitiesPath.set(0, uri);
 			} catch (Exception ex) {
 				ex.printStackTrace();

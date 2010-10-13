@@ -29,9 +29,6 @@ import org.ri2c.d3.migration.BadMigrationSideException;
 import org.ri2c.d3.migration.MigrationData;
 import org.ri2c.d3.protocol.Protocols;
 
-import static org.ri2c.d3.IdentifiableObject.Tools.getURI;
-import static org.ri2c.d3.IdentifiableObject.Tools.getFullPath;
-
 @IdentifiableObjectPath("/d3/migrations")
 public class Migration extends IdentifiableObject {
 	public static enum MigrationStatus {
@@ -95,7 +92,7 @@ public class Migration extends IdentifiableObject {
 		switch (side) {
 		case SENDER: {
 			Request r = new Request(this, receiver.getRemoteAtlas(), "host",
-					new Object[] { getURI(this), getFullPath(data.getEntity()),
+					new Object[] { getURI(), data.getEntity().getFullPath(),
 							data.getEntity().getClass().getName() });
 
 			Protocols.sendRequest(r);
@@ -107,7 +104,7 @@ public class Migration extends IdentifiableObject {
 					.getIdentifiableObject(sender);
 
 			Request r = new Request(this, target, "transfer",
-					new Object[] { getURI(this) });
+					new Object[] { getURI() });
 			Protocols.sendRequest(r);
 
 			setStatus(MigrationStatus.TRANSFERING);

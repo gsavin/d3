@@ -36,8 +36,6 @@ import org.ri2c.d3.entity.Entity;
 import org.ri2c.d3.migration.MigrationData;
 import org.ri2c.d3.protocol.Protocols;
 
-import static org.ri2c.d3.IdentifiableObject.Tools.getFullPath;
-
 @IdentifiableObjectDescription("Internal L2D Atlas implementation.")
 public class D3Atlas extends Atlas {
 	// protected static long L2D_ATLAS_ID_GENERATOR = 0;
@@ -135,7 +133,7 @@ public class D3Atlas extends Atlas {
 			}
 
 			entities.host(entity, body);
-			startBody(getFullPath(entity));
+			startBody(entity.getFullPath());
 
 			return entity;
 		} catch (Exception e) {
@@ -156,7 +154,7 @@ public class D3Atlas extends Atlas {
 		}
 		
 		if (idObject.getType() == IdentifiableType.entity) {
-			Body body = entities.getBody(getFullPath(idObject));
+			Body body = entities.getBody(idObject.getFullPath());
 
 			if (body == null) {
 				throw new NullPointerException("body is null");
@@ -168,7 +166,7 @@ public class D3Atlas extends Atlas {
 
 	public MigrationStatus migrateEntity(Entity entity,
 			RemoteAgency rad) {
-		Body body = entities.getBody(getFullPath(entity));
+		Body body = entities.getBody(entity.getFullPath());
 		MigrationData data = new MigrationData(entity, body.queue);
 
 		body.enterMigration();
@@ -183,7 +181,7 @@ public class D3Atlas extends Atlas {
 			body.migrationDone();
 			body.waitForState(Body.STATE_FINISH);
 			agency.unregisterIdentifiableObject(entity);
-			entities.unhost(getFullPath(entity));
+			entities.unhost(entity.getFullPath());
 		}
 
 		return s;

@@ -24,8 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.ri2c.d3.Console;
 import org.ri2c.d3.entity.Entity;
 
-import static org.ri2c.d3.IdentifiableObject.Tools.getFullPath;
-
 public class EntitiesPool {
 	public static class PoolEntry {
 		Entity entity;
@@ -57,7 +55,7 @@ public class EntitiesPool {
 	}
 */
 	public void host(Entity e, Body body) {
-		String entityPath = getFullPath(e);
+		String entityPath = e.getFullPath();
 		if (entities.containsKey(entityPath)) {
 			Console.error("want to host entity already hosted");
 			return;

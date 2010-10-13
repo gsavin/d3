@@ -21,6 +21,7 @@ package org.ri2c.d3.agency.feature;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.net.URL;
 
 import org.ri2c.d3.Agency;
@@ -36,13 +37,13 @@ import com.sun.net.httpserver.HttpServer;
 
 @IdentifiableObjectPath("/d3/features")
 @IdentifiableObjectDescription("HTTP Web server")
-public class D3HTTP implements Feature, HttpHandler {
+public class D3HTTP extends Feature implements HttpHandler {
 	protected static final int HTTP_PORT = 6080;
 
 	HttpServer server;
 
 	public D3HTTP() {
-
+		super("http");
 	}
 
 	public void handle(HttpExchange arg0) throws IOException {
@@ -92,10 +93,13 @@ public class D3HTTP implements Feature, HttpHandler {
 
 	protected String entitiesList() {
 		StringBuilder buffer = new StringBuilder("<ul>");
-		String[] entities = Agency.getLocalAgency().getAtlas().listEntities();
+		
+		URI[] entities = Agency.getLocalAgency().getIdentifiableObjectList(IdentifiableType.entity);
+		
 		if (entities != null)
-			for (String e : entities)
+			for (URI e : entities)
 				buffer.append("<li>").append(e).append("</li>");
+		
 		return buffer.append("</ul>").toString();
 	}
 
@@ -110,19 +114,11 @@ public class D3HTTP implements Feature, HttpHandler {
 		return buffer.append("</ul>").toString();
 	}
 
-	public String getId() {
-		return "http";
-	}
-
-	public IdentifiableType getType() {
-		return IdentifiableType.feature;
-	}
-
 	public boolean initFeature(Agency agency, Args args) {
 		try {
 
 			server = HttpServer.create(new InetSocketAddress(HTTP_PORT), 4);
-			server.createContext("/l2d/", this);
+			server.createContext("/d3/", this);
 
 			server.start();
 

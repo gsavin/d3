@@ -20,6 +20,8 @@ package org.ri2c.d3.test;
 
 //import org.ri2c.d3.Atlas;
 import java.security.MessageDigest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.ri2c.d3.annotation.IdentifiableObjectPath;
 import org.ri2c.d3.atlas.internal.D3Atlas;
@@ -29,68 +31,68 @@ public class Labs {
 
 	@IdentifiableObjectPath("/base/interface")
 	public static interface BaseInterface {
-		
+
 	}
-	
-	//@IdentifiableObjectPath("/base")
+
+	// @IdentifiableObjectPath("/base")
 	public static class BaseClass implements BaseInterface {
-		
+
 	}
-	
-	//@IdentifiableObjectPath("/base/daughter/interface/A")
+
+	// @IdentifiableObjectPath("/base/daughter/interface/A")
 	public static interface DaughterInterfaceA {
-		
+
 	}
-	
-	//@IdentifiableObjectPath("/base/daughter/interface/B")
+
+	// @IdentifiableObjectPath("/base/daughter/interface/B")
 	public static interface DaughterInterfaceB {
-		
+
 	}
-	
-	//@IdentifiableObjectPath("/base/daughter")
-	public static class Daughter extends BaseClass implements DaughterInterfaceB, DaughterInterfaceA {
-		
+
+	// @IdentifiableObjectPath("/base/daughter")
+	public static class Daughter extends BaseClass implements
+			DaughterInterfaceB, DaughterInterfaceA {
+
 	}
+
 	/**
 	 * @param args
 	 * @throws URISyntaxException
 	 */
 	public static void main(String[] args) throws Exception {
-		IdentifiableObjectPath path = null;
-		;
-		Class<?> cls = Daughter.class;
+		Pattern p = Pattern.compile("/([^/]+)");
 
-		while (cls != Object.class && path == null) {
-			path = cls.getAnnotation(IdentifiableObjectPath.class);
+		long m1 = System.currentTimeMillis();
 
-			if (path == null) {
-				for (Class<?> i : cls.getInterfaces()) {
-					path = i.getAnnotation(IdentifiableObjectPath.class);
-					if (path != null)
+		for (int i = 0; i < 100000; i++) {
+			String path = "/d3/features/discover/discover0";
+			Matcher m = p.matcher(path);
+
+			String current;
+
+			if (m.find()) {
+				do {
+					current = m.group(1);
+					if (!m.find()) {
+						// System.out.printf("id is \"%s\"%n",current);
 						break;
-				}
+					} else {
+						// System.out.printf("subpath is \"%s\"%n",current);
+					}
+				} while (true);
 			}
-			
-			cls = cls.getSuperclass();
-		}
-
-		if (path != null) {
-			System.out.printf("path is \"%s\"%n", path.value());
-		} else {
-			System.out.printf("no path found%n");
 		}
 		
-		MessageDigest md = MessageDigest.getInstance("SHA");
-		md.update("Ceci est un test".getBytes());
-		String sha1 = ObjectCoder.byte2hexa(md.digest());
-		System.out.printf("sha: %s%n",sha1);
-		md.update("Ceci est un tes".getBytes());
-		sha1 = ObjectCoder.byte2hexa(md.digest());
-		System.out.printf("sha: %s%n",sha1);
-		md.update("Ceci est un tes".getBytes());
-		md.update("Ceci est un test".getBytes());
-		sha1 = ObjectCoder.byte2hexa(md.digest());
-		System.out.printf("sha: %s%n",sha1);
+		long m2 = System.currentTimeMillis();
+		
+		for( int i =0; i< 100000; i++ )  {
+			String path = "/d3/features/discover/discover0";
+			String[] subpath = path.split("/");
+		}
+		
+		long m3 = System.currentTimeMillis();
+		
+		System.out.printf("%dms%n%dms%n",m2-m1,m3-m2);
 	}
 
 }
