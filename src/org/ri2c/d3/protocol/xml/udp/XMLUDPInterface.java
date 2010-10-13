@@ -54,13 +54,13 @@ public class XMLUDPInterface extends UDPInterface implements XMLInterface {
 
 	public XMLUDPInterface() throws SocketException {
 		super();
-		cs = Charset.forName(Agency.getArg("l2d.system.cs.default"));
+		cs = Charset.forName(Agency.getArg(Agency.Argument.DEFAULT_CHARSET.key));
 		factory = new InnerXMLStanzaFactory();
 	}
 
 	public void init(RequestListener bridge, IpTables iptables) {
 		try {
-			super.init(Agency.getArg("l2d.protocol.xml.udp.interface"),
+			super.init(Agency.getArg("d3.protocol.xml.udp.interface"),
 					XML_UDP_PORT);
 		} catch (SocketException e) {
 			e.printStackTrace();

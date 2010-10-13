@@ -47,6 +47,19 @@ import static org.ri2c.d3.IdentifiableObject.Tools.getURI;
 @IdentifiableObjectDescription("Agency object.")
 @IdentifiableObjectPath("/")
 public class Agency implements IdentifiableObject, RequestListener {
+	public static enum Argument {
+		PROTOCOLS("d3.protocols"),
+		FEATURES("d3.features"),
+		DEFAULT_CHARSET("d3.system.cs.default"),
+		REQUEST_SERVICE("d3.request.service");
+		
+		public final String key;
+		
+		Argument(String key) {
+			this.key = key;
+		}
+	}
+	
 	private static Agency localAgency;
 	private static Args localArgs;
 
@@ -61,15 +74,15 @@ public class Agency implements IdentifiableObject, RequestListener {
 
 			System.out.printf("[agency] create agency%n");
 
-			if (localArgs.has("l2d.protocols")) {
-				String[] protocols = localArgs.get("l2d.protocols").split(",");
+			if (localArgs.has(Argument.PROTOCOLS.key)) {
+				String[] protocols = localArgs.get(Argument.PROTOCOLS.key).split(",");
 
 				for (String protocol : protocols)
 					Protocols.initProtocol(protocol);
 			}
 
-			if (localArgs.has("l2d.features")) {
-				String[] features = localArgs.get("l2d.features").split(",");
+			if (localArgs.has(Argument.FEATURES.key)) {
+				String[] features = localArgs.get(Argument.FEATURES.key).split(",");
 
 				for (String feature : features) {
 					String r = loadFeature(feature);
@@ -140,7 +153,7 @@ public class Agency implements IdentifiableObject, RequestListener {
 		requestService = new RequestService();
 		requestService.init(
 				Collections.unmodifiableCollection(agencyListeners),
-				localArgs.getArgs("l2d.request.service"));
+				localArgs.getArgs(Argument.REQUEST_SERVICE.key));
 
 		atlas = new D3Atlas();
 		atlas.init(this);

@@ -103,8 +103,6 @@ public class Migration implements IdentifiableObject {
 							data.getEntity().getClass().getName() });
 
 			Protocols.sendRequest(r);
-
-			Console.info("init %s as sender",getId());
 			
 			break;
 		}
@@ -117,8 +115,6 @@ public class Migration implements IdentifiableObject {
 			Protocols.sendRequest(r);
 
 			setStatus(MigrationStatus.TRANSFERING);
-
-			Console.info("init %s as receiver",getId());
 			
 			break;
 		}
@@ -129,8 +125,6 @@ public class Migration implements IdentifiableObject {
 	public void transfer(URI destination) {
 		if (side == MigrationSide.RECEIVER)
 			throw new BadMigrationSideException();
-
-		Console.info("%s transfert to %s",getId(),destination);
 		
 		setStatus(MigrationStatus.TRANSFERING);
 
@@ -147,8 +141,6 @@ public class Migration implements IdentifiableObject {
 	public void receive(MigrationData data) {
 		if (side == MigrationSide.SENDER)
 			throw new BadMigrationSideException();
-
-		Console.info("%s receive",getId());
 		
 		register(data.getEntity());
 		body.receiveContent(data.getEntity(), data.getRequests());
@@ -168,8 +160,6 @@ public class Migration implements IdentifiableObject {
 	public void confirm(MigrationStatus status) {
 		if (side == MigrationSide.RECEIVER)
 			throw new BadMigrationSideException();
-
-		Console.info("%s confirm",getId());
 		
 		unregister(this);
 		setStatus(status == null ? MigrationStatus.ERROR : status);
@@ -178,14 +168,12 @@ public class Migration implements IdentifiableObject {
 	@RequestCallable("cancel")
 	public void cancel() {
 		// TODO
-		Console.info("%s cancel",getId());
 		setStatus(MigrationStatus.CANCELED);
 	}
 	
 	@RequestCallable("reject")
 	public void reject() {
 		// TODO
-		Console.info("%s reject",getId());
 		setStatus(MigrationStatus.REJECTED);
 	}
 
