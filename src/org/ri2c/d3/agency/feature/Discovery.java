@@ -35,8 +35,6 @@ import java.util.regex.Pattern;
 
 import org.ri2c.d3.Agency;
 import org.ri2c.d3.Args;
-import org.ri2c.d3.IdentifiableObject;
-import org.ri2c.d3.Request;
 import org.ri2c.d3.agency.RunnableFeature;
 import org.ri2c.d3.agency.RunnableFeatureCommand;
 import org.ri2c.d3.annotation.IdentifiableObjectDescription;
@@ -93,6 +91,8 @@ public class Discovery implements RunnableFeature, Runnable {
 	protected static final String DISCOVERY_AGENCY_EXIT = "agency-exit";
 
 	protected static final String DISCOVERY_PROTOCOLS = "protocols";
+
+	protected static final String DISCOVERY_DIGEST = "digest";
 
 	/**
 	 * Port used in discovery.
@@ -161,6 +161,8 @@ public class Discovery implements RunnableFeature, Runnable {
 			.compile("address\\(([^\\(]+)\\)");
 	protected static final Pattern protocolPattern = Pattern
 			.compile("protocol\\(([^\\(]+)\\)");
+	protected static final Pattern digestPattern = Pattern
+			.compile("digest\\(([^\\(]+)\\)");
 
 	/**
 	 * Time unit used in delay.
@@ -208,6 +210,8 @@ public class Discovery implements RunnableFeature, Runnable {
 	protected int averagePeriod;
 
 	protected String discoveryId;
+
+	protected String agencyDigest;
 
 	public Discovery() {
 		unit = TimeUnit.MILLISECONDS;
@@ -270,19 +274,25 @@ public class Discovery implements RunnableFeature, Runnable {
 
 			localAddress = local.getHostAddress();
 
-			String message = String.format(
-					"%s %s id(%s) address(%s) protocol(%s)",
-					DISCOVERY_MESSAGE_PREFIX, DISCOVERY_AGENCY_AT,
-					localAgency.getId(), localAddress,
-					Agency.getArg("l2d.protocols"));
-
-			byte[] messageData = message.getBytes();
-
-			thePacket = new DatagramPacket(messageData, 0, messageData.length,
-					discoveryGroup, discoveryPort);
+			createDiscoveryPacket();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	protected void createDiscoveryPacket() {
+		agencyDigest = Agency.getLocalAgency().getDigest();
+
+		String message = String.format(
+				"%s %s id(%s) address(%s) protocol(%s) digest(%s)",
+				DISCOVERY_MESSAGE_PREFIX, DISCOVERY_AGENCY_AT,
+				localAgency.getId(), localAddress,
+				Agency.getArg("l2d.protocols"), agencyDigest);
+
+		byte[] messageData = message.getBytes();
+
+		thePacket = new DatagramPacket(messageData, 0, messageData.length,
+				discoveryGroup, discoveryPort);
 	}
 
 	public String getId() {
@@ -365,6 +375,9 @@ public class Discovery implements RunnableFeature, Runnable {
 	 * @throws IOException
 	 */
 	protected synchronized void sendDiscoveryPacket() throws IOException {
+		if (!Agency.getLocalAgency().getDigest().equals(agencyDigest))
+			createDiscoveryPacket();
+
 		discoverySocket.send(thePacket);
 	}
 
@@ -421,15 +434,17 @@ public class Discovery implements RunnableFeature, Runnable {
 				message = consume(message, DISCOVERY_AGENCY_AT);
 
 				if (message.indexOf("id(" + localAgency.getId() + ")") < 0) {
-					Matcher id, protocol, address;
+					Matcher id, protocol, address, digest;
 
 					id = idPattern.matcher(message);
 					address = addressPattern.matcher(message);
 					protocol = protocolPattern.matcher(message);
+					digest = digestPattern.matcher(message);
 
 					if (id.find()
 							&& address.find()
 							&& protocol.find()
+							&& digest.find()
 							&& localAgency.getRemoteAgencyDescription(id
 									.group(1)) == null) {
 						/*
@@ -442,7 +457,8 @@ public class Discovery implements RunnableFeature, Runnable {
 						}
 
 						localAgency.registerAgency(id.group(1),
-								address.group(1), protocol.group(1));
+								address.group(1), protocol.group(1),
+								digest.group(1));
 					}
 				}
 			} else

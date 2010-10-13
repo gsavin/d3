@@ -21,28 +21,34 @@ package org.ri2c.d3.agency;
 import org.ri2c.d3.RemoteIdentifiableObject;
 import org.ri2c.d3.annotation.IdentifiableObjectPath;
 
-@IdentifiableObjectPath("/d3/remotes")
-public class RemoteAgencyDescription extends RemoteIdentifiableObject {
+@IdentifiableObjectPath("/")
+public class RemoteAgency extends RemoteIdentifiableObject {
 	protected final String agencyId;
 	protected String address;
 	protected String[] protocols;
 	protected long lastPresenceDate;
 	protected RemoteIdentifiableObject remoteAtlas;
+	protected String digest;
 
-	public RemoteAgencyDescription(String agencyId, String address,
-			String protocols) {
+	public RemoteAgency(String agencyId, String address, String protocols,
+			String digest) {
 		super(agencyId, agencyId, IdentifiableType.agency);
 
 		this.agencyId = agencyId;
 		this.address = address;
 		this.protocols = protocols.trim().split("\\s*,\\s*");
 		this.lastPresenceDate = System.currentTimeMillis();
+		this.digest = digest;
 		this.remoteAtlas = new RemoteIdentifiableObject(agencyId, "/d3/atlas",
 				IdentifiableType.atlas);
 	}
 
 	public void udpatePresence(long date) {
 		this.lastPresenceDate = date;
+	}
+
+	public void updateDigest(String digest) {
+		this.digest = digest;
 	}
 
 	public final String getId() {
@@ -52,7 +58,7 @@ public class RemoteAgencyDescription extends RemoteIdentifiableObject {
 	public String getAddress() {
 		return address;
 	}
-	
+
 	public RemoteIdentifiableObject getRemoteAtlas() {
 		return remoteAtlas;
 	}
@@ -62,5 +68,9 @@ public class RemoteAgencyDescription extends RemoteIdentifiableObject {
 			return null;
 
 		return protocols[0];
+	}
+	
+	public String getDigest() {
+		return digest;
 	}
 }

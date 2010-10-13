@@ -19,6 +19,7 @@
 package org.ri2c.d3.atlas.internal;
 
 import java.net.URI;
+import java.net.URLEncoder;
 
 import org.ri2c.d3.Agency;
 import org.ri2c.d3.Atlas;
@@ -27,7 +28,7 @@ import org.ri2c.d3.IdentifiableObject;
 import org.ri2c.d3.Migration;
 import org.ri2c.d3.Migration.MigrationStatus;
 import org.ri2c.d3.Request;
-import org.ri2c.d3.agency.RemoteAgencyDescription;
+import org.ri2c.d3.agency.RemoteAgency;
 import org.ri2c.d3.annotation.IdentifiableObjectDescription;
 import org.ri2c.d3.annotation.RequestCallable;
 import org.ri2c.d3.atlas.AtlasListener;
@@ -121,11 +122,11 @@ public class D3Atlas extends Atlas {
 		// TODO Auto-generated method stub
 	}
 
-	public Entity createEntity(Class<? extends Entity> desc) {
+	public <T extends Entity> T createEntity(Class<T> desc) {
 		String entityId = newEntityId();
 
 		try {
-			Entity entity = desc.getConstructor(String.class).newInstance(
+			T entity = desc.getConstructor(String.class).newInstance(
 					entityId);
 			Body body = new Body(entity);
 
@@ -166,7 +167,7 @@ public class D3Atlas extends Atlas {
 	}
 
 	public MigrationStatus migrateEntity(Entity entity,
-			RemoteAgencyDescription rad) {
+			RemoteAgency rad) {
 		Body body = entities.getBody(getFullPath(entity));
 		MigrationData data = new MigrationData(entity, body.queue);
 
@@ -192,6 +193,8 @@ public class D3Atlas extends Atlas {
 	public void host(URI source, String entityPath, String entityClassname) {
 		boolean accepted = true;
 
+		Console.info("host %s",entityPath);
+		
 		if (accepted) {
 			Body body = new Body();
 			entities.host(entityPath, body);
@@ -223,7 +226,13 @@ public class D3Atlas extends Atlas {
 	}
 
 	private String newEntityId() {
-		return String.format("%s:%016X:%016X", agency.getId(),
+		String id = String.format("entity_%s_%016X_%016X", agency.getId(),
 				System.nanoTime(), entityIdGenerator++);
+		
+		try {
+			return URLEncoder.encode(id, "UTF-8");
+		} catch(Exception e) {
+			return id;
+		}
 	}
 }

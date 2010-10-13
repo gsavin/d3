@@ -18,6 +18,7 @@
  */
 package org.ri2c.d3;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -31,7 +32,12 @@ import org.ri2c.d3.request.ObjectCoder.CodingMethod;
 
 import static org.ri2c.d3.IdentifiableObject.Tools.getURI;
 
-public class Request {
+public class Request implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -836303930336000404L;
+
 	public static final String ENCODING = "UTF-8";
 
 	public static final String CALLABLE = "callable";
@@ -77,7 +83,7 @@ public class Request {
 			try {
 				query = String.format("%s%s%s=%s", query,
 						query.length() > 0 ? "&" : "", FUTURE,
-						URLEncoder.encode(future.toString(), ENCODING));
+						URLEncoder.encode(getURI(future).toString(), ENCODING));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -86,7 +92,7 @@ public class Request {
 		this.target = getURI(target, query);
 	}
 
-	public Request(String target) throws URISyntaxException {
+	public Request(IdentifiableObject source, String target) throws URISyntaxException {
 		if (target == null)
 			throw new NullPointerException("target is null");
 
@@ -103,16 +109,16 @@ public class Request {
 
 			this.source = decoded;
 		} else {
-			this.source = null;
+			this.source = getURI(source);
 		}
 	}
 
-	public Request(URI target) {
+	public Request(IdentifiableObject source, URI target) {
 		if (target == null)
 			throw new NullPointerException("target is null");
 
 		this.target = target;
-
+		
 		if (targetQueryContains(SOURCE)) {
 			URI decoded = null;
 			try {
@@ -124,7 +130,7 @@ public class Request {
 
 			this.source = decoded;
 		} else {
-			this.source = null;
+			this.source = getURI(source);
 		}
 	}
 

@@ -23,9 +23,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.ri2c.d3.annotation.IdentifiableObjectPath;
 import org.ri2c.d3.annotation.RequestCallable;
 
+import static org.ri2c.d3.IdentifiableObject.Tools.register;
+import static org.ri2c.d3.IdentifiableObject.Tools.unregister;
+
 @IdentifiableObjectPath("/d3/futures")
 public class Future implements IdentifiableObject {
+	public static enum SpecialReturn {
+		NULL, VOID
+	}
+
 	private static long futureIdGenerator = 0;
+
 	private static String newFutureId() {
 		return String.format("%016X%016X", System.nanoTime(),
 				futureIdGenerator++);
@@ -35,11 +43,13 @@ public class Future implements IdentifiableObject {
 	AtomicBoolean available;
 	Thread thread2interrupt;
 	protected final String id;
-	
+
 	public Future() {
 		this.value = null;
 		this.available = new AtomicBoolean(false);
 		this.id = newFutureId();
+
+		register(this);
 	}
 
 	public Object getValue() {
@@ -71,6 +81,8 @@ public class Future implements IdentifiableObject {
 
 			}
 		}
+
+		unregister(this);
 	}
 
 	public boolean isAvailable() {
@@ -79,6 +91,31 @@ public class Future implements IdentifiableObject {
 
 	public void interruptMeWhenDone() {
 		thread2interrupt = Thread.currentThread();
+	}
+
+	public void waitForValue() {
+		while (!available.get()) {
+			try {
+				synchronized(available) {
+					available.wait(200);
+				}
+			} catch (InterruptedException e) {
+
+			}
+		}
+	}
+	
+	public void waitForValue( long timeout ) {
+		if(available.get())
+			return;
+		
+		try {
+			synchronized(available) {
+				available.wait(timeout);
+			}
+		} catch (InterruptedException e) {
+
+		}
 	}
 
 	public String getId() {

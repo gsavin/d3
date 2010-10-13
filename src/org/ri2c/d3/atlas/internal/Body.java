@@ -162,7 +162,9 @@ public class Body implements Runnable {
 				setState(STATE_MIGRATING);
 				while (migration.get() == MIGRATION_PENDING) {
 					try {
-						migration.wait(200);
+						synchronized(migration) {
+							migration.wait(200);
+						}
 					} catch (InterruptedException e) {
 					}
 				}

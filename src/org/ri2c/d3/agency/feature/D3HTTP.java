@@ -26,7 +26,7 @@ import java.net.URL;
 import org.ri2c.d3.Agency;
 import org.ri2c.d3.Args;
 import org.ri2c.d3.agency.Feature;
-import org.ri2c.d3.agency.RemoteAgencyDescription;
+import org.ri2c.d3.agency.RemoteAgency;
 import org.ri2c.d3.annotation.IdentifiableObjectDescription;
 import org.ri2c.d3.annotation.IdentifiableObjectPath;
 
@@ -101,7 +101,7 @@ public class D3HTTP implements Feature, HttpHandler {
 
 	protected String agenciesList() {
 		StringBuilder buffer = new StringBuilder("<ul>");
-		for (RemoteAgencyDescription rad : Agency.getLocalAgency()
+		for (RemoteAgency rad : Agency.getLocalAgency()
 				.eachRemoteAgency())
 			buffer.append("<li>").append(rad.getId()).append("&nbsp;@&nbsp;")
 					.append(rad.getAddress()).append("&nbsp;:&nbsp;")

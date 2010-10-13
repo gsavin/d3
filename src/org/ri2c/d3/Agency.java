@@ -32,7 +32,7 @@ import org.ri2c.d3.agency.Feature;
 import org.ri2c.d3.agency.FeatureManager;
 import org.ri2c.d3.agency.IdentifiableObjectManager;
 import org.ri2c.d3.agency.IpTables;
-import org.ri2c.d3.agency.RemoteAgencyDescription;
+import org.ri2c.d3.agency.RemoteAgency;
 import org.ri2c.d3.agency.IdentifiableObjectManager.RegistrationStatus;
 import org.ri2c.d3.annotation.IdentifiableObjectDescription;
 import org.ri2c.d3.annotation.IdentifiableObjectPath;
@@ -41,309 +41,290 @@ import org.ri2c.d3.atlas.internal.D3Atlas;
 import org.ri2c.d3.protocol.Protocols;
 import org.ri2c.d3.request.RequestListener;
 import org.ri2c.d3.request.RequestService;
-//import org.ri2c.l2d.request.DefaultRequestInterpreter;
-//import org.ri2c.l2d.request.ExtendableRequestInterpreter;
-//import org.ri2c.l2d.request.RequestInterpreter;
+
+import static org.ri2c.d3.IdentifiableObject.Tools.getURI;
 
 @IdentifiableObjectDescription("Agency object.")
 @IdentifiableObjectPath("/")
-public class Agency
-	implements IdentifiableObject, RequestListener
-{
-	private static Agency 	localAgency;
-	private static Args		localArgs;
-	
-	public static String getArg( String key )
-	{
+public class Agency implements IdentifiableObject, RequestListener {
+	private static Agency localAgency;
+	private static Args localArgs;
+
+	public static String getArg(String key) {
 		return localArgs.get(key);
 	}
-	
-	public static void enableAgency( Args args )
-	{
-		if( localAgency == null )
-		{
+
+	public static void enableAgency(Args args) {
+		if (localAgency == null) {
 			localArgs = args;
 			localAgency = new Agency();
-			
+
 			System.out.printf("[agency] create agency%n");
-			
-			if( localArgs.has("l2d.protocols") )
-			{
-				String [] protocols = localArgs.get("l2d.protocols").split(",");
-				
-				for( String protocol: protocols )
+
+			if (localArgs.has("l2d.protocols")) {
+				String[] protocols = localArgs.get("l2d.protocols").split(",");
+
+				for (String protocol : protocols)
 					Protocols.initProtocol(protocol);
 			}
-			
-			if( localArgs.has("l2d.features") )
-			{
-				String [] features = localArgs.get("l2d.features").split(",");
-				
-				for( String feature: features )
-				{
+
+			if (localArgs.has("l2d.features")) {
+				String[] features = localArgs.get("l2d.features").split(",");
+
+				for (String feature : features) {
 					String r = loadFeature(feature);
-					
-					if( r != null )
-						System.err.printf("[agency] error while loading feature \"%s\": %s%n",feature,r);
+
+					if (r != null)
+						System.err
+								.printf("[agency] error while loading feature \"%s\": %s%n",
+										feature, r);
 				}
 			}
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
-	private static String loadFeature( String name )
-	{
-		try
-		{
+	private static String loadFeature(String name) {
+		try {
 			String classname = "org.ri2c.d3.agency.feature." + name.trim();
-			Class<? extends Feature> featureClass = (Class<? extends Feature>) Class.forName(classname);
+			Class<? extends Feature> featureClass = (Class<? extends Feature>) Class
+					.forName(classname);
 			Feature feature = featureClass.newInstance();
 			localAgency.addFeature(feature);
-		}
-		catch (ClassNotFoundException e)
-		{
+		} catch (ClassNotFoundException e) {
+			return e.getMessage();
+		} catch (InstantiationException e) {
+			return e.getMessage();
+		} catch (IllegalAccessException e) {
 			return e.getMessage();
 		}
-		catch (InstantiationException e)
-		{
-			return e.getMessage();
-		}
-		catch (IllegalAccessException e)
-		{
-			return e.getMessage();
-		}
-		
+
 		return null;
 	}
-	
-	public static Agency getLocalAgency()
-	{
+
+	public static Agency getLocalAgency() {
 		return localAgency;
 	}
 
-	//ExtendableRequestInterpreter						requestInterpreter;
-	private String												agencyId;
-	private ConcurrentHashMap<String,RemoteAgencyDescription> 	remoteAgencies;
-	private FeatureManager										featureManager;
-	private IpTables											ipTables;
-	private RequestService										requestService;
-	private Atlas												atlas;
-	private ConcurrentLinkedQueue<AgencyListener>				agencyListeners;
-	private IdentifiableObjectManager							identifiableObjects;
-	
-	private Agency()
-	{
-		try {
-			agencyId   = InetAddress.getLocalHost().getHostName();
-			
-			if( agencyId.equals("localhost") )
-				throw new UnknownHostException();
-			
-		} catch (UnknownHostException e) {
-			agencyId   = String.format("%X:%X", System.nanoTime(), (long) ( Math.random() * Long.MAX_VALUE ) );
-		}
-		
-		identifiableObjects	= new IdentifiableObjectManager();
-		
-		remoteAgencies  	= new ConcurrentHashMap<String,RemoteAgencyDescription>();
-		featureManager  	= new FeatureManager(this);
-		ipTables			= new IpTables();
-		
-		agencyListeners		= new ConcurrentLinkedQueue<AgencyListener>();
+	// ExtendableRequestInterpreter requestInterpreter;
+	private String agencyId;
+	private ConcurrentHashMap<String, RemoteAgency> remoteAgencies;
+	private FeatureManager featureManager;
+	private IpTables ipTables;
+	private RequestService requestService;
+	private Atlas atlas;
+	private ConcurrentLinkedQueue<AgencyListener> agencyListeners;
+	private IdentifiableObjectManager identifiableObjects;
 
-		//requestInterpreter 	= new DefaultRequestInterpreter();
-		requestService		= new RequestService();
-		requestService.init(Collections.unmodifiableCollection(agencyListeners),
+	private Agency() {
+		try {
+			agencyId = InetAddress.getLocalHost().getHostName();
+
+			if (agencyId.equals("localhost"))
+				throw new UnknownHostException();
+
+		} catch (UnknownHostException e) {
+			agencyId = String.format("%X:%X", System.nanoTime(),
+					(long) (Math.random() * Long.MAX_VALUE));
+		}
+
+		identifiableObjects = new IdentifiableObjectManager();
+
+		remoteAgencies = new ConcurrentHashMap<String, RemoteAgency>();
+		featureManager = new FeatureManager(this);
+		ipTables = new IpTables();
+
+		agencyListeners = new ConcurrentLinkedQueue<AgencyListener>();
+
+		// requestInterpreter = new DefaultRequestInterpreter();
+		requestService = new RequestService();
+		requestService.init(
+				Collections.unmodifiableCollection(agencyListeners),
 				localArgs.getArgs("l2d.request.service"));
-		
-		atlas				= new D3Atlas();
+
+		atlas = new D3Atlas();
 		atlas.init(this);
-		
+
 		registerIdentifiableObject(this);
 		registerIdentifiableObject(atlas);
-		
-		identifiableObjects.alias(atlas,"default");
+
+		identifiableObjects.alias(atlas, "default");
 	}
-	
-	public String getId()
-	{
+
+	public final String getId() {
 		return agencyId;
 	}
-	
-	public Args getArgs()
-	{
+
+	public final IdentifiableType getType() {
+		return IdentifiableType.agency;
+	}
+
+	public Args getArgs() {
 		return localArgs;
 	}
-	
-	public IpTables getIpTables()
-	{
+
+	public IpTables getIpTables() {
 		return ipTables;
 	}
-	
-	public Atlas getAtlas()
-	{
+
+	public Atlas getAtlas() {
 		return atlas;
 	}
-	
-	public void requestReceived(Request r)
-	{
+
+	public void requestReceived(Request r) {
 		requestService.executeRequest(r);
 	}
+
 	/*
-	public void addRequestInterpreter( String requestName, RequestInterpreter ri )
-	{
-		requestInterpreter.addInterpreter(requestName,ri);
-	}
-	*/
-	
-	public void launch( Application app )
-	{
+	 * public void addRequestInterpreter( String requestName, RequestInterpreter
+	 * ri ) { requestInterpreter.addInterpreter(requestName,ri); }
+	 */
+
+	public void launch(Application app) {
 		registerIdentifiableObject(app);
 		addAgencyListener(app);
-		
+
 		new ApplicationExecutor(app);
 	}
-	
-	public void registerAgency( String remoteId, String address, String protocols )
-	{
-		if( ! remoteAgencies.containsKey(remoteId) && ! ipTables.isBlacklisted(address) )
-		{
-			try
-			{
+
+	public void registerAgency(String remoteId, String address,
+			String protocols, String digest) {
+		boolean blacklisted = ipTables.isBlacklisted(address);
+
+		if (!remoteAgencies.containsKey(remoteId) && !blacklisted) {
+			try {
 				InetAddress inet = InetAddress.getByName(address);
-				if( ! inet.isReachable(400) )
-				{
+				if (!inet.isReachable(400)) {
 					ipTables.declareErrorOn(address);
-					System.err.printf("[agency] remote agency %s not reachable%n",remoteId);
+					System.err.printf(
+							"[agency] remote agency %s not reachable%n",
+							remoteId);
 					return;
 				}
-			}
-			catch (UnknownHostException e)
-			{
+			} catch (UnknownHostException e) {
 				ipTables.declareErrorOn(address);
-				System.err.printf("[agency] remote agency %s not reachable%n",remoteId);
+				System.err.printf("[agency] remote agency %s not reachable%n",
+						remoteId);
+				return;
+			} catch (IOException e) {
+				ipTables.declareErrorOn(address);
+				System.err.printf("[agency] remote agency %s not reachable%n",
+						remoteId);
 				return;
 			}
-			catch (IOException e)
-			{
-				ipTables.declareErrorOn(address);
-				System.err.printf("[agency] remote agency %s not reachable%n",remoteId);
-				return;
-			}
-			
-			Console.info("register new agency: %s %s@%s", remoteId, address, protocols);
-			
-			RemoteAgencyDescription rad = new RemoteAgencyDescription(remoteId,address,protocols);
-			remoteAgencies.put(remoteId,rad);
-			ipTables.registerId(remoteId,address);
-			
-			for( AgencyListener l: agencyListeners )
+
+			Console.info("register new agency: %s %s@%s", remoteId, address,
+					protocols);
+
+			RemoteAgency rad = new RemoteAgency(remoteId, address, protocols, digest);
+			remoteAgencies.put(remoteId, rad);
+			ipTables.registerId(remoteId, address);
+
+			for (AgencyListener l : agencyListeners)
 				l.newAgencyRegistered(rad);
+		} else if (!blacklisted) {
+			RemoteAgency remote = remoteAgencies.get(remoteId);
+			
+			if(!remote.getDigest().equals(digest)) {
+				remote.updateDigest(digest);
+				
+				for( AgencyListener l: agencyListeners)
+					l.remoteAgencyDescriptionUpdated(remote);
+			}
 		}
 	}
-	
-	public void unregisterAgency( RemoteAgencyDescription rad )
-	{
+
+	public void unregisterAgency(RemoteAgency rad) {
 		remoteAgencies.remove(rad.getRemoteAgencyId());
 		Console.info("unregister agency %s", rad.getRemoteAgencyId());
 	}
-	
-	public boolean registerIdentifiableObject( IdentifiableObject idObject )
-	{
-		if( identifiableObjects.register(idObject) != RegistrationStatus.accepted )
-		{
+
+	public boolean registerIdentifiableObject(IdentifiableObject idObject) {
+		if (identifiableObjects.register(idObject) != RegistrationStatus.accepted) {
 			System.err.printf("[agency] object not registered%n");
 			return false;
 		}
-		
-		for( AgencyListener l: agencyListeners )
+
+		for (AgencyListener l : agencyListeners)
 			l.identifiableObjectRegistered(idObject);
-		
+
 		return true;
 	}
-	
-	public void unregisterIdentifiableObject( IdentifiableObject idObject )
-	{
+
+	public void unregisterIdentifiableObject(IdentifiableObject idObject) {
 		identifiableObjects.unregister(idObject);
-		
-		for( AgencyListener l: agencyListeners )
+
+		for (AgencyListener l : agencyListeners)
 			l.identifiableObjectUnregistered(idObject);
 	}
-	
-	/*public <T extends IdentifiableObject> T getIdentifiableObject( IdentifiableObject source )
-	{
-		return null;
-	}*/
-	
-	public IdentifiableObject getIdentifiableObject( URI uri )
-	{
+
+	public IdentifiableObject getIdentifiableObject(URI uri) {
 		return identifiableObjects.get(uri);
 	}
 	
-	public void addFeature( Feature f )
-	{
+	public IdentifiableObject getIdentifiableObject(IdentifiableType type, String path) {
+		return identifiableObjects.get(type, path);
+	}
+
+	public void addFeature(Feature f) {
 		featureManager.addFeature(f);
 	}
-	
-	public Iterable<RemoteAgencyDescription> eachRemoteAgency()
-	{
+
+	public Iterable<RemoteAgency> eachRemoteAgency() {
 		return remoteAgencies.values();
 	}
-	
-	public RemoteAgencyDescription getRemoteAgencyDescription( String agencyId )
-	{
+
+	public RemoteAgency getRemoteAgencyDescription(String agencyId) {
 		return remoteAgencies.get(agencyId);
 	}
-	
-	public void remoteAgencyDescriptionChanged( String agencyId )
-	{
-		if( remoteAgencies.get(agencyId) != null )
-		{
-			RemoteAgencyDescription rad =
-				remoteAgencies.get(agencyId);
-			
-			for( AgencyListener l: agencyListeners )
+
+	public void remoteAgencyDescriptionChanged(String agencyId) {
+		if (remoteAgencies.get(agencyId) != null) {
+			RemoteAgency rad = remoteAgencies.get(agencyId);
+
+			for (AgencyListener l : agencyListeners)
 				l.remoteAgencyDescriptionUpdated(rad);
 		}
 	}
-	
-	public void addAgencyListener( AgencyListener listener )
-	{
+
+	public void addAgencyListener(AgencyListener listener) {
 		agencyListeners.add(listener);
 	}
-	
-	public void removeAgencyListener( AgencyListener listener )
-	{
+
+	public void removeAgencyListener(AgencyListener listener) {
 		agencyListeners.remove(listener);
 	}
 
-	public IdentifiableType getType()
-	{
-		return IdentifiableType.agency;
-	}
-/*
-	public void handleRequest(IdentifiableObject source,
-			IdentifiableObject target, Request r)
-	{
-		if( r.getName().startsWith("entity:") )
-			atlas.handleRequest(source, target, r);
-	}
-	*/
-	
-	public void lazyCheckEntitiesOn( RemoteAgencyDescription rad )
-	{
-		Request r = new Request(this,rad,"getEntityList",null);
-			//Protocols.createRequestTo(this,rad,"entity:getlist");
+	/*
+	 * public void handleRequest(IdentifiableObject source, IdentifiableObject
+	 * target, Request r) { if( r.getName().startsWith("entity:") )
+	 * atlas.handleRequest(source, target, r); }
+	 */
+
+	public void lazyCheckEntitiesOn(RemoteAgency rad) {
+		Request r = new Request(this, rad, "getEntityList", null);
+		// Protocols.createRequestTo(this,rad,"entity:getlist");
 		Protocols.sendRequest(r);
 	}
-	
-	@RequestCallable("getEntityList")
-	public URI[] getEntityList() {
-		return null;
+
+	@RequestCallable("getDigest")
+	public String getDigest() {
+		return identifiableObjects.getDigest();
 	}
-	
+
+	@RequestCallable("getIdentifiableObjectList")
+	public URI[] getIdentifiableObjectList(IdentifiableType type) {
+		IdentifiableObject[] objects = identifiableObjects.get(type);
+		URI[] uris = new URI[objects.length];
+
+		for (int i = 0; i < objects.length; i++)
+			uris[i] = getURI(objects[i]);
+
+		return uris;
+	}
+
 	@RequestCallable("ping")
-	public void ping() {
-		Console.info("ping");
+	public String ping() {
+		return "pong";
 	}
 }

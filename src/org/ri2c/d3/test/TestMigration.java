@@ -18,114 +18,144 @@
  */
 package org.ri2c.d3.test;
 
+import java.net.URI;
 import java.util.LinkedList;
 
 import org.ri2c.d3.Agency;
 import org.ri2c.d3.Application;
 import org.ri2c.d3.Console;
-import org.ri2c.d3.Future;
-import org.ri2c.d3.RemoteIdentifiableObject;
-import org.ri2c.d3.agency.RemoteAgencyDescription;
-import org.ri2c.d3.entity.EntityADN;
-import org.ri2c.d3.entity.EntityDescription;
-import org.ri2c.d3.entity.EntityMigrationStatus;
+import org.ri2c.d3.IdentifiableObject;
+import org.ri2c.d3.Migration.MigrationStatus;
+import org.ri2c.d3.agency.RemoteAgency;
+import org.ri2c.d3.annotation.RequestCallable;
+import org.ri2c.d3.entity.Entity;
+import org.ri2c.d3.tools.StartD3;
 
-public class TestMigration
-	extends Application
-{
-	static MigrationEntityDescription entityDescription = new MigrationEntityDescription();
-	
-	static class MigrationEntityDescription
-		extends EntityDescription
-	{
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = 5030697857917597208L;
+import static org.ri2c.d3.IdentifiableObject.Tools.call;
+import static org.ri2c.d3.IdentifiableObject.Tools.getURI;
 
-		public MigrationEntityDescription()
-		{
-			super( "Migration Entity", MigrationEntity.class.getName(), "", "whereIam" );
-		}
+public class TestMigration extends Application {
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		TestMigration test = new TestMigration();
+
+		StartD3.init(args);
+
+		Agency.getLocalAgency().addAgencyListener(test);
+		Agency.getLocalAgency().registerIdentifiableObject(test);
+
+		test.init();
+		test.execute();
 	}
-	
-	public static class MigrationEntity
-		implements EntityADN
-	{
+
+	public static class MigrationEntity extends Entity {
 		/**
 		 * 
 		 */
 		private static final long serialVersionUID = 4519822789886385904L;
 
-		public MigrationEntity( String id )
-		{
-			
+		public MigrationEntity(String id) {
+			super(id);
 		}
-		
-		public EntityDescription getEntityDescription()
-		{
-			return entityDescription;
-		}
-		
-		public String whereIam()
-		{
+
+		@RequestCallable("whereAreYou")
+		public String whereIam() {
 			return Agency.getLocalAgency().getId();
 		}
 	}
-	
-	LinkedList<String> entitiesId;
-	boolean				migrate = false;
-	EntityMigrationStatus status;
-	String				where;
-	
-	public TestMigration()
-	{
-		super( "l2d.test.migration" );
-		
-		entitiesId = new LinkedList<String>();
+
+	LinkedList<URI> entitiesPath;
+	boolean migrate = false;
+	MigrationStatus status;
+	String where;
+
+	public TestMigration() {
+		super("l2d.test.migration");
+
+		entitiesPath = new LinkedList<URI>();
 	}
-	
-	public void init()
-	{
-		entitiesId.add(
-				Agency.getLocalAgency().getAtlas().createEntity(entityDescription).getId() );
-		entitiesId.add(
-				Agency.getLocalAgency().getAtlas().createEntity(entityDescription).getId() );
-		
+
+	public void init() {
+		entitiesPath.add(getURI(Agency.getLocalAgency().getAtlas()
+				.createEntity(MigrationEntity.class)));
+		entitiesPath.add(getURI(Agency.getLocalAgency().getAtlas()
+				.createEntity(MigrationEntity.class)));
+
+		displayPosition();
+
 		checkMigration();
 	}
-	
-	public void execute()
-	{
-		while( ! migrate )
-		{
-			try { Thread.sleep(200); } catch( Exception e ) {}
+
+	public void execute() {
+		while (!migrate) {
+			try {
+				Thread.sleep(200);
+			} catch (Exception e) {
+			}
 		}
-		
-		status.waitMigrationEndsOrFailed();
-		
-		RemoteIdentifiableObject rid = new RemoteIdentifiableObject(where,entitiesId.get(0),IdentifiableType.entity);
-		
-		Console.info("calling");
-		Future f = Agency.getLocalAgency().getAtlas().remoteEntityCall(this,rid,"whereIam",true);
-		Console.info("where %s is ? %s",entitiesId.get(0),f.getValue());
+
+		displayPosition();
 	}
-	
-	public void newAgencyRegistered(RemoteAgencyDescription rad)
-	{
-		checkMigration();
+
+	protected void displayPosition() {
+		for (URI uri : entitiesPath) {
+			IdentifiableObject idObject = Agency.getLocalAgency()
+					.getIdentifiableObject(uri);
+			String str = (String) call(this, idObject, "whereAreYou", null);
+			Console.info("where %s is ? %s", idObject.getId(), str);
+		}
 	}
-	
-	protected synchronized void checkMigration()
-	{
-		if( migrate )
+
+	public void newAgencyRegistered(RemoteAgency rad) {
+		if (!migrate) {
+
+			Entity e = (Entity) Agency.getLocalAgency().getIdentifiableObject(
+					entitiesPath.get(0));
+
+			Agency.getLocalAgency().getAtlas().migrateEntity(e, rad);
+
+			where = String.format("entity://%s%s", rad.getRemoteAgencyId(),
+					entitiesPath.get(0).getPath());
+
+			try {
+				URI uri = new URI(where);
+				
+				Console.warning("new uri: %s",uri);
+				
+				entitiesPath.set(0, uri);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+
+			migrate = true;
+		}
+	}
+
+	protected synchronized void checkMigration() {
+		if (migrate)
 			return;
 		
-		for( RemoteAgencyDescription rad: Agency.getLocalAgency().eachRemoteAgency() )
-		{
-			Console.info("migrate to %s",rad.getId());
-			status = Agency.getLocalAgency().getAtlas().migrateEntity(entitiesId.get(0), rad);
-			where = rad.getRemoteAgencyId();
+		for (RemoteAgency rad : Agency.getLocalAgency().eachRemoteAgency()) {
+			Entity e = (Entity) Agency.getLocalAgency().getIdentifiableObject(
+					entitiesPath.get(0));
+
+			Agency.getLocalAgency().getAtlas().migrateEntity(e, rad);
+
+			where = String.format("entity://%s%s", rad.getRemoteAgencyId(),
+					entitiesPath.get(0).getPath());
+
+			try {
+				URI uri = new URI(where);
+				
+				Console.warning("new uri: %s",uri);
+				
+				entitiesPath.set(0, uri);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+
 			migrate = true;
 			break;
 		}

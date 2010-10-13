@@ -21,7 +21,7 @@ package org.ri2c.d3;
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.ri2c.d3.agency.RemoteAgencyDescription;
+import org.ri2c.d3.agency.RemoteAgency;
 import org.ri2c.d3.annotation.IdentifiableObjectPath;
 import org.ri2c.d3.annotation.RequestCallable;
 import org.ri2c.d3.atlas.internal.Body;
@@ -31,6 +31,8 @@ import org.ri2c.d3.protocol.Protocols;
 
 import static org.ri2c.d3.IdentifiableObject.Tools.getURI;
 import static org.ri2c.d3.IdentifiableObject.Tools.getFullPath;
+import static org.ri2c.d3.IdentifiableObject.Tools.register;
+import static org.ri2c.d3.IdentifiableObject.Tools.unregister;
 
 @IdentifiableObjectPath("/d3/migrations")
 public class Migration implements IdentifiableObject {
@@ -53,7 +55,7 @@ public class Migration implements IdentifiableObject {
 	protected final MigrationSide side;
 	protected final MigrationData data;
 	protected final URI sender;
-	protected final RemoteAgencyDescription receiver;
+	protected final RemoteAgency receiver;
 	protected final AtomicReference<MigrationStatus> status;
 	protected final Body body;
 
@@ -70,7 +72,7 @@ public class Migration implements IdentifiableObject {
 		init();
 	}
 
-	public Migration(RemoteAgencyDescription remote, MigrationData data) {
+	public Migration(RemoteAgency remote, MigrationData data) {
 		this.id = newMigrationId();
 		this.side = MigrationSide.SENDER;
 		this.data = data;
@@ -92,7 +94,7 @@ public class Migration implements IdentifiableObject {
 	}
 
 	public void init() {
-		Agency.getLocalAgency().registerIdentifiableObject(this);
+		register(this);
 
 		switch (side) {
 		case SENDER: {
@@ -102,6 +104,8 @@ public class Migration implements IdentifiableObject {
 
 			Protocols.sendRequest(r);
 
+			Console.info("init %s as sender",getId());
+			
 			break;
 		}
 		case RECEIVER: {
@@ -114,6 +118,8 @@ public class Migration implements IdentifiableObject {
 
 			setStatus(MigrationStatus.TRANSFERING);
 
+			Console.info("init %s as receiver",getId());
+			
 			break;
 		}
 		}
@@ -124,6 +130,8 @@ public class Migration implements IdentifiableObject {
 		if (side == MigrationSide.RECEIVER)
 			throw new BadMigrationSideException();
 
+		Console.info("%s transfert to %s",getId(),destination);
+		
 		setStatus(MigrationStatus.TRANSFERING);
 
 		IdentifiableObject target = Agency.getLocalAgency()
@@ -140,6 +148,9 @@ public class Migration implements IdentifiableObject {
 		if (side == MigrationSide.SENDER)
 			throw new BadMigrationSideException();
 
+		Console.info("%s receive",getId());
+		
+		register(data.getEntity());
 		body.receiveContent(data.getEntity(), data.getRequests());
 
 		IdentifiableObject target = Agency.getLocalAgency()
@@ -149,7 +160,7 @@ public class Migration implements IdentifiableObject {
 				new Object[] { MigrationStatus.SUCCESS });
 		Protocols.sendRequest(r);
 
-		Agency.getLocalAgency().unregisterIdentifiableObject(this);
+		unregister(this);
 		setStatus(MigrationStatus.SUCCESS);
 	}
 
@@ -158,21 +169,23 @@ public class Migration implements IdentifiableObject {
 		if (side == MigrationSide.RECEIVER)
 			throw new BadMigrationSideException();
 
-		Agency.getLocalAgency().unregisterIdentifiableObject(this);
+		Console.info("%s confirm",getId());
+		
+		unregister(this);
 		setStatus(status == null ? MigrationStatus.ERROR : status);
 	}
 
 	@RequestCallable("cancel")
 	public void cancel() {
 		// TODO
-
+		Console.info("%s cancel",getId());
 		setStatus(MigrationStatus.CANCELED);
 	}
 	
 	@RequestCallable("reject")
 	public void reject() {
 		// TODO
-		
+		Console.info("%s reject",getId());
 		setStatus(MigrationStatus.REJECTED);
 	}
 

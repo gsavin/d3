@@ -23,12 +23,13 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.ri2c.d3.Agency;
+import org.ri2c.d3.Console;
 import org.ri2c.d3.IdentifiableObject;
-import org.ri2c.d3.RemoteIdentifiableObject;
-import org.ri2c.d3.IdentifiableObject.IdentifiableType;
 import org.ri2c.d3.annotation.IdentifiableObjectPath;
 import org.ri2c.d3.annotation.RequestCallable;
 import org.ri2c.d3.entity.Entity;
+
+import static org.ri2c.d3.IdentifiableObject.Tools.call;
 
 @IdentifiableObjectPath("/d3/test/entities")
 public class TestEntity extends Entity {
@@ -56,20 +57,28 @@ public class TestEntity extends Entity {
 	
 	@RequestCallable("ping")
 	public void ping() {
-		
+		Console.info("[%s] ping",getId());
 	}
 
 	@RequestCallable("pong")
 	public void pong() {
-		
+		Console.info("[%s] pong",getId());
 	}
 
+	@RequestCallable("step")
 	public void step() {
 		int i = random.nextInt(idObjects.size());
 
 		for (IdentifiableObject idObject : idObjects) {
 			if (i-- == 0) {
+				String action;
 				
+				if(random.nextBoolean())
+					action = "pong";
+				else
+					action = "ping";
+				
+				call(this,idObject,action,null,false);
 			}
 		}
 	}

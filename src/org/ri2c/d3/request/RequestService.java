@@ -29,13 +29,10 @@ import java.util.concurrent.TimeUnit;
 import org.ri2c.d3.Agency;
 import org.ri2c.d3.Args;
 import org.ri2c.d3.IdentifiableObject;
-import org.ri2c.d3.RemoteIdentifiableObject;
 import org.ri2c.d3.Request;
-import org.ri2c.d3.IdentifiableObject.IdentifiableType;
 import org.ri2c.d3.agency.AgencyListener;
-import org.ri2c.d3.request.ObjectCoder.CodingMethod;
 
-import static org.ri2c.d3.IdentifiableObject.Tools.call;
+import static org.ri2c.d3.IdentifiableObject.Tools.handleRequest;
 
 public class RequestService {
 	private class RequestCommand implements Runnable {
@@ -88,7 +85,7 @@ public class RequestService {
 
 			//IdentifiableObject source = Agency.getLocalAgency()
 			//		.getIdentifiableObject(request.getSourceURI());
-
+			/*
 			IdentifiableObject target = Agency.getLocalAgency()
 					.getIdentifiableObject(request.getTargetURI());
 
@@ -112,6 +109,8 @@ public class RequestService {
 
 				call(target, callableName, args);
 			}
+			*/
+			handleRequest(request);
 		}
 	}
 

@@ -24,7 +24,7 @@ import java.util.HashMap;
 import org.ri2c.d3.Agency;
 import org.ri2c.d3.Protocol;
 import org.ri2c.d3.Request;
-import org.ri2c.d3.agency.RemoteAgencyDescription;
+import org.ri2c.d3.agency.RemoteAgency;
 
 import static org.ri2c.d3.IdentifiableObject.Tools.getFullPath;
 
@@ -82,13 +82,13 @@ public class Protocols {
 		return protocols.get(id);
 	}
 
-	private static final Protocol getProtocolTo(RemoteAgencyDescription rad) {
+	private static final Protocol getProtocolTo(RemoteAgency rad) {
 		return getProtocol(rad.getFirstProtocol());
 	}
 
 	public static final void sendRequest(Request r) {
 		if (!r.isLocalTarget()) {
-			RemoteAgencyDescription rad = Agency.getLocalAgency()
+			RemoteAgency rad = Agency.getLocalAgency()
 					.getRemoteAgencyDescription(r.getTargetAgency());
 
 			getProtocolTo(rad).sendRequest(r);

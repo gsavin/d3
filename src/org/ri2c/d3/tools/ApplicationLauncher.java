@@ -32,7 +32,7 @@ public class ApplicationLauncher
 		
 		args = args == null ? null : Arrays.copyOfRange(args,1,args.length);
 		
-		StartL2D.init( args );
+		StartD3.init( args );
 		
 		try
 		{
@@ -48,6 +48,6 @@ public class ApplicationLauncher
 			System.exit(1);
 		}
 		
-		StartL2D.l2dLoop();
+		StartD3.l2dLoop();
 	}
 }

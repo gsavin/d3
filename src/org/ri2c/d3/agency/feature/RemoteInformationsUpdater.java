@@ -27,7 +27,7 @@ import org.ri2c.d3.Console;
 import org.ri2c.d3.IdentifiableObject;
 import org.ri2c.d3.Request;
 import org.ri2c.d3.agency.FeatureDescription;
-import org.ri2c.d3.agency.RemoteAgencyDescription;
+import org.ri2c.d3.agency.RemoteAgency;
 import org.ri2c.d3.agency.RunnableFeature;
 import org.ri2c.d3.agency.RunnableFeatureCommand;
 
@@ -47,7 +47,7 @@ public class RemoteInformationsUpdater
 		
 		public void run()
 		{
-			for( RemoteAgencyDescription rad: agency.eachRemoteAgency() )
+			for( RemoteAgency rad: agency.eachRemoteAgency() )
 			{
 				if( random.nextFloat() < updateProbability )
 					update(rad);
@@ -56,7 +56,7 @@ public class RemoteInformationsUpdater
 			resetDelay(delay,unit);
 		}
 		
-		protected void update( RemoteAgencyDescription rad )
+		protected void update( RemoteAgency rad )
 		{
 			Console.info("update %s",rad.getRemoteAgencyId());
 			

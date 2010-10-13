@@ -19,7 +19,7 @@
 package org.ri2c.d3;
 
 import org.ri2c.d3.agency.AgencyListener;
-import org.ri2c.d3.agency.RemoteAgencyDescription;
+import org.ri2c.d3.agency.RemoteAgency;
 
 public abstract class Application
 	implements IdentifiableObject, AgencyListener
@@ -29,11 +29,6 @@ public abstract class Application
 	public Application( String name )
 	{
 		this.name = name;
-	}
-	
-	public <T extends Description> T getDescription()
-	{
-		return null;
 	}
 
 	public final String getId()
@@ -67,12 +62,12 @@ public abstract class Application
 
 	}
 
-	public void newAgencyRegistered(RemoteAgencyDescription rad) {
+	public void newAgencyRegistered(RemoteAgency rad) {
 		// TODO Auto-generated method stub
 
 	}
 
-	public void remoteAgencyDescriptionUpdated(RemoteAgencyDescription rad) {
+	public void remoteAgencyDescriptionUpdated(RemoteAgency rad) {
 		// TODO Auto-generated method stub
 
 	}

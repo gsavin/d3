@@ -18,6 +18,9 @@
  */
 package org.ri2c.d3;
 
+import org.ri2c.d3.annotation.IdentifiableObjectPath;
+
+@IdentifiableObjectPath("/")
 public class RemoteIdentifiableObject
 	implements IdentifiableObject
 {
@@ -28,6 +31,9 @@ public class RemoteIdentifiableObject
 	public RemoteIdentifiableObject( String agencyId,
 			String objectId, IdentifiableType objectType )
 	{
+		if( objectId.startsWith("/") )
+			objectId = objectId.substring(1);
+		
 		this.remoteAgencyId = agencyId;
 		this.objectId		= objectId;
 		this.objectType		= objectType;

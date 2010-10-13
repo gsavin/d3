@@ -19,15 +19,13 @@
 package org.ri2c.d3;
 
 import org.ri2c.d3.Migration.MigrationStatus;
-import org.ri2c.d3.agency.RemoteAgencyDescription;
+import org.ri2c.d3.agency.RemoteAgency;
 import org.ri2c.d3.annotation.IdentifiableObjectPath;
 import org.ri2c.d3.atlas.AtlasListener;
 import org.ri2c.d3.entity.Entity;
 
 @IdentifiableObjectPath("/d3")
-public abstract class Atlas
-	implements IdentifiableObject
-{
+public abstract class Atlas implements IdentifiableObject {
 	public final String getId() {
 		return "atlas";
 	}
@@ -35,16 +33,17 @@ public abstract class Atlas
 	public final IdentifiableType getType() {
 		return IdentifiableType.atlas;
 	}
-	
-	public abstract void init( Agency agency );
-	
-	public abstract void addAtlasListener( AtlasListener listener );
-	
-	public abstract void removeAtlasListener( AtlasListener listener );
-	
-	public abstract Entity createEntity( Class<? extends Entity> desc );
-	
-	public abstract void entityCall( Request r );
-	
-	public abstract MigrationStatus migrateEntity( Entity entity, RemoteAgencyDescription rad );
+
+	public abstract void init(Agency agency);
+
+	public abstract void addAtlasListener(AtlasListener listener);
+
+	public abstract void removeAtlasListener(AtlasListener listener);
+
+	public abstract <T extends Entity> T createEntity(Class<T> desc);
+
+	public abstract void entityCall(Request r);
+
+	public abstract MigrationStatus migrateEntity(Entity entity,
+			RemoteAgency rad);
 }

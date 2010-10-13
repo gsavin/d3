@@ -27,7 +27,7 @@ import org.ri2c.d3.Args;
 import org.ri2c.d3.IdentifiableObject;
 import org.ri2c.d3.Request;
 import org.ri2c.d3.agency.FeatureDescription;
-import org.ri2c.d3.agency.RemoteAgencyDescription;
+import org.ri2c.d3.agency.RemoteAgency;
 import org.ri2c.d3.agency.RunnableFeature;
 import org.ri2c.d3.agency.RunnableFeatureCommand;
 import org.ri2c.d3.protocol.Protocols;
@@ -59,7 +59,7 @@ public class Presence
 		
 		public void run()
 		{
-			for( RemoteAgencyDescription rad: localAgency.eachRemoteAgency() )
+			for( RemoteAgency rad: localAgency.eachRemoteAgency() )
 			{
 				if( rad.getFirstProtocol() != null )
 				{

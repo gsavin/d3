@@ -21,35 +21,29 @@ package org.ri2c.d3.tools;
 import org.ri2c.d3.Agency;
 import org.ri2c.d3.Args;
 
-public class StartL2D
-{
-	public static void l2dLoop()
-	{
-		while( true )
-		{
-			try
-			{
+public class StartD3 {
+	public static void d3Loop() {
+		while (true) {
+			try {
 				Thread.sleep(1000);
-			}
-			catch( Exception e )
-			{
-				
+			} catch (Exception e) {
+
 			}
 		}
 	}
-	
-	public static void init( String [] mainArgs )
-	{
-		String cfg 	= System.getProperty("org.ri2c.l2d.config","org/ri2c/l2d/resources/default.cfg");
-		Args args 	= Args.processFile(cfg);
-		Args.parseArgs(args,mainArgs);
+
+	public static void init(String[] mainArgs) {
+		String cfg = System.getProperty("org.ri2c.d3.config",
+				"org/ri2c/d3/resources/default.cfg");
 		
+		Args args = Args.processFile(cfg);
+		Args.parseArgs(args, mainArgs);
+
 		Agency.enableAgency(args);
 	}
-	
-	public static void main( String [] mainArgs )
-	{
+
+	public static void main(String[] mainArgs) {
 		init(mainArgs);
-		l2dLoop();
+		d3Loop();
 	}
 }

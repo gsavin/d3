@@ -40,7 +40,7 @@ import org.ri2c.d3.IdentifiableObject;
 import org.ri2c.d3.RemoteIdentifiableObject;
 import org.ri2c.d3.agency.AgencyListener;
 import org.ri2c.d3.agency.Feature;
-import org.ri2c.d3.agency.RemoteAgencyDescription;
+import org.ri2c.d3.agency.RemoteAgency;
 import org.ri2c.d3.annotation.IdentifiableObjectPath;
 
 @IdentifiableObjectPath("/d3/features/model")
@@ -211,11 +211,11 @@ public class Model
 		
 	}
 
-	public void newAgencyRegistered(RemoteAgencyDescription rad) {
+	public void newAgencyRegistered(RemoteAgency rad) {
 		
 	}
 
-	public void remoteAgencyDescriptionUpdated(RemoteAgencyDescription rad) {
+	public void remoteAgencyDescriptionUpdated(RemoteAgency rad) {
 		
 	}
 

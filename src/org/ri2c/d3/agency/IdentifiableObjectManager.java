@@ -19,6 +19,8 @@
 package org.ri2c.d3.agency;
 
 import java.net.URI;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -27,6 +29,7 @@ import org.ri2c.d3.Console;
 import org.ri2c.d3.IdentifiableObject;
 import org.ri2c.d3.IdentifiableObject.IdentifiableType;
 import org.ri2c.d3.RemoteIdentifiableObject;
+import org.ri2c.d3.request.ObjectCoder;
 
 import static org.ri2c.d3.IdentifiableObject.Tools.getFullPath;
 
@@ -46,6 +49,8 @@ public class IdentifiableObjectManager {
 
 	private ConcurrentHashMap<IdentifiableType, Pool> pools;
 	private ReentrantLock registrationLock;
+	private MessageDigest digest;
+	private long lastChange;
 
 	public IdentifiableObjectManager() {
 		pools = new ConcurrentHashMap<IdentifiableType, Pool>();
@@ -54,6 +59,14 @@ public class IdentifiableObjectManager {
 			pools.put(t, new Pool());
 
 		registrationLock = new ReentrantLock();
+
+		try {
+			digest = MessageDigest.getInstance("SHA");
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+
+		lastChange = System.nanoTime();
 	}
 
 	public void alias(String id, IdentifiableType type, String alias) {
@@ -109,6 +122,7 @@ public class IdentifiableObjectManager {
 		}
 
 		p.put(path, obj);
+		lastChange = System.currentTimeMillis();
 
 		Console.info("register %s", path);
 
@@ -122,6 +136,7 @@ public class IdentifiableObjectManager {
 
 		registrationLock.lock();
 		pools.get(obj.getType()).remove(getFullPath(obj));
+		lastChange = System.currentTimeMillis();
 		registrationLock.unlock();
 
 		Console.info("unregister %s", obj.getId());
@@ -132,10 +147,14 @@ public class IdentifiableObjectManager {
 		return pools.get(type).get(getFullPath(cls, id));
 	}
 
+	public IdentifiableObject get(IdentifiableType type, String path) {
+		return pools.get(type).get(path);
+	}
+
 	public IdentifiableObject get(URI uri) {
-		if( uri == null )
+		if (uri == null)
 			throw new NullPointerException("uri is null");
-		
+
 		if (uri.getHost().equals(Agency.getLocalAgency().getId())) {
 			return pools.get(IdentifiableType.valueOf(uri.getScheme())).get(
 					uri.getPath());
@@ -143,5 +162,17 @@ public class IdentifiableObjectManager {
 			return new RemoteIdentifiableObject(uri.getHost(), uri.getPath(),
 					IdentifiableType.valueOf(uri.getScheme()));
 		}
+	}
+
+	public IdentifiableObject[] get(IdentifiableType type) {
+		Pool p = pools.get(type);
+		IdentifiableObject[] objects = new IdentifiableObject[0];
+
+		return p == null ? objects : p.values().toArray(objects);
+	}
+
+	public String getDigest() {
+		digest.update(Long.toString(lastChange).getBytes());
+		return ObjectCoder.byte2hexa(digest.digest());
 	}
 }

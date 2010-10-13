@@ -19,8 +19,11 @@
 package org.ri2c.d3.test;
 
 //import org.ri2c.d3.Atlas;
+import java.security.MessageDigest;
+
 import org.ri2c.d3.annotation.IdentifiableObjectPath;
 import org.ri2c.d3.atlas.internal.D3Atlas;
+import org.ri2c.d3.request.ObjectCoder;
 
 public class Labs {
 
@@ -52,7 +55,7 @@ public class Labs {
 	 * @param args
 	 * @throws URISyntaxException
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		IdentifiableObjectPath path = null;
 		;
 		Class<?> cls = Daughter.class;
@@ -76,6 +79,18 @@ public class Labs {
 		} else {
 			System.out.printf("no path found%n");
 		}
+		
+		MessageDigest md = MessageDigest.getInstance("SHA");
+		md.update("Ceci est un test".getBytes());
+		String sha1 = ObjectCoder.byte2hexa(md.digest());
+		System.out.printf("sha: %s%n",sha1);
+		md.update("Ceci est un tes".getBytes());
+		sha1 = ObjectCoder.byte2hexa(md.digest());
+		System.out.printf("sha: %s%n",sha1);
+		md.update("Ceci est un tes".getBytes());
+		md.update("Ceci est un test".getBytes());
+		sha1 = ObjectCoder.byte2hexa(md.digest());
+		System.out.printf("sha: %s%n",sha1);
 	}
 
 }

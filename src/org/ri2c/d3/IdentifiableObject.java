@@ -32,6 +32,14 @@ public interface IdentifiableObject {
 	}
 
 	public static class Tools {
+		public static void register(IdentifiableObject idObject) {
+			Agency.getLocalAgency().registerIdentifiableObject(idObject);
+		}
+
+		public static void unregister(IdentifiableObject idObject) {
+			Agency.getLocalAgency().unregisterIdentifiableObject(idObject);
+		}
+
 		public static String getArgsPrefix(IdentifiableObject idObject) {
 			String path = getPath(idObject.getClass());
 
@@ -51,7 +59,7 @@ public interface IdentifiableObject {
 		public static String getPath(Class<? extends IdentifiableObject> idCls) {
 			IdentifiableObjectPath path = null;
 			Class<?> cls = idCls;
-			
+
 			while (cls != Object.class && path == null) {
 				path = cls.getAnnotation(IdentifiableObjectPath.class);
 
@@ -62,10 +70,10 @@ public interface IdentifiableObject {
 							break;
 					}
 				}
-				
+
 				cls = cls.getSuperclass();
 			}
-			
+
 			if (path != null)
 				return path.value();
 
@@ -122,50 +130,78 @@ public interface IdentifiableObject {
 			return null;
 		}
 
-		public static Object call(IdentifiableObject idObject, String name,
-				Object[] args) {
-			Class<?> cls = idObject.getClass();
-			Method callable = null;
+		public static Object call(IdentifiableObject source,
+				IdentifiableObject target, String name, Object[] args) {
+			return call(source, target, name, args, false);
+		}
 
-			while (callable == null && cls != Object.class) {
-				Method[] methods = cls.getMethods();
+		public static Object call(IdentifiableObject source,
+				IdentifiableObject target, String name, Object[] args,
+				boolean async) {
+			if (target instanceof RemoteIdentifiableObject) {
+				Future f = new Future();
+				Request r = new Request(source, target, name, args, f);
 
-				if (methods != null) {
-					for (Method m : methods) {
-						if (m.getAnnotation(RequestCallable.class) != null
-								&& m.getAnnotation(RequestCallable.class)
-										.value().equals(name)) {
-							callable = m;
-							break;
+				Protocols.sendRequest(r);
+
+				if (async) {
+					return f;
+				} else {
+					f.waitForValue();
+
+					if (f.getValue() == Future.SpecialReturn.NULL)
+						return null;
+
+					return f.getValue();
+				}
+			} else {
+				Class<?> cls = target.getClass();
+				Method callable = null;
+
+				while (callable == null && cls != Object.class) {
+					Method[] methods = cls.getMethods();
+
+					if (methods != null) {
+						for (Method m : methods) {
+							if (m.getAnnotation(RequestCallable.class) != null
+									&& m.getAnnotation(RequestCallable.class)
+											.value().equals(name)) {
+								callable = m;
+								break;
+							}
 						}
 					}
+
+					cls = cls.getSuperclass();
 				}
 
-				cls = cls.getSuperclass();
-			}
+				if (callable == null)
+					return new NullPointerException("callable is null");
 
-			if (callable == null)
-				return new NullPointerException("callable is null");
-
-			try {
-				return callable.invoke(idObject, args);
-			} catch (Exception e) {
-				return e;
+				try {
+					return callable.invoke(target, args);
+				} catch (Exception e) {
+					return e;
+				}
 			}
 		}
 
 		public static void handleRequest(Request r) {
-			IdentifiableObject idObject = Agency.getLocalAgency()
+			IdentifiableObject source = Agency.getLocalAgency()
+					.getIdentifiableObject(r.getSourceURI());
+			IdentifiableObject target = Agency.getLocalAgency()
 					.getIdentifiableObject(r.getTargetURI());
 
-			Object ret = call(idObject, r.getCallable(),
+			Object ret = call(source, target, r.getCallable(),
 					r.getCallableArguments());
 
 			if (r.hasFuture()) {
 				URI future = r.getFutureURI();
-				Object[] args = ret == null ? null : new Object[] { ret };
 
-				Request back = new Request(idObject, Agency.getLocalAgency()
+				Object[] args = new Object[] { ret == null ? Future.SpecialReturn.NULL
+						: ret };
+
+				Request back = new Request(target, Agency.getLocalAgency()
 						.getIdentifiableObject(future), "init", args);
 
 				Protocols.sendRequest(back);

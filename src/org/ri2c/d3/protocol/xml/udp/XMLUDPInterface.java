@@ -30,6 +30,7 @@ import org.ri2c.d3.Agency;
 import org.ri2c.d3.Console;
 import org.ri2c.d3.Request;
 import org.ri2c.d3.agency.IpTables;
+import org.ri2c.d3.agency.RemoteAgency;
 import org.ri2c.d3.protocol.udp.UDPInterface;
 import org.ri2c.d3.protocol.xml.XMLInterface;
 import org.ri2c.d3.protocol.xml.XMLStanza;
@@ -76,7 +77,7 @@ public class XMLUDPInterface extends UDPInterface implements XMLInterface {
 		if (inet != null) {
 			XMLStanza stanza = factory.newXMLStanza("request");
 			stanza.appendContent(request.toString());
-			
+
 			try {
 				byte[] data = stanza.toString().getBytes(cs);
 				sendUDPRequest(inet, XML_UDP_PORT, data);
@@ -97,16 +98,19 @@ public class XMLUDPInterface extends UDPInterface implements XMLInterface {
 		}
 
 		try {
-			XMLStanza stanza = XMLStanzaBuilder.string2stanza(
-					factory, content);
+			XMLStanza stanza = XMLStanzaBuilder.string2stanza(factory, content);
+
+			RemoteAgency source = Agency.getLocalAgency()
+					.getRemoteAgencyDescription(sourceId);
 
 			try {
 				URI uri = new URI(stanza.getContent());
-				Request r = new Request(uri);
+				Request r = new Request(source,uri);
 
 				xprb.requestReceived(r);
 			} catch (Exception e) {
 				Console.error(e.toString());
+				e.printStackTrace();
 			}
 		} catch (XMLParseException e) {
 			e.printStackTrace();

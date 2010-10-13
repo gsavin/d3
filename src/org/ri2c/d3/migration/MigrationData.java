@@ -18,13 +18,18 @@
  */
 package org.ri2c.d3.migration;
 
+import java.io.Serializable;
 import java.util.Collection;
 
 import org.ri2c.d3.Request;
 import org.ri2c.d3.entity.Entity;
 
-public class MigrationData {
-
+public class MigrationData implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6441852201508531522L;
+	
 	protected Entity entity;
 	protected Collection<Request> requests;
 	

@@ -43,12 +43,12 @@ public class ObjectCoder
 			
 			return bytes.toByteArray();
 		}
-		catch( Exception e ) {}
+		catch( Exception e ) { e.printStackTrace(); }
 		
 		return new byte [0];
 	}
 	
-	private static String byte2hexa( byte [] data )
+	public static String byte2hexa( byte [] data )
 	{
 		StringBuilder buffer = new StringBuilder();
 		
@@ -61,7 +61,7 @@ public class ObjectCoder
 		return buffer.toString();
 	}
 	
-	private static byte [] hexa2byte( String hexa )
+	public static byte [] hexa2byte( String hexa )
 	{
 		hexa = hexa.trim();
 		

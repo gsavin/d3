@@ -18,49 +18,50 @@
  */
 package org.ri2c.d3.protocol.xml;
 
-import java.net.URI;
-
 import org.ri2c.d3.Agency;
 import org.ri2c.d3.Args;
+import org.ri2c.d3.IdentifiableObject;
 import org.ri2c.d3.Request;
+import org.ri2c.d3.agency.RemoteAgency;
 import org.ri2c.d3.protocol.XMLProtocol;
 import org.ri2c.d3.request.RequestListener;
 
-public class TestXMLProtocol
-{
-	public static class FakeRequestListener
-		implements RequestListener
-	{
-		public void requestReceived(Request r)
-		{
-			System.out.printf( "[fake-rl] receive request %s%n", r );
+public class TestXMLProtocol {
+	public static class FakeRequestListener implements RequestListener {
+		public void requestReceived(Request r) {
+			System.out.printf("[fake-rl] receive request %s%n", r);
 		}
 	}
-	
-	public static void main( String [] args ) throws Exception
-	{
-		Agency.enableAgency(Args.processFile("org/ri2c/d3/resources/default.cfg"));
-		
-		if( "server".equals(args[0]) )
-		{
+
+	public static void main(String[] args) throws Exception {
+		Agency.enableAgency(Args
+				.processFile("org/ri2c/d3/resources/default.cfg"));
+
+		if ("server".equals(args[0])) {
 			FakeRequestListener frl = new FakeRequestListener();
 			XMLProtocol protocol = XMLProtocol.getDefault();
 			protocol.init();
 			protocol.addRequestListener(frl);
-			
-			while(true) { try { Thread.sleep(1000); } catch( Exception e ) {} }
-		}
-		else
-		{
+
+			while (true) {
+				try {
+					Thread.sleep(1000);
+				} catch (Exception e) {
+				}
+			}
+		} else {
 			FakeRequestListener frl = new FakeRequestListener();
 			XMLProtocol protocol = XMLProtocol.getDefault();
 			protocol.addRequestListener(frl);
-			URI uri = new URI("agency://l2d-machineA/l2d-machineA?callable=ping");
-			Request hello = new Request(uri);
 
 			Thread.sleep(3000);
+
+			RemoteAgency remote = Agency.getLocalAgency()
+					.getRemoteAgencyDescription("l2d-machineA");
 			
-			protocol.sendRequest(hello);
+			Object f = IdentifiableObject.Tools.call(Agency.getLocalAgency(), remote, "ping", null);
+			
+			System.out.printf("reponse: %s%n",f);
 		}
 	}
 }

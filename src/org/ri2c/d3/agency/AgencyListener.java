@@ -25,9 +25,9 @@ public interface AgencyListener
 {
 	void agencyExit( Agency agency );
 	
-	void newAgencyRegistered( RemoteAgencyDescription rad );
+	void newAgencyRegistered( RemoteAgency rad );
 	
-	void remoteAgencyDescriptionUpdated( RemoteAgencyDescription rad );
+	void remoteAgencyDescriptionUpdated( RemoteAgency rad );
 	
 	void requestReceived( IdentifiableObject source, IdentifiableObject target, String name );
 	
