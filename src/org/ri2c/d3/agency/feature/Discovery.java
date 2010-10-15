@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 
 import org.ri2c.d3.Agency;
 import org.ri2c.d3.Args;
+import org.ri2c.d3.agency.RemoteAgency;
 import org.ri2c.d3.agency.RunnableFeature;
 import org.ri2c.d3.agency.RunnableFeatureCommand;
 import org.ri2c.d3.annotation.IdentifiableObjectDescription;
@@ -213,7 +214,7 @@ public class Discovery extends RunnableFeature implements Runnable {
 
 	public Discovery() {
 		super(String.format("discovery%X", DISCOVERY_ID_GENERATOR++));
-		
+
 		unit = TimeUnit.MILLISECONDS;
 	}
 
@@ -287,7 +288,7 @@ public class Discovery extends RunnableFeature implements Runnable {
 				DISCOVERY_MESSAGE_PREFIX, DISCOVERY_AGENCY_AT,
 				localAgency.getId(), localAddress,
 				Agency.getArg(Agency.Argument.PROTOCOLS.key), agencyDigest);
-		
+
 		byte[] messageData = message.getBytes();
 
 		thePacket = new DatagramPacket(messageData, 0, messageData.length,
@@ -353,11 +354,16 @@ public class Discovery extends RunnableFeature implements Runnable {
 
 		Thread t;
 
-		t = new Thread(this, "l2d-discovery-listener");
+		t = new Thread(this, "d3-discovery-listener");
 		t.setDaemon(true);
 		t.start();
 
 		return true;
+	}
+	
+	public void terminateFeature() {
+		spread = false;
+		discoverySocket.close();
 	}
 
 	/**
@@ -432,24 +438,27 @@ public class Discovery extends RunnableFeature implements Runnable {
 					protocol = protocolPattern.matcher(message);
 					digest = digestPattern.matcher(message);
 
-					if (id.find()
-							&& address.find()
-							&& protocol.find()
-							&& digest.find()
-							&& localAgency.getRemoteAgencyDescription(id
-									.group(1)) == null) {
-						/*
-						 * Send a discovery packet, to allow remote agency to
-						 * recognize this.
-						 */
-						try {
-							sendDiscoveryPacket();
-						} catch (IOException e) {
-						}
+					if (id.find() && address.find() && protocol.find()
+							&& digest.find()) {
 
-						localAgency.registerAgency(id.group(1),
-								address.group(1), protocol.group(1),
-								digest.group(1));
+						RemoteAgency remote = localAgency
+								.getRemoteAgencyDescription(id.group(1));
+						
+						if (remote == null
+								|| !remote.getDigest().equals(digest.group(1))) {
+							/*
+							 * Send a discovery packet, to allow remote agency
+							 * to recognize this.
+							 */
+							try {
+								sendDiscoveryPacket();
+							} catch (IOException e) {
+							}
+
+							localAgency.registerAgency(id.group(1),
+									address.group(1), protocol.group(1),
+									digest.group(1));
+						}
 					}
 				}
 			} else

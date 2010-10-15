@@ -1,0 +1,79 @@
+<style type="text/css">
+<!--
+
+/*
+ * Thanks Ant1.
+ */
+
+dl.bibliography
+{
+	padding: 6px;
+}
+
+dt.bibinbook, dt.bibinproceedings, dt.bibarticle, dt.bibphdthesis
+{
+	font-weight: bold;
+}
+
+dt.bibinproceedings
+{
+	padding-left: 25px;
+	background-image: url(img/Tag_InPr.png);
+	background-repeat: no-repeat;
+	background-position: 1px 1px;
+}
+
+dt.bibarticle
+{
+	padding-left: 25px;
+	background-image: url(img/Tag_ART.png);
+	background-repeat: no-repeat;
+	background-position: 1px 1px;
+}
+
+dt.bibphdthesis
+{
+	padding-left: 25px;
+	background-image: url(img/Tag_PHD.png);
+	background-repeat: no-repeat;
+	background-position: 1px 1px;
+}
+
+dt.bibinbook
+{
+	padding-left: 25px;
+	background-image: url(img/Tag_InBk.png);
+	background-repeat: no-repeat;
+	background-position: 1px 1px;
+}
+
+dd.bibinbook, dd.bibinproceedings, dd.bibarticle, dd.bibphdthesis
+{
+	margin-bottom: 10px;
+}
+
+-->
+</style>
+<dl class="bibliography">
+  <dt class="bibinproceedings"><a id="AISB2010" title="In Proceedings.">Swarm Intelligence to Distribute Simulations in Computational Ecosystems</a></dt> 
+  <dd class="bibinproceedings"> 
+    <span class="bibauthor">Antoine Dutot, Damien Olivier, Guilhelm Savin</span>,
+    <span class="bibbooktitle">in The Thirty Sixth Annual Convention of the Society for the Study of Artificial Intelligence and Simulation of Behaviour (AISB’10)</span>,
+    <span class="bibaddress">Leicester, United Kingdom</span>,
+    <span class="bibyear">2010</span>,
+    <a class="biburl" href="http://litis.univ-lehavre.fr/~savin/papers/AISB2010.pdf">download</a>
+  </dd> 
+  <dt class="bibinproceedings"><a id="ICCSAa2009" title="In Proceedings.">Dagda, a load-balanced middleware to distribute Complex Systems simulations</a></dt> 
+  <dd class="bibinproceedings"> 
+    <span class="bibauthor">Antoine Dutot, Damien Olivier, Guilhelm Savin</span>,
+    <span class="bibbooktitle">in 3rd International Conference on Complex Systems and Applications (ICCSA'09)</span>,
+    <span class="bibaddress">France</span>,
+    <span class="bibpages">pp. 171-174</span>,
+    <span class="bibyear">2009</span>,
+    <a class="biburl" href="http://litis.univ-lehavre.fr/~dutot/biblio/ICCSAa2009.pdf">download</a>,
+    <a class="bibtex" href="biblio//ICCSAa2009.bib">BibTeX</a>,
+    <a class="bibabstract" href="biblio//ICCSAa2009.txt">abstract</a>,
+    <a class="biboai" href="oai:hal.archives-ouvertes.fr:hal-00448387_v1">OAI</a>,
+    <a class="bibhal" href="http://hal.archives-ouvertes.fr/hal-00448387/fr/">HAL</a> 
+  </dd> 
+</dl>

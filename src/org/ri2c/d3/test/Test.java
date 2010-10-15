@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.ri2c.d3.Agency;
 import org.ri2c.d3.Application;
+import org.ri2c.d3.Console;
 import org.ri2c.d3.Future;
 import org.ri2c.d3.agency.RemoteAgency;
 import org.ri2c.d3.atlas.future.FutureAction;
@@ -53,32 +54,17 @@ public class Test extends Application {
 
 		StartD3.init(args);
 
-		Agency.getLocalAgency().addAgencyListener(test);
-		Agency.getLocalAgency().registerIdentifiableObject(test);
-
-		for (int i = 0; i < 10; i++)
-			test.entities.add(Agency.getLocalAgency().getAtlas()
-					.createEntity(TestEntity.class));
+		Agency.getLocalAgency().launch(test);
 
 		Thread[] threads = new Thread[Thread.activeCount()];
 		Thread.enumerate(threads);
 
 		System.out.printf("Active threads:%n");
 		for (Thread t : threads)
-			System.out.printf(" - %s%n", t.getName());
+			if (t != null)
+				System.out.printf(" - %s%n", t.getName());
 
-		// StartL2D.l2dLoop();
-
-		while (true) {
-			for (Entity e : test.entities)
-				call(test, e, "step", null, true);
-
-			try {
-				Thread.sleep(400);
-			} catch (Exception e) {
-
-			}
-		}
+		StartD3.d3Loop();
 	}
 
 	ConcurrentLinkedQueue<TestEntity> entities = new ConcurrentLinkedQueue<TestEntity>();
@@ -99,32 +85,49 @@ public class Test extends Application {
 	}
 
 	public void remoteAgencyDescriptionUpdated(RemoteAgency rad) {
+		Console.warning("remote agency updated: %s", rad.getId());
 		Object r = call(this, rad, "getIdentifiableObjectList",
 				new Object[] { IdentifiableType.entity });
-		
-		if( r!= null ) {
+
+		if (r != null) {
 			try {
 				URI[] entities = (URI[]) r;
-				System.out.printf("entities on %s%n",rad.getId());
-				for( URI entity : entities ) {
-					System.out.printf("- %s%n",entity);
-					
-					for( TestEntity testEntity: this.entities ) 
-						if( random.nextFloat() < 0.2 ) call(this,testEntity,"beMyFriend",new Object[]{entity},true);
+				System.out.printf("entities on %s%n", rad.getId());
+				for (URI entity : entities) {
+					System.out.printf("- %s%n", entity);
+
+					for (TestEntity testEntity : this.entities)
+						if (random.nextFloat() < 0.2)
+							call(this, testEntity, "beMyFriend",
+									new Object[] { entity }, true);
 				}
-			} catch(Exception e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
 	}
 
 	public void execute() {
-		// TODO Auto-generated method stub
+		while (true) {
+			// Console.warning("test running");
+			for (Entity e : entities)
+				call(this, e, "step", null, true);
 
+			try {
+				Thread.sleep(400);
+			} catch (Exception e) {
+
+			}
+		}
 	}
 
 	public void init() {
-		// TODO Auto-generated method stub
 
+		for (int i = 0; i < 100; i++)
+			entities.add(Agency.getLocalAgency().getAtlas()
+					.createEntity(TestEntity.class));
+
+		for (RemoteAgency remote : Agency.getLocalAgency().eachRemoteAgency())
+			remoteAgencyDescriptionUpdated(remote);
 	}
 }

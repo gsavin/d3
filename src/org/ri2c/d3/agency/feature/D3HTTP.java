@@ -128,4 +128,8 @@ public class D3HTTP extends Feature implements HttpHandler {
 			return false;
 		}
 	}
+	
+	public void terminateFeature() {
+		server.stop(0);
+	}
 }

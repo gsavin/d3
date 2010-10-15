@@ -67,6 +67,8 @@ public class TestEntity extends Entity {
 
 	@RequestCallable("step")
 	public void step() {
+		//Console.warning("entity step (friends: %d)",idObjects.size());
+		
 		int i = random.nextInt(idObjects.size());
 		
 		for (IdentifiableObject idObject : idObjects) {

@@ -20,21 +20,17 @@ package org.ri2c.d3.agency;
 
 import org.ri2c.d3.Application;
 
-public class ApplicationExecutor
-	implements Runnable
-{
+public class ApplicationExecutor implements Runnable {
 	Application app;
-	
-	public ApplicationExecutor( Application app )
-	{
+
+	public ApplicationExecutor(Application app) {
 		this.app = app;
-		
-		Thread t = new Thread( this, app.getId() );
+
+		Thread t = new Thread(this, app.getFullPath());
 		t.start();
 	}
-	
-	public void run()
-	{
+
+	public void run() {
 		app.init();
 		app.execute();
 	}

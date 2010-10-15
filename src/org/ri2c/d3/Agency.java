@@ -42,6 +42,12 @@ import org.ri2c.d3.protocol.Protocols;
 import org.ri2c.d3.request.RequestListener;
 import org.ri2c.d3.request.RequestService;
 
+/**
+ * Agencies are the base of the distribution environment.
+ * 
+ * @author gsavin
+ * 
+ */
 @IdentifiableObjectDescription("Agency object.")
 @IdentifiableObjectPath("/")
 public class Agency extends IdentifiableObject implements RequestListener {
@@ -126,6 +132,12 @@ public class Agency extends IdentifiableObject implements RequestListener {
 		return null;
 	}
 
+	/**
+	 * Get the local agency. This agency can be accessed from any objects of the
+	 * runtime.
+	 * 
+	 * @return the local agency
+	 */
 	public static Agency getLocalAgency() {
 		return localAgency;
 	}
@@ -211,6 +223,8 @@ public class Agency extends IdentifiableObject implements RequestListener {
 	public void registerAgency(String remoteId, String address,
 			String protocols, String digest) {
 		boolean blacklisted = ipTables.isBlacklisted(address);
+
+		Console.info("agency %s digest: %s", remoteId, digest);
 
 		if (!remoteAgencies.containsKey(remoteId) && !blacklisted) {
 			try {

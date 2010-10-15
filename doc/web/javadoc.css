@@ -1,0 +1,126 @@
+.index-preamble {
+  text-align: center;
+}
+.type-name {
+  font-family: Monospace;
+}
+.class-title {
+  font-size: 30px;
+  font-weight: bold;
+  padding-left: 20px;
+}
+.class-content {
+  margin-top: 50px;
+}
+.class-comment {
+}
+.class-superclasses {
+  font-size: 12px;
+}
+.class-superclass {
+
+}
+.class-interface-entries {
+
+}
+.class-interface-entry {
+
+}
+.class-part-title {
+  background: #5a6986;
+  padding: 10px;
+  font-size: 20px;
+  margin-top: 20px;
+  border: solid 1px black;
+  font-weight: bold;
+}
+.class-part-item {
+  border: solid 1px black;
+  padding: 5px;
+  background-color: #fff6cd;
+}
+.class-field-brief-type {
+  display: inline-block;
+  text-align: right;
+  width: 20%;
+  font-size: 12px;
+}
+.class-field-brief-name {
+  display: inline-block;
+  padding-left: 20px;
+  font-size: 14px;
+}
+.class-field-name {
+  font-size: 18px;
+  font-weight: bold;
+}
+.class-field-prototype {
+  font-size: 12px;
+}
+.class-field-comment {
+  margin-left: 50px;
+  font-size: 14px;
+}
+.class-method {
+  padding: 5px;
+  width: 100%;
+}
+.class-method-name {
+  font-size: 18px;
+  font-weight: bold;
+}
+.class-method-prototype {
+  font-size: 12px;
+}
+.class-method-comment {
+  margin-left: 50px;
+  font-size: 14px;
+}
+.class-method-brief {
+  border: solid 1px black;
+  padding: 5px;
+  background-color: #fff6cd;
+}
+.class-method-brief-return {
+  display: inline-block;
+  text-align: right;
+  width: 20%;
+  font-size: 12px;
+}
+.class-method-brief-name {
+  display: inline-block;
+  padding-left: 20px;
+  font-size: 14px;
+}
+.class-method-brief-comment {
+  font-size: 14px;
+  margin-left: 20%;
+  padding-left: 15px;
+  padding-top: 1px;
+  margin-top: 1px;
+  border-top: 1px solid gray;
+}
+.package-title {
+  font-size: 30px;
+  font-weight: bold;
+  padding-left: 20px;
+}
+.package-content {
+  margin-top: 50px;
+  vertical-align: top;
+}
+ul.package-class-entries {
+
+}
+li.package-class-entry {
+
+}
+a:hover {
+  color: #5a6986;
+}
+hr {
+  background-color : black;
+  color: black;
+  border: 0px;
+  height: 1px;
+}

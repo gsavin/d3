@@ -32,4 +32,5 @@ public abstract class Feature extends IdentifiableObject {
 	}
 
 	public abstract boolean initFeature(Agency agency, Args args);
+	public abstract void terminateFeature();
 }

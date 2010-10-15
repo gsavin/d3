@@ -25,10 +25,12 @@ import java.util.concurrent.TimeUnit;
 
 import javax.swing.JFrame;
 
+import org.graphstream.algorithm.DynamicAlgorithm;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.ConcurrentGraph;
+import org.graphstream.stream.thread.ThreadProxyPipe;
 import org.graphstream.ui.layout.Layout;
 import org.graphstream.ui.layout.Layouts;
 import org.graphstream.ui.swingViewer.DefaultView;
@@ -42,6 +44,7 @@ import org.ri2c.d3.RemoteIdentifiableObject;
 import org.ri2c.d3.agency.AgencyListener;
 import org.ri2c.d3.agency.Feature;
 import org.ri2c.d3.agency.RemoteAgency;
+import org.ri2c.d3.agency.feature.model.MultiThreadProxyPipe;
 import org.ri2c.d3.annotation.IdentifiableObjectPath;
 
 @IdentifiableObjectPath("/d3/features/model")
@@ -70,7 +73,7 @@ public class Model extends Feature implements AgencyListener {
 		public void openInAFrame(boolean on) {
 			if (on) {
 				if (frame == null) {
-					frame = new JFrame("L2D Execution Model");
+					frame = new JFrame("D3 Execution Model");
 					frame.setLayout(new BorderLayout());
 					frame.add(this, BorderLayout.CENTER);
 					frame.setSize(width, height);
@@ -100,12 +103,17 @@ public class Model extends Feature implements AgencyListener {
 		}
 	}
 
-	private class WeightDecreaser implements Runnable {
+	private class ModelMaintenance implements Runnable {
+		boolean run = true;
+		
 		public void run() {
-			while (true) {
+			while (run) {
 				for (Edge e : model.getEachEdge())
 					decreaseWeight(e);
 
+				if( Model.this.loadBalancer != null )
+					Model.this.loadBalancer.compute();
+				
 				try {
 					Thread.sleep(TimeUnit.MILLISECONDS.convert(
 							weightDecreaserPeriod, weightDecreaserUnit));
@@ -117,14 +125,28 @@ public class Model extends Feature implements AgencyListener {
 	}
 
 	protected static String defaultStyleSheet = "graph {" + " padding: 50px;"
-			+ "}" + "node .remote {" + " fill-color: red;" + "}";
+			+ "} " + "node { fill-color: black; } "
+			+ "node.remote { fill-color: red; } "
+			+ "node.entity { size: 10px; } "
+			+ "node.application { size: 20px; }";
+
+	public static enum LoadBalancer {
+		NONE(""), ANTCO2("org.graphstream.algorithm.antco2.AntCo2Algorithm");
+
+		public final String algorithmClassName;
+
+		LoadBalancer(String className) {
+			this.algorithmClassName = className;
+		}
+	}
 
 	protected Graph model;
 	protected Viewer viewer;
 	protected long weightDecreaserPeriod = 500;
 	protected TimeUnit weightDecreaserUnit = TimeUnit.MILLISECONDS;
-	protected WeightDecreaser weightDecreaser = new WeightDecreaser();
+	protected ModelMaintenance weightDecreaser = new ModelMaintenance();
 	protected boolean justEntities = true;
+	protected DynamicAlgorithm loadBalancer;
 
 	public Model() {
 		super(String.format("model%x", MODEL_ID_GENERATOR++));
@@ -133,6 +155,9 @@ public class Model extends Feature implements AgencyListener {
 	public boolean initFeature(Agency agency, Args args) {
 		model = new ConcurrentGraph(getId(), false, true);
 		model.addAttribute("ui.stylesheet", defaultStyleSheet);
+		model.addAttribute("ui.quality");
+		model.addAttribute("ui.antialias");
+
 		agency.addAgencyListener(this);
 
 		Thread t = new Thread(weightDecreaser, "d3.features.model.decreaser");
@@ -143,7 +168,42 @@ public class Model extends Feature implements AgencyListener {
 				&& isDisplayable())
 			display(true);
 
+		if (args.has("load_balancing")
+				&& Boolean.parseBoolean(args.get("load_balancing"))) {
+
+			LoadBalancer loadBalancer = LoadBalancer.ANTCO2;
+
+			try {
+				if (args.has("load_balancer"))
+					loadBalancer = LoadBalancer.valueOf(args
+							.get("load_balancer"));
+			} catch (Exception e) {
+				Console.warning(e.getMessage());
+			}
+
+			try {
+				@SuppressWarnings("unchecked")
+				Class<? extends DynamicAlgorithm> cls = (Class<? extends DynamicAlgorithm>) Class
+						.forName(loadBalancer.algorithmClassName);
+				this.loadBalancer = cls.newInstance();
+				this.loadBalancer.init(model);
+			} catch (Exception e) {
+				Console.error(e.getMessage());
+			}
+		}
+
 		return true;
+	}
+	
+	public void terminateFeature() {
+		Agency.getLocalAgency().removeAgencyListener(this);
+		weightDecreaser.run = false;
+		
+		if( this.loadBalancer != null )
+			this.loadBalancer.terminate();
+		
+		if( this.viewer != null )
+			this.viewer.close();
 	}
 
 	protected void display(boolean autolayout) {
@@ -151,8 +211,9 @@ public class Model extends Feature implements AgencyListener {
 			if (viewer != null) {
 
 			} else {
-				viewer = new Viewer(model,
-						Viewer.ThreadingModel.GRAPH_IN_ANOTHER_THREAD);
+				ThreadProxyPipe pipe = new MultiThreadProxyPipe(model);
+
+				viewer = new Viewer(pipe);
 
 				DefaultView view = new ResizableView(viewer,
 						Viewer.DEFAULT_VIEW_ID, Viewer.newGraphRenderer());
@@ -186,11 +247,13 @@ public class Model extends Feature implements AgencyListener {
 		if (n == null) {
 			n = model.addNode(id);
 			n.addAttribute("type", type);
-			n.addAttribute("ui.label", id);
-		}
+			// n.addAttribute("ui.label", id);
 
-		if (isRemote)
-			setNodeRemote(id);
+			if (isRemote)
+				setNodeRemote(id);
+			else
+				n.setAttribute("ui.class", type);
+		}
 
 		return n;
 	}
@@ -198,12 +261,20 @@ public class Model extends Feature implements AgencyListener {
 	protected void setNodeRemote(String id) {
 		Node n = model.getNode(id);
 
-		if (n != null)
-			n.addAttribute("ui.class", "remote");
+		if (n != null) {
+			n.addAttribute("ui.class", "remote," + n.getAttribute("type"));
+		}
 	}
 
 	public void requestReceived(IdentifiableObject source,
 			IdentifiableObject target, String name) {
+		// Console.warning("receiving request \"%s\"",name);
+
+		if (source == null)
+			throw new NullPointerException("source is null");
+		if (target == null)
+			throw new NullPointerException("target is null");
+
 		if (justEntities && source.getType() != IdentifiableType.entity
 				|| target.getType() != IdentifiableType.entity) {
 			Console.warning("not entities");
@@ -217,12 +288,18 @@ public class Model extends Feature implements AgencyListener {
 					(target instanceof RemoteIdentifiableObject));
 		}
 
+		if (target instanceof RemoteIdentifiableObject)
+			setNodeRemote(targetNode.getId());
+
 		Node sourceNode = model.getNode(source.getId());
 
 		if (sourceNode == null) {
 			sourceNode = createNode(source.getId(), source.getType().name(),
 					(source instanceof RemoteIdentifiableObject));
 		}
+
+		if (source instanceof RemoteIdentifiableObject)
+			setNodeRemote(sourceNode.getId());
 
 		Edge e = targetNode.getEdgeFrom(sourceNode.getId());
 
@@ -260,9 +337,9 @@ public class Model extends Feature implements AgencyListener {
 
 	protected void decreaseWeight(Edge e) {
 		double w = e.getNumber("weight");
-		w *= 0.5;
+		w *= 0.75;
 
-		if (w < 0.2) {
+		if (w < 0.1) {
 			model.removeEdge(e.getId());
 		} else {
 			e.changeAttribute("weight", w);

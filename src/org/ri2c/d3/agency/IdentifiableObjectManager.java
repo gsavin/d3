@@ -122,9 +122,8 @@ public class IdentifiableObjectManager {
 		}
 
 		p.put(path, obj);
-		lastChange = System.currentTimeMillis();
-
-		Console.info("register %s", path);
+		needUpdate(obj);
+		// Console.info("register %s", path);
 
 		registrationLock.unlock();
 		return RegistrationStatus.accepted;
@@ -136,10 +135,10 @@ public class IdentifiableObjectManager {
 
 		registrationLock.lock();
 		pools.get(obj.getType()).remove(obj.getFullPath());
-		lastChange = System.currentTimeMillis();
+		needUpdate(obj);
 		registrationLock.unlock();
 
-		Console.info("unregister %s", obj.getId());
+		// Console.info("unregister %s", obj.getId());
 	}
 
 	public IdentifiableObject get(IdentifiableType type,
@@ -174,5 +173,16 @@ public class IdentifiableObjectManager {
 	public String getDigest() {
 		digest.update(Long.toString(lastChange).getBytes());
 		return ObjectCoder.byte2hexa(digest.digest());
+	}
+	
+	protected void needUpdate(IdentifiableObject cause) {
+		switch (cause.getType()) {
+		case entity:
+		case feature:
+		case protocol:
+		case application:
+			lastChange = System.currentTimeMillis();
+			break;
+		}
 	}
 }

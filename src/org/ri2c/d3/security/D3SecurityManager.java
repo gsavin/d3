@@ -16,16 +16,8 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.ri2c.d3;
+package org.ri2c.d3.security;
 
-import java.io.Serializable;
-
-public class Description
-	implements Serializable
-{
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 3424472953345626474L;
+public class D3SecurityManager extends SecurityManager {
 
 }

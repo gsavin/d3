@@ -1,0 +1,23 @@
+<h1 class="title" style="font-family: Impact; font-size: 50px; font-weight: normal;">
+  <span style="font-size:65px;">d</span><sup>3</sup> : 
+  <span style="font-size:65px;">d</span>ynamic and 
+  <span style="font-size:65px;">d</span>ecentralized 
+  <span style="font-size:65px;">d</span>istribution
+</h1>
+
+<div style="width: 60%; margin-left: 20%; text-align: justify;">
+  <p><span class="d3">d<sup>3</sup></span> is a middleware dedicated to dynamic
+distribution. It aims to distribute complex systems composed of massive dynamic
+entities set and dynamic interations between these entities.</p>
+  <p><span class="d3">d<sup>3</sup></span> is composed of agencies modeling
+computing resources: a unique agency by resource. Each agency has the same
+hierarchical level that the others.</p>
+  <p><span class="d3">d<sup>3</sup></span> allows to define identifiable objects
+which provide methods which can be called from any agency. A special kind of
+such objects is called entity and can migrate from one agency to another.</p>
+  <p>The dynamic load-balancing algorithm <a
+href="http://litis.univ-lehavre.fr/~dutot/AntCO2.html">AntCo<sup>2</sup></a> is
+implemented on this platform to balance entities over the agencies. The <a
+href="http://graphstream-project.org">GraphStream</a> library is used to model
+interactions between objects.</p>
+</div>

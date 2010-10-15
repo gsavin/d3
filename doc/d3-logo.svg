@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="1000"
+   height="1000"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.47 r22583"
+   sodipodi:docname="d3-logo.svg"
+   inkscape:export-filename="/home/raziel/workspace/d3/doc/d3-logo-vsmall.png"
+   inkscape:export-xdpi="40"
+   inkscape:export-ydpi="40">
+  <defs
+     id="defs4">
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 526.18109 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="744.09448 : 526.18109 : 1"
+       inkscape:persp3d-origin="372.04724 : 350.78739 : 1"
+       id="perspective10" />
+    <inkscape:perspective
+       id="perspective3614"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective3614-1"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective3614-8"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective3665"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <filter
+       inkscape:collect="always"
+       id="filter3682">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="6.5764671"
+         id="feGaussianBlur3684" />
+    </filter>
+    <inkscape:perspective
+       id="perspective3694"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <filter
+       inkscape:collect="always"
+       id="filter3723">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="5.0266602"
+         id="feGaussianBlur3725" />
+    </filter>
+    <inkscape:perspective
+       id="perspective3735"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <filter
+       inkscape:collect="always"
+       id="filter3749">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="11.119116"
+         id="feGaussianBlur3751" />
+    </filter>
+    <inkscape:perspective
+       id="perspective3794"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective3794-3"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.98994949"
+     inkscape:cx="357.88634"
+     inkscape:cy="593.96578"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1099"
+     inkscape:window-height="1012"
+     inkscape:window-x="94"
+     inkscape:window-y="7"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Calque 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-52.362183)">
+    <text
+       xml:space="preserve"
+       style="font-size:100px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:8;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;font-family:pulse sans virgin;-inkscape-font-specification:pulse sans virgin;filter:url(#filter3723)"
+       x="713.37073"
+       y="533.53503"
+       id="text2820-0"
+       inkscape:export-filename="/home/raziel/workspace/d3/doc/d3-logo-small.png"
+       inkscape:export-xdpi="100"
+       inkscape:export-ydpi="100"><tspan
+         sodipodi:role="line"
+         id="tspan2822-9"
+         x="713.37073"
+         y="533.53503"
+         style="font-size:300px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:8;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;font-family:Impact;-inkscape-font-specification:Impact Bold">3</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:600px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;stroke:none;filter:url(#filter3682);font-family:Eras-Black;-inkscape-font-specification:Eras-Black Semi-Bold"
+       x="491.18781"
+       y="856.00476"
+       id="text2816-6"
+       inkscape:export-filename="/home/raziel/workspace/d3/doc/d3-logo-small.png"
+       inkscape:export-xdpi="100"
+       inkscape:export-ydpi="100"><tspan
+         sodipodi:role="line"
+         id="tspan2818-5"
+         x="491.18781"
+         y="856.00476"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Impact;-inkscape-font-specification:Impact Bold">d</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:600px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Eras-Black;-inkscape-font-specification:Eras-Black Semi-Bold"
+       x="491.41208"
+       y="856.83057"
+       id="text2816"
+       inkscape:export-filename="/home/raziel/workspace/d3/doc/d3-logo-small.png"
+       inkscape:export-xdpi="100"
+       inkscape:export-ydpi="100"><tspan
+         sodipodi:role="line"
+         id="tspan2818"
+         x="491.41208"
+         y="856.83057"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Impact;-inkscape-font-specification:Impact Bold">d</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:100px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;fill:#f3e7b3;fill-opacity:1;stroke:#000000;stroke-width:8;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;font-family:pulse sans virgin;-inkscape-font-specification:pulse sans virgin"
+       x="713.5224"
+       y="532.39825"
+       id="text2820"
+       inkscape:export-filename="/home/raziel/workspace/d3/doc/d3-logo-small.png"
+       inkscape:export-xdpi="100"
+       inkscape:export-ydpi="100"><tspan
+         sodipodi:role="line"
+         id="tspan2822"
+         x="713.5224"
+         y="532.39825"
+         style="font-size:300px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#f3e7b3;fill-opacity:1;stroke:#000000;stroke-width:8;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;font-family:Impact;-inkscape-font-specification:Impact Bold">3</tspan></text>
+    <path
+       style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dashoffset:0;filter:url(#filter3749)"
+       d="m 457.21591,681.03367 c 4.48276,184.51755 -176.90592,43.2214 -264.26611,-102.3448 -57.49395,-95.8008 -97.230907,-199.10507 3.55068,-271.75327 102.14463,-73.63074 321.11358,-69.17078 317.40675,56.69129 -2.74538,93.21729 -86.2913,159.58148 -56.69132,317.40678 z"
+       id="path3604-8-4"
+       sodipodi:nodetypes="csssc"
+       inkscape:export-filename="/home/raziel/workspace/d3/doc/d3-favicon.png"
+       inkscape:export-xdpi="4.7598124"
+       inkscape:export-ydpi="4.7598124" />
+    <path
+       style="fill:#5a6986;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dashoffset:0"
+       d="m 459.39887,680.73881 c 4.48276,184.51759 -176.90592,43.2214 -264.26611,-102.3448 -57.49395,-95.8008 -97.230907,-199.10507 3.55068,-271.75327 102.14463,-73.63074 321.11358,-69.17078 317.40675,56.69129 -2.74538,93.21729 -86.2913,159.58148 -56.69132,317.40678 z"
+       id="path3604-8"
+       sodipodi:nodetypes="csssc"
+       inkscape:export-filename="/home/raziel/workspace/d3/doc/d3-favicon.png"
+       inkscape:export-xdpi="4.7598124"
+       inkscape:export-ydpi="4.7598124" />
+    <path
+       sodipodi:type="arc"
+       style="fill:#f3e7b3;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:20;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="path3604"
+       sodipodi:cx="170.71577"
+       sodipodi:cy="328.24857"
+       sodipodi:rx="57.578693"
+       sodipodi:ry="57.578693"
+       d="m 228.29447,328.24857 c 0,31.79983 -25.77886,57.57869 -57.5787,57.57869 -31.79983,0 -57.57869,-25.77886 -57.57869,-57.57869 0,-31.79984 25.77886,-57.5787 57.57869,-57.5787 31.79984,0 57.5787,25.77886 57.5787,57.5787 z"
+       transform="matrix(0.57176376,0.82041831,-0.82041831,0.57176376,589.53697,42.498633)"
+       inkscape:export-filename="/home/raziel/workspace/d3/doc/d3-favicon.png"
+       inkscape:export-xdpi="4.7598124"
+       inkscape:export-ydpi="4.7598124" />
+    <path
+       transform="matrix(0.57176376,0.82041831,-0.82041831,0.57176376,405.169,77.41171)"
+       sodipodi:type="arc"
+       style="fill:#f3e7b3;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:20;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="path3604-0"
+       sodipodi:cx="170.71577"
+       sodipodi:cy="328.24857"
+       sodipodi:rx="57.578693"
+       sodipodi:ry="57.578693"
+       d="m 228.29447,328.24857 c 0,31.79983 -25.77886,57.57869 -57.5787,57.57869 -31.79983,0 -57.57869,-25.77886 -57.57869,-57.57869 0,-31.79984 25.77886,-57.5787 57.57869,-57.5787 31.79984,0 57.5787,25.77886 57.5787,57.5787 z"
+       inkscape:export-filename="/home/raziel/workspace/d3/doc/d3-favicon.png"
+       inkscape:export-xdpi="4.7598124"
+       inkscape:export-ydpi="4.7598124" />
+    <path
+       transform="matrix(0.57176376,0.82041831,-0.82041831,0.57176376,528.25213,304.37431)"
+       sodipodi:type="arc"
+       style="fill:#f3e7b3;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:20;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="path3604-6"
+       sodipodi:cx="170.71577"
+       sodipodi:cy="328.24857"
+       sodipodi:rx="57.578693"
+       sodipodi:ry="57.578693"
+       d="m 228.29447,328.24857 c 0,31.79983 -25.77886,57.57869 -57.5787,57.57869 -31.79983,0 -57.57869,-25.77886 -57.57869,-57.57869 0,-31.79984 25.77886,-57.5787 57.57869,-57.5787 31.79984,0 57.5787,25.77886 57.5787,57.5787 z"
+       inkscape:export-filename="/home/raziel/workspace/d3/doc/d3-favicon.png"
+       inkscape:export-xdpi="4.7598124"
+       inkscape:export-ydpi="4.7598124" />
+  </g>
+</svg>

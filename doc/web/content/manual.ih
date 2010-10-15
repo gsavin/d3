@@ -1,54 +1,5 @@
-<?xml version="1.0" encoding="utf-8" ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
-    <meta http-equiv="Content-Language" content="fr"/>
-
-    <meta name="Author" content="Guilhelm Savin"/>
-    <meta name="Keywords" content="guilhelm savin d3 distribution middleware "/>
-
-    <meta name="Description" content=""/>
-    <meta name="Robots" content="all"/>
-    <meta name="revisit-after" content="30 days"/>
-    <title>D3 : Dynamic and Decentralized Distribution</title>
-    
-    <link rel="stylesheet" type="text/css" href="rst.css"/>
-    
-    <style type="text/css">
-    <!--
-    body {
-      background: url('img/background.png') repeat-x;
-      background-attachment: fixed;
-      font-family: Verdana, Arial;
-      width: 60%;
-      margin-left: 20%;
-    }
-    #d3-logo {
-      width: 350px;
-      height: 350px;
-      background: url('img/d3.png') no-repeat;
-      position: fixed;
-      left: 5px;
-      top: 5px;
-    }
-    p  {
-      text-align: justify; 
-    }
-    a {
-      color: black;
-      text-decoration: none;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-    -->
-    </style>
-</head>
-<body>
-      <div id="d3-logo"></div>
 <div class="document" id="d3-dynamic-and-decentralized-distribution">
-<h1 class="title">D3 : Dynamic and Decentralized Distribution</h1>
+<h1 class="title" style="font-family: Impact; font-size: 50px; font-weight: normal;"><span style="font-size:65px;">d</span><sup>3</sup> : <span style="font-size:65px;">d</span>ynamic and <span style="font-size:65px;">d</span>ecentralized <span style="font-size:65px;">d</span>istribution</h1>
 
 <div class="contents topic" id="contents">
 <p class="topic-title first">Contents</p>
@@ -183,5 +134,3 @@ distribution environment.</p>
 <h1><a class="toc-backref" href="#id14">Deployment</a></h1>
 </div>
 </div>
-</body>
-</html>

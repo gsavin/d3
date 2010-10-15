@@ -26,6 +26,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.ri2c.d3.Agency;
 import org.ri2c.d3.Args;
+import org.ri2c.d3.Console;
+import org.ri2c.d3.IdentifiableObject;
 import org.ri2c.d3.Request;
 import org.ri2c.d3.agency.AgencyListener;
 
@@ -101,19 +103,32 @@ public class RequestService {
 	}
 
 	public void executeRequest(Request r) {
-		for (AgencyListener l : listeners)
-			l.requestReceived(
-					Agency.getLocalAgency().getIdentifiableObject(
-							r.getSourceURI()), Agency.getLocalAgency()
-							.getIdentifiableObject(r.getTargetURI()), r
-							.getCallable());
+		IdentifiableObject source = Agency.getLocalAgency()
+				.getIdentifiableObject(r.getSourceURI());
 
-		switch (r.getTargetType()) {
-		case entity:
-			Agency.getLocalAgency().getAtlas().entityCall(r);
-			break;
-		default:
-			pool.execute(new RequestCommand(r));
+		IdentifiableObject target = Agency.getLocalAgency()
+				.getIdentifiableObject(r.getTargetURI());
+
+		if (target == null) {
+			Console.warning("target is null, skipping request");
+		} else {
+			switch (r.getTargetType()) {
+			case entity:
+				Agency.getLocalAgency().getAtlas().entityCall(r);
+				break;
+			default:
+				pool.execute(new RequestCommand(r));
+			}
+
+			switch (r.getTargetType()) {
+			case entity:
+			case agency:
+			case protocol:
+			case application:
+				for (AgencyListener l : listeners)
+					l.requestReceived(source, target, r.getCallable());
+				break;
+			}
 		}
 	}
 }
