@@ -24,98 +24,69 @@ import java.util.concurrent.TimeUnit;
 import org.ri2c.d3.Agency;
 import org.ri2c.d3.Args;
 import org.ri2c.d3.Console;
-import org.ri2c.d3.IdentifiableObject;
-import org.ri2c.d3.Request;
-import org.ri2c.d3.agency.FeatureDescription;
 import org.ri2c.d3.agency.RemoteAgency;
 import org.ri2c.d3.agency.RunnableFeature;
 import org.ri2c.d3.agency.RunnableFeatureCommand;
+import org.ri2c.d3.annotation.IdentifiableObjectPath;
 
-public class RemoteInformationsUpdater
-	implements RunnableFeature
-{
-	protected static final FeatureDescription riuDescription =
-		new FeatureDescription("l2d.features.RemoteInformationsUpdater","Remote Informations Updater", "");
-	
-	protected class RIUCommand
-		extends RunnableFeatureCommand
-	{
-		public RIUCommand()
-		{
-			super(delay,unit);
+@IdentifiableObjectPath("/d3/features/remoteInformationsUpdater")
+public class RemoteInformationsUpdater extends RunnableFeature {
+	protected class RIUCommand extends RunnableFeatureCommand {
+		public RIUCommand() {
+			super(delay, unit);
 		}
-		
-		public void run()
-		{
-			for( RemoteAgency rad: agency.eachRemoteAgency() )
-			{
-				if( random.nextFloat() < updateProbability )
+
+		public void run() {
+			for (RemoteAgency rad : agency.eachRemoteAgency()) {
+				if (random.nextFloat() < updateProbability)
 					update(rad);
 			}
-			
-			resetDelay(delay,unit);
+
+			resetDelay(delay, unit);
 		}
-		
-		protected void update( RemoteAgency rad )
-		{
-			Console.info("update %s",rad.getRemoteAgencyId());
-			
-			try
-			{
-				if( ! agency.getIpTables().getAddress(rad.getRemoteAgencyId()).isReachable(1000) )
+
+		protected void update(RemoteAgency rad) {
+			Console.info("update %s", rad.getRemoteAgencyId());
+
+			try {
+				if (!agency.getIpTables().getAddress(rad.getRemoteAgencyId())
+						.isReachable(1000))
 					throw new Exception();
-				
+
 				agency.lazyCheckEntitiesOn(rad);
-			}
-			catch( Exception e )
-			{
+			} catch (Exception e) {
 				agency.unregisterAgency(rad);
 			}
 		}
 	}
-	
-	protected Random		random;
-	protected Agency		agency;
-	protected long			delay;
-	protected TimeUnit		unit;
-	protected float			updateProbability;
-	protected RIUCommand	riuCommand;
-	
-	public RunnableFeatureCommand getRunnableFeatureCommand()
-	{
+
+	protected Random random;
+	protected Agency agency;
+	protected long delay;
+	protected TimeUnit unit;
+	protected float updateProbability;
+	protected RIUCommand riuCommand;
+
+	public RemoteInformationsUpdater() {
+		super("remoteInformationUpdater");
+	}
+
+	public RunnableFeatureCommand getRunnableFeatureCommand() {
 		return riuCommand;
 	}
 
-	@SuppressWarnings("unchecked")
-	public FeatureDescription getDescription()
-	{
-		return riuDescription;
-	}
+	public boolean initFeature(Agency agency, Args args) {
+		this.random = new Random();
+		this.agency = agency;
+		this.delay = 2000;
+		this.unit = TimeUnit.MILLISECONDS;
+		this.updateProbability = 0.3f;
+		this.riuCommand = new RIUCommand();
 
-	public String getId()
-	{
-		return riuDescription.getId();
-	}
-
-	public IdentifiableType getType()
-	{
-		return IdentifiableType.feature;
-	}
-
-	public boolean initFeature(Agency agency, Args args)
-	{
-		this.random 			= new Random();
-		this.agency 			= agency;
-		this.delay				= 2000;
-		this.unit				= TimeUnit.MILLISECONDS;
-		this.updateProbability	= 0.3f;
-		this.riuCommand			= new RIUCommand();
-		
 		return true;
 	}
 
-	public void handleRequest(IdentifiableObject source,
-			IdentifiableObject target, Request r) {
-	}
+	public void terminateFeature() {
 
+	}
 }

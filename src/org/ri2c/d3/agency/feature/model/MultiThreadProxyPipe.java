@@ -21,9 +21,7 @@ package org.ri2c.d3.agency.feature.model;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.graphstream.graph.Graph;
-import org.graphstream.stream.Source;
 import org.graphstream.stream.thread.ThreadProxyPipe;
-import org.ri2c.d3.Console;
 
 public class MultiThreadProxyPipe extends ThreadProxyPipe {
 

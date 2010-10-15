@@ -25,9 +25,11 @@ import java.util.concurrent.ThreadFactory;
 
 import javax.management.modelmbean.XMLParseException;
 
+import org.ri2c.d3.Agency;
 import org.ri2c.d3.Console;
 import org.ri2c.d3.Request;
 import org.ri2c.d3.agency.IpTables;
+import org.ri2c.d3.agency.RemoteAgency;
 import org.ri2c.d3.protocol.connected.ConnectedInterface;
 import org.ri2c.d3.protocol.connected.Connection;
 import org.ri2c.d3.protocol.connected.ConnectionFactory;
@@ -50,9 +52,13 @@ public class XMLTCPInterface implements XMLInterface, ConnectedInterface {
 	class XMLConnection extends Connection {
 		String buffer;
 		Charset cs;
-
+		RemoteAgency remote;
+		
 		public XMLConnection(SocketChannel channel) {
 			super(channel);
+
+			remote = Agency.getLocalAgency().getRemoteAgencyDescription(
+					iptables.getId(channel.socket().getInetAddress()));
 
 			buffer = "";
 			cs = Charset.defaultCharset();
@@ -83,7 +89,7 @@ public class XMLTCPInterface implements XMLInterface, ConnectedInterface {
 
 					try {
 						URI uri = new URI(xr.getContent());
-						Request r = new Request(uri);
+						Request r = new Request(remote,uri);
 
 						xprb.requestReceived(r);
 					} catch (Exception e) {
@@ -115,6 +121,7 @@ public class XMLTCPInterface implements XMLInterface, ConnectedInterface {
 	private IpTables iptables;
 	private XMLStanzaFactory stanzaFactory;
 	private XMLConnectionFactory xmlConnectionFactory;
+	@SuppressWarnings("unused")
 	private ConnectionManager connectionManager;
 
 	public void init(RequestListener bridge, IpTables iptables) {
