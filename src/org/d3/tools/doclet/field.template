@@ -1,0 +1,15 @@
+<#if doc.isBrief()>
+	<div class="class-part-item">
+		<div class="class-field-brief-type type-name">${doc.modifiers()} ${doc.type()}</div>
+		<div class="class-field-brief-name type-name">${doc.name()}</div>
+		<#if doc.hasComment()>
+			<div class=\"class-method-brief-comment\">${doc.comment(true)}</div>
+		</#if>
+	</div>
+<#else>
+	<a id="#${doc.cleanName(true)}"></a>
+	<div class="class-field-name type-name">${doc.name()}</div>
+	<div class="class-field-prototype type-name">${doc.access()} ${doc.modifiers()} ${doc.type()} ${doc.name()}</div>
+	<div class="class-field-comment">${doc.comment(false)}</div>
+	<hr/>
+</#if>

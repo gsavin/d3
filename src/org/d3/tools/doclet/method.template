@@ -1,0 +1,16 @@
+<#if doc.isBrief()>
+	<div class="class-method-brief">
+		<div class="class-method-brief-return type-name">${doc.modifiers()} ${doc.returnType()}</div>
+		<div class="class-method-brief-name type-name">${doc.signature()}</div>
+		<#if doc.hasComment()>
+			<div class="class-method-brief-comment">${doc.comment(true)}</div>
+		</#if>
+	</div>
+<#else>
+	<div class="class-method">
+		<div class="class-method-name type-name">${doc.name()}</div>
+		<div class="class-method-prototype type-name">${doc.access()} ${doc.modifiers()} ${doc.returnType()} ${doc.signature()}</div>
+		<div class="class-method-comment">${doc.comment(false)}</div>
+	</div>
+	<hr/>
+</#if>

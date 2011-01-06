@@ -1,0 +1,38 @@
+${header}
+package ${doc.classPackage()}
+<div class="class-title">${doc.type()} ${doc.name(true)}</div>
+<hr/>
+${doc.superclasses()}
+${doc.interfaces()}
+${doc.annotations()}
+<hr/>
+<div class="class-content">
+	<div class="class-comment">${doc.comment(false)}</div>
+	<#if doc.hasFields()>
+		<div class="class-part-title">Fields</div>
+		${doc.fields(true)}
+	</#if>
+	<#if doc.hasConstructors()>
+		<div class="class-part-title">Constructors</div>
+		${doc.constructors(true)}
+	</#if>
+	<#if doc.hasMethods()>
+		<div class="class-part-title">Methods</div>
+		${doc.methods(true)}
+	</#if>
+	<br/><hr/><br/>
+	<#if doc.hasFields()>
+	<div class="class-part-title">Fields detail</div>
+	${doc.fields(false)}
+	</#if>
+	<#if doc.hasConstructors()>
+	<div class="class-part-title">Constructors detail</div>
+	${doc.constructors(false)}
+	</#if>
+	<#if doc.hasMethods()>
+	<div class="class-part-title">Methods detail</div>
+	<br/>
+	${doc.methods(false)}
+	</#if>
+</div>
+${footer}

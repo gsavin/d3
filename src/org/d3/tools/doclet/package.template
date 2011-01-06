@@ -1,0 +1,21 @@
+${header}
+package<div class="package-title">${doc.name()}</div>
+<hr/>
+<div class="package-content">
+	<#if doc.hasComment()>
+		<div class="package-comment">${doc.comment(false)}</div>
+	</#if> 
+	<#if doc.containsClasses()>
+		<div style="display: inline-block; vertical-align: top;">
+			<h3>Package classes:</h3>
+			<ul class="package-class-entries">${doc.classes()}</ul>
+		</div>
+	</#if>
+	<#if doc.containsSubpackages()>
+		<div style="display: inline-block;">
+			<h3>Sub-packages:</h3>
+			<ul class="package-subpackage-entries">${doc.subpackages()}</ul>
+	</div>
+	</#if>
+</div>
+${footer}
