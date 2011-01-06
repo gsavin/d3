@@ -14,9 +14,9 @@
     <meta name="Robots" content="all"/>
     <meta name="revisit-after" content="30 days"/>
     
-    <link rel="shortcut icon" href="/~savin/d3/img/favicon.png" />
-    <link rel="stylesheet" type="text/css" href="/~savin/d3/d3.css"/>
-    <link rel="stylesheet" type="text/css" href="/~savin/d3/rst.css"/>
+    <link rel="shortcut icon" href="/img/favicon.png" />
+    <link rel="stylesheet" type="text/css" href="/d3.css"/>
+    <link rel="stylesheet" type="text/css" href="/rst.css"/>
 
     </style>
   </head>
@@ -29,7 +29,7 @@
       		</div>
       	</div>
       	<div id="menubar">
-      	<a href="/~savin/d3/?page=home">Home</a> | <a href="/~savin/d3/?page=publication">Publications</a> | <a href="/~savin/d3/?page=manual">Manual</a> | <a href="/~savin/d3/api/index.html">API</a> | Downloads | <a href="http://github.com/gsavin/d3">d3@github</a>
+      	<a href="/index.php?page=home">Home</a> | <a href="/index.php?page=publication">Publications</a> | <a href="/index.php?page=manual">Manual</a> | <a href="/api/index.html">API</a> | Downloads | <a href="http://github.com/gsavin/d3">d3 @ github</a>
       	</div>
       	<div id="content" style="clear: both;">
 	<?php 

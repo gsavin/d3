@@ -9,6 +9,18 @@
   font-weight: bold;
   padding-left: 20px;
 }
+.class-identifiableobject-path {
+
+}
+.class-identifiableobject-description {
+
+}
+.class-identifiableobject-path h3 {
+	margin-bottom: 0px;
+}
+.class-identifiableobject-description h3 {
+	margin-bottom: 0px;
+}
 .class-content {
   margin-top: 50px;
 }
