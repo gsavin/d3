@@ -28,13 +28,13 @@ import javax.swing.JFrame;
 import org.d3.Agency;
 import org.d3.Args;
 import org.d3.Console;
-import org.d3.IdentifiableObject;
-import org.d3.RemoteIdentifiableObject;
+import org.d3.Actor;
+import org.d3.actor.RemoteActor;
 import org.d3.agency.AgencyListener;
 import org.d3.agency.Feature;
 import org.d3.agency.RemoteAgency;
 import org.d3.agency.feature.model.MultiThreadProxyPipe;
-import org.d3.annotation.IdentifiableObjectPath;
+import org.d3.annotation.ActorPath;
 import org.graphstream.algorithm.DynamicAlgorithm;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
@@ -47,7 +47,7 @@ import org.graphstream.ui.swingViewer.DefaultView;
 import org.graphstream.ui.swingViewer.GraphRenderer;
 import org.graphstream.ui.swingViewer.Viewer;
 
-@IdentifiableObjectPath("/features/model")
+@ActorPath("/features/model")
 public class Model extends Feature implements AgencyListener {
 	protected static long MODEL_ID_GENERATOR = 0;
 
@@ -267,8 +267,8 @@ public class Model extends Feature implements AgencyListener {
 		}
 	}
 
-	public void requestReceived(IdentifiableObject source,
-			IdentifiableObject target, String name) {
+	public void requestReceived(Actor source,
+			Actor target, String name) {
 		// Console.warning("receiving request \"%s\"",name);
 
 		if (source == null)
@@ -286,20 +286,20 @@ public class Model extends Feature implements AgencyListener {
 
 		if (targetNode == null) {
 			targetNode = createNode(target.getId(), target.getType().name(),
-					(target instanceof RemoteIdentifiableObject));
+					(target instanceof RemoteActor));
 		}
 
-		if (target instanceof RemoteIdentifiableObject)
+		if (target instanceof RemoteActor)
 			setNodeRemote(targetNode.getId());
 
 		Node sourceNode = model.getNode(source.getId());
 
 		if (sourceNode == null) {
 			sourceNode = createNode(source.getId(), source.getType().name(),
-					(source instanceof RemoteIdentifiableObject));
+					(source instanceof RemoteActor));
 		}
 
-		if (source instanceof RemoteIdentifiableObject)
+		if (source instanceof RemoteActor)
 			setNodeRemote(sourceNode.getId());
 
 		Edge e = targetNode.getEdgeFrom(sourceNode.getId());
@@ -316,13 +316,13 @@ public class Model extends Feature implements AgencyListener {
 		}
 	}
 
-	public void identifiableObjectRegistered(IdentifiableObject idObject) {
+	public void identifiableObjectRegistered(Actor idObject) {
 		if (!justEntities || idObject.getType() == IdentifiableType.entity)
 			createNode(idObject.getId(), idObject.getType().name(),
-					idObject instanceof RemoteIdentifiableObject);
+					idObject instanceof RemoteActor);
 	}
 
-	public void identifiableObjectUnregistered(IdentifiableObject idObject) {
+	public void identifiableObjectUnregistered(Actor idObject) {
 		model.removeNode(idObject.getId());
 	}
 

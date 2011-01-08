@@ -18,9 +18,13 @@
  */
 package org.d3.protocol;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.d3.Actor;
 import org.d3.Agency;
 import org.d3.Console;
 import org.d3.Protocol;
@@ -29,30 +33,25 @@ import org.d3.agency.RemoteAgency;
 
 @SuppressWarnings("unchecked")
 public class Protocols {
-	private static final HashMap<String, Protocol> knownProtocols = new HashMap<String, Protocol>();
-	private static final HashMap<String, Protocol> protocols = new HashMap<String, Protocol>();
-
-	static {
-		String[] map = { "org.d3.protocol.XMLProtocol" };
-
-		for (String entry : map)
-			enableProtocol(entry);
-	}
-
-	public static void enableProtocol(String classname) {
+	public static void enableProtocol(String classname)
+			throws BadProtocolException {
 		try {
 			Class<? extends Protocol> cls = (Class<? extends Protocol>) Class
 					.forName(classname);
-			Method m = cls.getMethod("getDefault");
-			Protocol p = (Protocol) m.invoke(null);
 
-			if (p != null) {
-				System.out.printf("[protocols] enable %s --> %s%n",
-						p.getFullPath(), classname);
-				knownProtocols.put(p.getFullPath(), p);
-			} else
-				System.err.printf("[protocols] error getting protocol %s%n",
-						classname);
+			if (cls.getAnnotation(InetProtocol.class) != null) {
+				try {
+					Constructor<? extends Protocol> c = cls
+							.getConstructor(InetSocketAddress.class);
+
+					Protocol p = c.newInstance();
+					enableProtocol(p);
+				} catch (NoSuchMethodException e) {
+					throw new BadProtocolException(e.getMessage());
+				}
+
+			}
+
 		} catch (Exception e) {
 			System.err.printf("[protocols] error while loading \"%s\"%n",
 					classname);
@@ -60,18 +59,22 @@ public class Protocols {
 		}
 	}
 
-	public static void initProtocol(String path) {
-		if (knownProtocols.containsKey(path)) {
-			Protocol p = knownProtocols.get(path);
+	public static void register(Protocol protocol) throws ProtocolException {
+		protocol.checkProtocolThreadAccess();
 
-			if (Agency.getLocalAgency().registerIdentifiableObject(p)) {
-				p.init();
-				knownProtocols.remove(path);
-				protocols.put(path, p);
-
-				System.out.printf("[protocols] %s ready%n", path);
-			}
+		int port = protocol.getPort();
+		
+		if (port > 0) {
+			if (ports.containsKey(port))
+				throw new ProtocolException();
+			
+			ports.put(port, protocol);
 		}
+
+	}
+
+	public static void enableProtocol(Protocol protocol) {
+
 	}
 
 	private static final Protocol getProtocol(String id) {
@@ -92,13 +95,36 @@ public class Protocols {
 
 			Protocol protocol = getProtocolTo(rad);
 
-			if( protocol == null ) {
-				Console.error("no protocol to %s",rad.getId());
+			if (protocol == null) {
+				Console.error("no protocol to %s", rad.getId());
 			}
 
 			protocol.sendRequest(r);
 		} else {
 			InternalProtocol.getInternalProtocol().sendRequest(r);
 		}
+	}
+
+	public static final boolean isLocalPort(int port) {
+		Protocol p = ports.get(port);
+		return p == null ? false : protocols.containsValue(p);
+	}
+
+	public static final Protocol getProtocolTo(Actor actor)
+			throws ProtocolNotFoundException {
+		return null;
+	}
+	
+	private final Ports ports;
+	private final Schemes schemes;
+	
+	public Protocols() {
+		this.ports = new Ports();
+		this.schemes = new Schemes();
+	}
+	
+	public void register(Protocol protocol) throws ProtocolException {
+		ports.register(protocol);
+		schemes.register(protocol);
 	}
 }

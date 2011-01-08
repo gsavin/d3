@@ -18,32 +18,66 @@
  */
 package org.d3;
 
-import org.d3.annotation.IdentifiableObjectPath;
-import org.d3.request.RequestListener;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectableChannel;
 
-@IdentifiableObjectPath("/protocols")
-public abstract class Protocol extends LocalIdentifiableObject {
+import org.d3.actor.LocalActor;
+import org.d3.annotation.ActorPath;
+import org.d3.protocol.ProtocolThread;
 
-	protected Protocol(String id) {
+@ActorPath("/protocols")
+public abstract class Protocol extends LocalActor {
+	public static final int REQUEST_MAX_SIZE = 1024000;
+
+	protected final SocketAddress socketAddress;
+	private final ProtocolThread protocolThread;
+	protected final String scheme;
+
+	protected Protocol(String scheme, String id, SocketAddress socketAddress) {
 		super(id);
+		this.socketAddress = socketAddress;
+		this.protocolThread = new ProtocolThread(this);
+		this.scheme = scheme;
+	}
+
+	public void init() {
+		super.init();
+		protocolThread.start();
 	}
 
 	public final IdentifiableType getType() {
 		return IdentifiableType.protocol;
 	}
 
+	public final void checkProtocolThreadAccess() {
+		protocolThread.checkIsOwner();
+	}
+	
 	protected void dispatch(Request r)
-			throws IdentifiableObjectNotFoundException {
-		IdentifiableObject target = Agency.getLocalAgency()
+			throws ActorNotFoundException {
+		Actor target = Agency.getLocalAgency()
 				.getIdentifiableObject(r.getTargetURI());
 
 		target.handle(r);
 	}
 
-	/**
-	 * Initialize this protocol.
-	 */
-	public abstract void init();
+	public final int getPort() {
+		if (socketAddress instanceof InetSocketAddress)
+			return ((InetSocketAddress) socketAddress).getPort();
+
+		return -1;
+	}
+
+	public final String getScheme() {
+		return scheme;
+	}
+	
+	public abstract SelectableChannel getChannel();
+
+	public abstract void readRequest(ByteBuffer buffer)
+			throws InvalidRequestFormatException;
 
 	/**
 	 * Send a request to an identifiable object.
@@ -52,18 +86,4 @@ public abstract class Protocol extends LocalIdentifiableObject {
 	 * @param r
 	 */
 	public abstract void sendRequest(Request r);
-
-	/**
-	 * Add a listener to received requests.
-	 * 
-	 * @param listener
-	 */
-	public abstract void addRequestListener(RequestListener listener);
-
-	/**
-	 * Remove a listener.
-	 * 
-	 * @param listener
-	 */
-	public abstract void removeRequestListener(RequestListener listener);
 }

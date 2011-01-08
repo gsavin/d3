@@ -43,12 +43,12 @@ public class DGRequestManager
 		this.distributedGraph = dg;
 	}
 
-	public void handleRequest(IdentifiableObject source,
-			IdentifiableObject target, Request r)
+	public void handleRequest(Actor source,
+			Actor target, Request r)
 	{
-		if( source instanceof RemoteIdentifiableObject )
+		if( source instanceof RemoteActor )
 		{
-			RemoteIdentifiableObject remoteSource = (RemoteIdentifiableObject) source;
+			RemoteActor remoteSource = (RemoteActor) source;
 			distributedGraph.checkKnownComponent(remoteSource);
 			
 			if( r.getName().startsWith( REQUEST_PREFIX ) )
@@ -84,7 +84,7 @@ public class DGRequestManager
 		return e;
 	}
 	
-	protected void handleKnownRequest( KnownRequest req, Request org, IdentifiableObject source )
+	protected void handleKnownRequest( KnownRequest req, Request org, Actor source )
 	{
 		Object r;
 		
@@ -133,7 +133,7 @@ public class DGRequestManager
 		Protocols.reply(source, distributedGraph, org, r);
 	}
 	
-	protected Object requestHasNode( KnownRequest req, Request org, IdentifiableObject source )
+	protected Object requestHasNode( KnownRequest req, Request org, Actor source )
 	{
 		String nodeId = org.getAttribute(NODE_ID);
 		
@@ -145,7 +145,7 @@ public class DGRequestManager
 		return hasNode;
 	}
 	
-	protected Object requestGetNodeAttributeCount( KnownRequest req, Request org, IdentifiableObject source )
+	protected Object requestGetNodeAttributeCount( KnownRequest req, Request org, Actor source )
 	{
 		String nodeId = org.getAttribute(NODE_ID);
 		
@@ -172,7 +172,7 @@ public class DGRequestManager
 		return r;
 	}
 	
-	protected Object requestGetNodeAttribute( KnownRequest req, Request org, IdentifiableObject source )
+	protected Object requestGetNodeAttribute( KnownRequest req, Request org, Actor source )
 	{
 		String nodeId = org.getAttribute(NODE_ID);
 		String attrId = org.getAttribute(ATTR_ID);
@@ -200,7 +200,7 @@ public class DGRequestManager
 		return r;
 	}
 	
-	protected Object requestSetNodeAttribute( KnownRequest req, Request org, IdentifiableObject source )
+	protected Object requestSetNodeAttribute( KnownRequest req, Request org, Actor source )
 	{
 		String nodeId = org.getAttribute(NODE_ID);
 		String attrId = org.getAttribute(ATTR_ID);
@@ -240,7 +240,7 @@ public class DGRequestManager
 		return r;
 	}
 	
-	protected Object requestClearNodeAttributes( KnownRequest req, Request org, IdentifiableObject source )
+	protected Object requestClearNodeAttributes( KnownRequest req, Request org, Actor source )
 	{
 		String nodeId = org.getAttribute(NODE_ID);
 		
@@ -268,7 +268,7 @@ public class DGRequestManager
 		return r;
 	}
 	
-	protected Object requestHasNodeAttribute( KnownRequest req, Request org, IdentifiableObject source )
+	protected Object requestHasNodeAttribute( KnownRequest req, Request org, Actor source )
 	{
 		String nodeId = org.getAttribute(NODE_ID);
 		String attrId = org.getAttribute(ATTR_ID);
@@ -291,7 +291,7 @@ public class DGRequestManager
 		return r;
 	}
 	
-	protected Object requestGetElementAttributeKeys( KnownRequest req, Request org, IdentifiableObject source )
+	protected Object requestGetElementAttributeKeys( KnownRequest req, Request org, Actor source )
 	{
 		String elementId = org.getAttribute(ELEMENT_ID);
 		String elementType = org.getAttribute(ELEMENT_TYPE);
@@ -325,7 +325,7 @@ public class DGRequestManager
 		return r;
 	}
 	
-	protected Object requestHasEdge( KnownRequest req, Request org, IdentifiableObject source )
+	protected Object requestHasEdge( KnownRequest req, Request org, Actor source )
 	{
 		String edgeId = org.getAttribute(EDGE_ID);
 		
@@ -337,7 +337,7 @@ public class DGRequestManager
 		return hasEdge;
 	}
 	
-	protected Object requestGetEdgeAttributeCount( KnownRequest req, Request org, IdentifiableObject source )
+	protected Object requestGetEdgeAttributeCount( KnownRequest req, Request org, Actor source )
 	{
 		String edgeId = org.getAttribute(EDGE_ID);
 		
@@ -364,7 +364,7 @@ public class DGRequestManager
 		return r;
 	}
 	
-	protected Object requestGetEdgeAttribute( KnownRequest req, Request org, IdentifiableObject source )
+	protected Object requestGetEdgeAttribute( KnownRequest req, Request org, Actor source )
 	{
 		String edgeId = org.getAttribute(EDGE_ID);
 		String attrId = org.getAttribute(ATTR_ID);
@@ -392,7 +392,7 @@ public class DGRequestManager
 		return r;
 	}
 	
-	protected Object requestSetEdgeAttribute( KnownRequest req, Request org, IdentifiableObject source )
+	protected Object requestSetEdgeAttribute( KnownRequest req, Request org, Actor source )
 	{
 		String edgeId = org.getAttribute(EDGE_ID);
 		String attrId = org.getAttribute(ATTR_ID);
@@ -432,7 +432,7 @@ public class DGRequestManager
 		return r;
 	}
 	
-	protected Object requestHasEdgeAttribute( KnownRequest req, Request org, IdentifiableObject source )
+	protected Object requestHasEdgeAttribute( KnownRequest req, Request org, Actor source )
 	{
 		String edgeId = org.getAttribute(EDGE_ID);
 		String attrId = org.getAttribute(ATTR_ID);
@@ -455,7 +455,7 @@ public class DGRequestManager
 		return r;
 	}
 	
-	protected Object requestClearEdgeAttributes( KnownRequest req, Request org, IdentifiableObject source )
+	protected Object requestClearEdgeAttributes( KnownRequest req, Request org, Actor source )
 	{
 		String edgeId = org.getAttribute(EDGE_ID);
 		

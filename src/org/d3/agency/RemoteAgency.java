@@ -20,17 +20,17 @@ package org.d3.agency;
 
 import java.net.InetAddress;
 
-import org.d3.RemoteIdentifiableObject;
-import org.d3.annotation.IdentifiableObjectPath;
+import org.d3.actor.RemoteActor;
+import org.d3.annotation.ActorPath;
 
-@IdentifiableObjectPath("/agencies")
-public class RemoteAgency extends RemoteIdentifiableObject {
+@ActorPath("/agencies")
+public class RemoteAgency extends RemoteActor {
 	protected String[] protocols;
 	protected long lastPresenceDate;
 	protected String digest;
 
 	public RemoteAgency(InetAddress host, String protocols, String digest) {
-		super(host, "agency", IdentifiableType.agency);
+		super(host, "agency");
 
 		this.protocols = protocols.trim().split("\\s*,\\s*");
 		this.lastPresenceDate = System.currentTimeMillis();

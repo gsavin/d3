@@ -23,13 +23,13 @@ import java.security.MessageDigest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.d3.annotation.IdentifiableObjectPath;
+import org.d3.annotation.ActorPath;
 import org.d3.atlas.internal.D3Atlas;
 import org.d3.request.ObjectCoder;
 
 public class Labs {
 
-	@IdentifiableObjectPath("/base/interface")
+	@ActorPath("/base/interface")
 	public static interface BaseInterface {
 
 	}

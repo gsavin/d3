@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.d3.IdentifiableObject.Tools.getArgsPrefix;
+import static org.d3.Actor.Tools.getArgsPrefix;
 
 public class Args
 {
@@ -94,7 +94,7 @@ public class Args
 		else return innerMap.containsKey(key);
 	}
 	
-	public Args getArgs( IdentifiableObject idObject ) {
+	public Args getArgs( Actor idObject ) {
 		return getArgs(getArgsPrefix(idObject));
 	}
 	

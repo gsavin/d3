@@ -38,8 +38,8 @@ import org.d3.Args;
 import org.d3.agency.RemoteAgency;
 import org.d3.agency.RunnableFeature;
 import org.d3.agency.RunnableFeatureCommand;
-import org.d3.annotation.IdentifiableObjectDescription;
-import org.d3.annotation.IdentifiableObjectPath;
+import org.d3.annotation.ActorDescription;
+import org.d3.annotation.ActorPath;
 
 /**
  * <title>Discovery L2D feature.</title> This feature allows to discover other
@@ -75,8 +75,8 @@ import org.d3.annotation.IdentifiableObjectPath;
  * @author Guilhelm Savin
  * 
  */
-@IdentifiableObjectPath("/features/discovery")
-@IdentifiableObjectDescription("Try to discover other agencies on the network.")
+@ActorPath("/features/discovery")
+@ActorDescription("Try to discover other agencies on the network.")
 public class Discovery extends RunnableFeature implements Runnable {
 	/**
 	 * Prefix of discovery messages.

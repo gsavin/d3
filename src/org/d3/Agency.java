@@ -25,16 +25,17 @@ import java.net.UnknownHostException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.d3.actor.LocalActor;
 import org.d3.agency.AgencyListener;
 import org.d3.agency.ApplicationExecutor;
 import org.d3.agency.Feature;
 import org.d3.agency.FeatureManager;
-import org.d3.agency.IdentifiableObjectManager;
+import org.d3.agency.ActorManager;
 import org.d3.agency.IpTables;
 import org.d3.agency.RemoteAgency;
-import org.d3.agency.IdentifiableObjectManager.RegistrationStatus;
-import org.d3.annotation.IdentifiableObjectDescription;
-import org.d3.annotation.IdentifiableObjectPath;
+import org.d3.agency.ActorManager.RegistrationStatus;
+import org.d3.annotation.ActorDescription;
+import org.d3.annotation.ActorPath;
 import org.d3.annotation.RequestCallable;
 //import org.d3.atlas.internal.D3Atlas;
 import org.d3.protocol.Protocols;
@@ -48,9 +49,9 @@ import org.d3.security.D3SecurityManager;
  * @author gsavin
  * 
  */
-@IdentifiableObjectDescription("Agency object.")
-@IdentifiableObjectPath("/")
-public class Agency extends LocalIdentifiableObject implements RequestListener {
+@ActorDescription("Agency object.")
+@ActorPath("/")
+public class Agency extends LocalActor implements RequestListener {
 	public static enum Argument {
 		PROTOCOLS("protocols"), FEATURES("features"), DEFAULT_CHARSET(
 				"system.cs.default"), REQUEST_SERVICE("request.service");
@@ -164,7 +165,7 @@ public class Agency extends LocalIdentifiableObject implements RequestListener {
 	// private RequestService requestService;
 	// private Atlas atlas;
 	private ConcurrentLinkedQueue<AgencyListener> agencyListeners;
-	private IdentifiableObjectManager identifiableObjects;
+	private ActorManager identifiableObjects;
 
 	private Agency() {
 		super("agency");
@@ -176,7 +177,7 @@ public class Agency extends LocalIdentifiableObject implements RequestListener {
 		 * } catch (UnknownHostException e) { agencyId = String.format("%X:%X",
 		 * System.nanoTime(), (long) (Math.random() * Long.MAX_VALUE)); }
 		 */
-		identifiableObjects = new IdentifiableObjectManager();
+		identifiableObjects = new ActorManager();
 
 		remoteAgencies = new ConcurrentHashMap<String, RemoteAgency>();
 		featureManager = new FeatureManager(this);
@@ -287,7 +288,7 @@ public class Agency extends LocalIdentifiableObject implements RequestListener {
 		Console.info("unregister agency %s", rad.getHost());
 	}
 
-	public boolean registerIdentifiableObject(IdentifiableObject idObject) {
+	public boolean registerIdentifiableObject(Actor idObject) {
 		if (identifiableObjects.register(idObject) != RegistrationStatus.accepted) {
 			System.err.printf("[agency] object not registered%n");
 			return false;
@@ -299,20 +300,20 @@ public class Agency extends LocalIdentifiableObject implements RequestListener {
 		return true;
 	}
 
-	public void unregisterIdentifiableObject(IdentifiableObject idObject) {
+	public void unregisterIdentifiableObject(Actor idObject) {
 		identifiableObjects.unregister(idObject);
 
 		for (AgencyListener l : agencyListeners)
 			l.identifiableObjectUnregistered(idObject);
 	}
 
-	public IdentifiableObject getIdentifiableObject(URI uri)
-			throws IdentifiableObjectNotFoundException {
+	public Actor getIdentifiableObject(URI uri)
+			throws ActorNotFoundException {
 		return identifiableObjects.get(uri);
 	}
 
-	public IdentifiableObject getIdentifiableObject(IdentifiableType type,
-			String path) throws IdentifiableObjectNotFoundException {
+	public Actor getIdentifiableObject(IdentifiableType type,
+			String path) throws ActorNotFoundException {
 		return identifiableObjects.get(type, path);
 	}
 
@@ -364,7 +365,7 @@ public class Agency extends LocalIdentifiableObject implements RequestListener {
 
 	@RequestCallable("getIdentifiableObjectList")
 	public URI[] getIdentifiableObjectList(IdentifiableType type) {
-		IdentifiableObject[] objects = identifiableObjects.get(type);
+		Actor[] objects = identifiableObjects.get(type);
 		URI[] uris = new URI[objects.length];
 
 		for (int i = 0; i < objects.length; i++)

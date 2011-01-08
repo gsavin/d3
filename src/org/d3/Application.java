@@ -18,10 +18,11 @@
  */
 package org.d3;
 
+import org.d3.actor.LocalActor;
 import org.d3.agency.AgencyListener;
 import org.d3.agency.RemoteAgency;
 
-public abstract class Application extends LocalIdentifiableObject implements
+public abstract class Application extends LocalActor implements
 		AgencyListener {
 
 	protected Application(String name) {
@@ -32,8 +33,8 @@ public abstract class Application extends LocalIdentifiableObject implements
 		return IdentifiableType.application;
 	}
 
-	public void handleRequest(IdentifiableObject source,
-			IdentifiableObject target, Request r) {
+	public void handleRequest(Actor source,
+			Actor target, Request r) {
 		// TODO Auto-generated method stub
 
 	}
@@ -43,12 +44,12 @@ public abstract class Application extends LocalIdentifiableObject implements
 
 	}
 
-	public void identifiableObjectRegistered(IdentifiableObject idObject) {
+	public void identifiableObjectRegistered(Actor idObject) {
 		// TODO Auto-generated method stub
 
 	}
 
-	public void identifiableObjectUnregistered(IdentifiableObject idObject) {
+	public void identifiableObjectUnregistered(Actor idObject) {
 		// TODO Auto-generated method stub
 
 	}
@@ -63,8 +64,8 @@ public abstract class Application extends LocalIdentifiableObject implements
 
 	}
 
-	public void requestReceived(IdentifiableObject source,
-			IdentifiableObject target, String name) {
+	public void requestReceived(Actor source,
+			Actor target, String name) {
 		// TODO Auto-generated method stub
 
 	}

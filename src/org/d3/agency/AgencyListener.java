@@ -19,7 +19,7 @@
 package org.d3.agency;
 
 import org.d3.Agency;
-import org.d3.IdentifiableObject;
+import org.d3.Actor;
 
 public interface AgencyListener
 {
@@ -29,9 +29,9 @@ public interface AgencyListener
 	
 	void remoteAgencyDescriptionUpdated( RemoteAgency rad );
 	
-	void requestReceived( IdentifiableObject source, IdentifiableObject target, String name );
+	void requestReceived( Actor source, Actor target, String name );
 	
-	void identifiableObjectRegistered( IdentifiableObject idObject );
+	void identifiableObjectRegistered( Actor idObject );
 	
-	void identifiableObjectUnregistered( IdentifiableObject idObject );
+	void identifiableObjectUnregistered( Actor idObject );
 }

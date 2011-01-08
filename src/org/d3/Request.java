@@ -26,7 +26,7 @@ import java.net.URLEncoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.d3.IdentifiableObject.IdentifiableType;
+import org.d3.Actor.IdentifiableType;
 import org.d3.request.ObjectCoder;
 import org.d3.request.ObjectCoder.CodingMethod;
 
@@ -47,13 +47,13 @@ public class Request implements Serializable {
 	protected final URI source;
 	protected final URI target;
 
-	public Request(IdentifiableObject source, IdentifiableObject target,
+	public Request(Actor source, Actor target,
 			String callable, Object[] args) {
 		this(source, target, callable, args, null);
 	}
 
-	public Request(IdentifiableObject source, IdentifiableObject target,
-			String callable, Object[] args, IdentifiableObject future) {
+	public Request(Actor source, Actor target,
+			String callable, Object[] args, Actor future) {
 		this.source = source.getURI();
 
 		String query = null;
@@ -90,7 +90,7 @@ public class Request implements Serializable {
 		this.target = target.getQueryURI(query);
 	}
 
-	public Request(IdentifiableObject source, String target) throws URISyntaxException {
+	public Request(Actor source, String target) throws URISyntaxException {
 		if (target == null)
 			throw new NullPointerException("target is null");
 
@@ -111,7 +111,7 @@ public class Request implements Serializable {
 		}
 	}
 
-	public Request(IdentifiableObject source, URI target) {
+	public Request(Actor source, URI target) {
 		if (target == null)
 			throw new NullPointerException("target is null");
 
@@ -130,6 +130,11 @@ public class Request implements Serializable {
 		} else {
 			this.source = source.getURI();
 		}
+	}
+	
+	public Request(URI source, URI target) {
+		this.source = source;
+		this.target = target;
 	}
 
 	public URI getSourceURI() {

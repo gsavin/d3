@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 import org.d3.Agency;
 import org.d3.Args;
 import org.d3.Console;
-import org.d3.IdentifiableObject;
+import org.d3.Actor;
 import org.d3.Request;
 import org.d3.agency.AgencyListener;
 
@@ -103,10 +103,10 @@ public class RequestService {
 	}
 
 	public void executeRequest(Request r) {
-		IdentifiableObject source = Agency.getLocalAgency()
+		Actor source = Agency.getLocalAgency()
 				.getIdentifiableObject(r.getSourceURI());
 
-		IdentifiableObject target = Agency.getLocalAgency()
+		Actor target = Agency.getLocalAgency()
 				.getIdentifiableObject(r.getTargetURI());
 
 		if (target == null) {

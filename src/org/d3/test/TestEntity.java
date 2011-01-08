@@ -24,14 +24,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.d3.Agency;
 import org.d3.Console;
-import org.d3.IdentifiableObject;
-import org.d3.annotation.IdentifiableObjectPath;
+import org.d3.Actor;
+import org.d3.annotation.ActorPath;
 import org.d3.annotation.RequestCallable;
 import org.d3.entity.Entity;
 
-import static org.d3.IdentifiableObject.Tools.call;
+import static org.d3.Actor.Tools.call;
 
-@IdentifiableObjectPath("/d3/test/entities")
+@ActorPath("/d3/test/entities")
 public class TestEntity extends Entity {
 	/**
 	 * 
@@ -40,16 +40,16 @@ public class TestEntity extends Entity {
 
 	static Random random = new Random();
 
-	ConcurrentLinkedQueue<IdentifiableObject> idObjects;
+	ConcurrentLinkedQueue<Actor> idObjects;
 
 	public TestEntity(String entityId) {
 		super(entityId);
-		idObjects = new ConcurrentLinkedQueue<IdentifiableObject>();
+		idObjects = new ConcurrentLinkedQueue<Actor>();
 	}
 
 	@RequestCallable("beMyFriend")
 	public void addFriend(URI uri) {
-		IdentifiableObject idObject = Agency.getLocalAgency().getIdentifiableObject(uri);
+		Actor idObject = Agency.getLocalAgency().getIdentifiableObject(uri);
 
 		if (idObject != null)
 			idObjects.add(idObject);
@@ -71,7 +71,7 @@ public class TestEntity extends Entity {
 		
 		int i = random.nextInt(idObjects.size());
 		
-		for (IdentifiableObject idObject : idObjects) {
+		for (Actor idObject : idObjects) {
 			if (i-- == 0) {
 				String action;
 				

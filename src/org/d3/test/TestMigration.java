@@ -24,14 +24,14 @@ import java.util.LinkedList;
 import org.d3.Agency;
 import org.d3.Application;
 import org.d3.Console;
-import org.d3.IdentifiableObject;
+import org.d3.Actor;
 import org.d3.Migration.MigrationStatus;
 import org.d3.agency.RemoteAgency;
 import org.d3.annotation.RequestCallable;
 import org.d3.entity.Entity;
 import org.d3.tools.StartD3;
 
-import static org.d3.IdentifiableObject.Tools.call;
+import static org.d3.Actor.Tools.call;
 
 public class TestMigration extends Application {
 	/**
@@ -100,7 +100,7 @@ public class TestMigration extends Application {
 
 	protected void displayPosition() {
 		for (URI uri : entitiesPath) {
-			IdentifiableObject idObject = Agency.getLocalAgency()
+			Actor idObject = Agency.getLocalAgency()
 					.getIdentifiableObject(uri);
 			String str = (String) call(this, idObject, "whereAreYou", null);
 			Console.info("where %s is ? %s", idObject.getId(), str);

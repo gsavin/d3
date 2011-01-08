@@ -107,8 +107,8 @@ public class DistributedGraph
 		return false;
 	}
 
-	public void handleRequest(IdentifiableObject source,
-			IdentifiableObject target, Request r)
+	public void handleRequest(Actor source,
+			Actor target, Request r)
 	{
 		requestManager.handleRequest(source, target, r);
 	}
@@ -118,7 +118,7 @@ public class DistributedGraph
 		
 	}
 	
-	public void checkKnownComponent( RemoteIdentifiableObject remote )
+	public void checkKnownComponent( RemoteActor remote )
 	{
 		if( graphId.equals(remote.getId()) &&
 				! agencyToComponent.containsKey(remote.getHost()) )

@@ -29,7 +29,7 @@ import org.ri2c.d3.protocol.Protocols;
 import org.ri2c.d3.request.ObjectCoder;
 
 public class RemoteGraphComponent
-	extends RemoteIdentifiableObject implements GraphComponent, DGConstants
+	extends RemoteActor implements GraphComponent, DGConstants
 {
 	DistributedGraph distributedGraph;
 	

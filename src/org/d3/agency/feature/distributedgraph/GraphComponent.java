@@ -21,7 +21,7 @@ package org.ri2c.d3.agency.feature.distributedgraph;
 import org.ri2c.d3.IdentifiableObject;
 
 public interface GraphComponent
-	extends IdentifiableObject, DGConstants
+	extends Actor, DGConstants
 {
 	String getAgencyId();
 	

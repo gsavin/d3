@@ -20,11 +20,11 @@ package org.d3.agency;
 
 import org.d3.Agency;
 import org.d3.Args;
-import org.d3.LocalIdentifiableObject;
-import org.d3.annotation.IdentifiableObjectPath;
+import org.d3.actor.LocalActor;
+import org.d3.annotation.ActorPath;
 
-@IdentifiableObjectPath("/features")
-public abstract class Feature extends LocalIdentifiableObject {
+@ActorPath("/features")
+public abstract class Feature extends LocalActor {
 	protected Feature(String id) {
 		super(id);
 	}

@@ -20,11 +20,12 @@ package org.d3;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.d3.annotation.IdentifiableObjectPath;
+import org.d3.actor.LocalActor;
+import org.d3.annotation.ActorPath;
 import org.d3.annotation.RequestCallable;
 
-@IdentifiableObjectPath("/d3/futures")
-public class Future extends LocalIdentifiableObject {
+@ActorPath("/d3/futures")
+public class Future extends LocalActor {
 	public static enum SpecialReturn {
 		NULL, VOID
 	}

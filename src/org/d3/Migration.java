@@ -21,16 +21,17 @@ package org.d3;
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.d3.actor.LocalActor;
 import org.d3.agency.RemoteAgency;
-import org.d3.annotation.IdentifiableObjectPath;
+import org.d3.annotation.ActorPath;
 import org.d3.annotation.RequestCallable;
 //import org.d3.atlas.internal.Body;
 import org.d3.migration.BadMigrationSideException;
 import org.d3.migration.MigrationData;
 import org.d3.protocol.Protocols;
 
-@IdentifiableObjectPath("/migrations")
-public class Migration extends LocalIdentifiableObject {
+@ActorPath("/migrations")
+public class Migration extends LocalActor {
 	public static enum MigrationStatus {
 		ERROR, PENDING, TRANSFERING, TRANSFERED, SUCCESS, CANCELED, REJECTED
 	}
@@ -100,7 +101,7 @@ public class Migration extends LocalIdentifiableObject {
 			break;
 		}
 		case RECEIVER: {
-			IdentifiableObject target;
+			Actor target;
 
 			try {
 				target = Agency.getLocalAgency().getIdentifiableObject(sender);
@@ -110,7 +111,7 @@ public class Migration extends LocalIdentifiableObject {
 				Protocols.sendRequest(r);
 
 				setStatus(MigrationStatus.TRANSFERING);
-			} catch (IdentifiableObjectNotFoundException e) {
+			} catch (ActorNotFoundException e) {
 				// TODO
 				e.printStackTrace();
 			}
@@ -128,7 +129,7 @@ public class Migration extends LocalIdentifiableObject {
 		setStatus(MigrationStatus.TRANSFERING);
 
 		try {
-			IdentifiableObject target = Agency.getLocalAgency()
+			Actor target = Agency.getLocalAgency()
 					.getIdentifiableObject(destination);
 
 			Request r = new Request(this, target, "receive",
@@ -136,7 +137,7 @@ public class Migration extends LocalIdentifiableObject {
 			Protocols.sendRequest(r);
 
 			setStatus(MigrationStatus.TRANSFERED);
-		} catch (IdentifiableObjectNotFoundException e) {
+		} catch (ActorNotFoundException e) {
 			// TODO
 			e.printStackTrace();
 		}
@@ -151,7 +152,7 @@ public class Migration extends LocalIdentifiableObject {
 		body.receiveContent(data.getEntity(), data.getRequests());
 
 		try {
-			IdentifiableObject target = Agency.getLocalAgency()
+			Actor target = Agency.getLocalAgency()
 					.getIdentifiableObject(sender);
 
 			Request r = new Request(this, target, "confirm",
@@ -160,7 +161,7 @@ public class Migration extends LocalIdentifiableObject {
 
 			unregister();
 			setStatus(MigrationStatus.SUCCESS);
-		} catch (IdentifiableObjectNotFoundException e) {
+		} catch (ActorNotFoundException e) {
 			// TODO
 			e.printStackTrace();
 		}

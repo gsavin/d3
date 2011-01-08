@@ -28,15 +28,15 @@ import org.d3.Agency;
 import org.d3.Args;
 import org.d3.agency.Feature;
 import org.d3.agency.RemoteAgency;
-import org.d3.annotation.IdentifiableObjectDescription;
-import org.d3.annotation.IdentifiableObjectPath;
+import org.d3.annotation.ActorDescription;
+import org.d3.annotation.ActorPath;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-@IdentifiableObjectPath("/features")
-@IdentifiableObjectDescription("HTTP Web server")
+@ActorPath("/features")
+@ActorDescription("HTTP Web server")
 public class D3HTTP extends Feature implements HttpHandler {
 	protected static final int HTTP_PORT = 6080;
 

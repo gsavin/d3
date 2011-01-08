@@ -23,10 +23,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.d3.Agency;
 import org.d3.Protocol;
 import org.d3.Request;
-import org.d3.annotation.IdentifiableObjectPath;
+import org.d3.annotation.ActorPath;
 import org.d3.request.RequestListener;
 
-@IdentifiableObjectPath("/d3/protocols")
+@ActorPath("/d3/protocols")
 public class InternalProtocol extends Protocol {
 	private static final InternalProtocol THIS = new InternalProtocol();
 

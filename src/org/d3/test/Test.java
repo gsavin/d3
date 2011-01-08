@@ -32,7 +32,7 @@ import org.d3.atlas.future.FutureAction;
 import org.d3.entity.Entity;
 import org.d3.tools.StartD3;
 
-import static org.d3.IdentifiableObject.Tools.call;
+import static org.d3.Actor.Tools.call;
 
 public class Test extends Application {
 	public static class TestFutureAction extends FutureAction {

@@ -27,9 +27,9 @@ import org.d3.Console;
 import org.d3.agency.RemoteAgency;
 import org.d3.agency.RunnableFeature;
 import org.d3.agency.RunnableFeatureCommand;
-import org.d3.annotation.IdentifiableObjectPath;
+import org.d3.annotation.ActorPath;
 
-@IdentifiableObjectPath("/d3/features/remoteInformationsUpdater")
+@ActorPath("/d3/features/remoteInformationsUpdater")
 public class RemoteInformationsUpdater extends RunnableFeature {
 	protected class RIUCommand extends RunnableFeatureCommand {
 		public RIUCommand() {

@@ -20,11 +20,11 @@ package org.d3.entity;
 
 import java.io.Serializable;
 
-import org.d3.LocalIdentifiableObject;
-import org.d3.annotation.IdentifiableObjectPath;
+import org.d3.actor.LocalActor;
+import org.d3.annotation.ActorPath;
 
-@IdentifiableObjectPath("/entities")
-public class Entity extends LocalIdentifiableObject implements Serializable {
+@ActorPath("/entities")
+public class Entity extends LocalActor implements Serializable {
 	/**
 	 * 
 	 */

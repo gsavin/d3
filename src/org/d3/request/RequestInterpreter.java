@@ -18,11 +18,11 @@
  */
 package org.d3.request;
 
-import org.d3.IdentifiableObject;
-import org.d3.RemoteIdentifiableObject;
+import org.d3.Actor;
 import org.d3.Request;
+import org.d3.actor.RemoteActor;
 
 public interface RequestInterpreter
 {
-	Object handleRequest( RemoteIdentifiableObject rio, IdentifiableObject target, Request r );
+	Object handleRequest( RemoteActor rio, Actor target, Request r );
 }
