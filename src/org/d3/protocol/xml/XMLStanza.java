@@ -87,6 +87,15 @@ public class XMLStanza {
 		return children.size();
 	}
 
+	public XMLStanza getChild(String name) {
+		for(int i=0; i<children.size(); i++) {
+			if( children.get(i).getName().equals(name))
+				return children.get(i);
+		}
+		
+		return null;
+	}
+	
 	public XMLStanza getChild(int i) {
 		return children.get(i);
 	}

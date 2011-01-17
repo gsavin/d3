@@ -21,8 +21,8 @@ package org.d3.migration;
 import java.io.Serializable;
 import java.util.Collection;
 
-import org.d3.Request;
-import org.d3.entity.Entity;
+import org.d3.actor.Entity;
+import org.d3.protocol.Request;
 
 public class MigrationData implements Serializable {
 	/**

@@ -18,6 +18,8 @@
  */
 package org.d3.agency;
 
+import org.d3.actor.Feature;
+
 public abstract class RunnableFeature extends Feature
 {
 	protected RunnableFeature(String id) {

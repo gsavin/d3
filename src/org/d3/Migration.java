@@ -21,14 +21,16 @@ package org.d3;
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.d3.actor.Agency;
 import org.d3.actor.LocalActor;
-import org.d3.agency.RemoteAgency;
 import org.d3.annotation.ActorPath;
-import org.d3.annotation.RequestCallable;
+import org.d3.annotation.Callable;
 //import org.d3.atlas.internal.Body;
 import org.d3.migration.BadMigrationSideException;
 import org.d3.migration.MigrationData;
 import org.d3.protocol.Protocols;
+import org.d3.protocol.Request;
+import org.d3.remote.RemoteAgency;
 
 @ActorPath("/migrations")
 public class Migration extends LocalActor {
@@ -121,7 +123,7 @@ public class Migration extends LocalActor {
 		}
 	}
 
-	@RequestCallable("transfer")
+	@Callable("transfer")
 	public void transfer(URI destination) {
 		if (side == MigrationSide.RECEIVER)
 			throw new BadMigrationSideException();
@@ -143,7 +145,7 @@ public class Migration extends LocalActor {
 		}
 	}
 
-	@RequestCallable("receive")
+	@Callable("receive")
 	public void receive(MigrationData data) {
 		if (side == MigrationSide.SENDER)
 			throw new BadMigrationSideException();
@@ -167,7 +169,7 @@ public class Migration extends LocalActor {
 		}
 	}
 
-	@RequestCallable("confirm")
+	@Callable("confirm")
 	public void confirm(MigrationStatus status) {
 		if (side == MigrationSide.RECEIVER)
 			throw new BadMigrationSideException();
@@ -176,13 +178,13 @@ public class Migration extends LocalActor {
 		setStatus(status == null ? MigrationStatus.ERROR : status);
 	}
 
-	@RequestCallable("cancel")
+	@Callable("cancel")
 	public void cancel() {
 		// TODO
 		setStatus(MigrationStatus.CANCELED);
 	}
 
-	@RequestCallable("reject")
+	@Callable("reject")
 	public void reject() {
 		// TODO
 		setStatus(MigrationStatus.REJECTED);

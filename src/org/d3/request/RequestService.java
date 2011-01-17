@@ -24,12 +24,12 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.d3.Agency;
 import org.d3.Args;
 import org.d3.Console;
 import org.d3.Actor;
-import org.d3.Request;
+import org.d3.actor.Agency;
 import org.d3.agency.AgencyListener;
+import org.d3.protocol.Request;
 
 //import static org.d3.IdentifiableObject.Tools.handleRequest;
 

@@ -18,24 +18,26 @@
  */
 package org.d3.tools;
 
-import org.d3.Agency;
 import org.d3.Args;
+import org.d3.Console;
+import org.d3.actor.Agency;
 
 public class StartD3 {
 	public static void d3Loop() {
-		while (true) {
-			try {
-				Thread.sleep(1000);
-			} catch (Exception e) {
-
-			}
+		try {
+			Thread.sleep(100000);
+			Agency.getLocalAgency().join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 	}
 
 	public static void init(String[] mainArgs) {
 		String cfg = System.getProperty("org.d3.config",
 				"org/d3/resources/default.cfg");
-		
+
+		Console.info("Starting D3 using \"%s\" ...", cfg);
+
 		Args args = Args.processFile(cfg);
 		Args.parseArgs(args, mainArgs);
 

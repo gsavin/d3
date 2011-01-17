@@ -18,9 +18,11 @@
  */
 package org.d3;
 
+import org.d3.actor.Agency;
 import org.d3.actor.LocalActor;
 import org.d3.agency.AgencyListener;
-import org.d3.agency.RemoteAgency;
+import org.d3.protocol.Request;
+import org.d3.remote.RemoteAgency;
 
 public abstract class Application extends LocalActor implements
 		AgencyListener {

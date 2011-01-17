@@ -92,4 +92,13 @@ public class Console
 		log( LOG_LEVEL_WARNING, "%s[%s] %s%s%n", enableColor ? VERT : "", cls,
 				String.format(message, args), enableColor ? RESET : "");
 	}
+	
+	public static void exception( Exception e) {
+		if( e instanceof RuntimeException )
+			warning("%s: %s", e.getClass().getName(), e.getMessage());
+		else
+			error("%s: %s", e.getClass().getName(), e.getMessage());
+		
+		e.printStackTrace();
+	}
 }

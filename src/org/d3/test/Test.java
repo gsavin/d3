@@ -18,116 +18,48 @@
  */
 package org.d3.test;
 
+import java.security.SecureRandom;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.net.URI;
-import java.util.LinkedList;
-import java.util.Random;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.nio.charset.Charset;
 
-import org.d3.Agency;
-import org.d3.Application;
 import org.d3.Console;
-import org.d3.Future;
-import org.d3.agency.RemoteAgency;
-import org.d3.atlas.future.FutureAction;
-import org.d3.entity.Entity;
-import org.d3.tools.StartD3;
+import org.d3.actor.Agency.Argument;
+import org.d3.protocol.BadProtocolException;
+import org.d3.protocol.Protocols;
 
-import static org.d3.Actor.Tools.call;
-
-public class Test extends Application {
-	public static class TestFutureAction extends FutureAction {
-		public TestFutureAction(LinkedList<Future> futures) {
-			super(futures);
-		}
-
-		public void action(Future future) {
-			Object obj = future.getValue();
-			System.out.printf("[test] future result: %s%n", obj);
-		}
-	}
-
+public class Test {
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) {
-		Test test = new Test();
+	public static void main(String[] args) throws Exception {
+		/*
+		 * SecureRandom random = new SecureRandom(); String agencyId;
+		 * 
+		 * agencyId = String.format("%x%x", System.nanoTime(),
+		 * random.nextLong());
+		 * 
+		 * String uriString = "//host/object/path"; URI uri = new
+		 * URI(uriString);
+		 * 
+		 * System.out.printf("> scheme=\"%s\", host=\"%s\", path=\"%s\"%n",
+		 * uri.getScheme(), uri.getHost(), uri.getPath());
+		 * System.out.println(Charset.defaultCharset().name());
+		 */
 
-		StartD3.init(args);
+		long m1, m2;
+		String uri = "scheme://host:port/path/id";
+		int size = 100000;
 
-		Agency.getLocalAgency().launch(test);
+		m1 = System.nanoTime();
+		for (int i = 0; i < size; i++)
+			//new URI(uri);
+			new URI("scheme", null, "host", 1, "/path", null, null);
+		
+		m2 = System.nanoTime();
 
-		Thread[] threads = new Thread[Thread.activeCount()];
-		Thread.enumerate(threads);
-
-		System.out.printf("Active threads:%n");
-		for (Thread t : threads)
-			if (t != null)
-				System.out.printf(" - %s%n", t.getName());
-
-		StartD3.d3Loop();
+		System.out.printf("> average : %d ns%n", (m2 - m1) / size);
 	}
 
-	ConcurrentLinkedQueue<TestEntity> entities = new ConcurrentLinkedQueue<TestEntity>();
-
-	Random random = new Random();
-
-	public Test() {
-		super(Test.class.getName());
-	}
-
-	public void agencyExit(Agency agency) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void newAgencyRegistered(RemoteAgency rad) {
-		remoteAgencyDescriptionUpdated(rad);
-	}
-
-	public void remoteAgencyDescriptionUpdated(RemoteAgency rad) {
-		Console.warning("remote agency updated: %s", rad.getId());
-		Object r = call(this, rad, "getIdentifiableObjectList",
-				new Object[] { IdentifiableType.entity });
-
-		if (r != null) {
-			try {
-				URI[] entities = (URI[]) r;
-				System.out.printf("entities on %s%n", rad.getId());
-				for (URI entity : entities) {
-					System.out.printf("- %s%n", entity);
-
-					for (TestEntity testEntity : this.entities)
-						if (random.nextFloat() < 0.2)
-							call(this, testEntity, "beMyFriend",
-									new Object[] { entity }, true);
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
-	public void execute() {
-		while (true) {
-			// Console.warning("test running");
-			for (Entity e : entities)
-				call(this, e, "step", null, true);
-
-			try {
-				Thread.sleep(400);
-			} catch (Exception e) {
-
-			}
-		}
-	}
-
-	public void init() {
-
-		for (int i = 0; i < 50; i++)
-			entities.add(Agency.getLocalAgency().getAtlas()
-					.createEntity(TestEntity.class));
-
-		for (RemoteAgency remote : Agency.getLocalAgency().eachRemoteAgency())
-			remoteAgencyDescriptionUpdated(remote);
-	}
 }

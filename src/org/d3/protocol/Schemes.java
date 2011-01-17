@@ -21,7 +21,7 @@ package org.d3.protocol;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.d3.Protocol;
+import org.d3.actor.Protocol;
 
 public class Schemes {
 
@@ -31,27 +31,27 @@ public class Schemes {
 		 */
 		private static final long serialVersionUID = -630028359855052622L;
 	}
-	
+
 	private final ConcurrentHashMap<String, Scheme> schemes;
-	
+
 	public Schemes() {
 		this.schemes = new ConcurrentHashMap<String, Scheme>();
 	}
-	
+
 	public synchronized void register(Protocol protocol)
 			throws ProtocolException {
 		Scheme scheme;
-		
-		if(schemes.containsKey(protocol.getScheme()))
+
+		if (schemes.containsKey(protocol.getScheme()))
 			scheme = schemes.get(protocol.getScheme());
 		else {
 			scheme = new Scheme();
 			schemes.put(protocol.getScheme(), scheme);
 		}
-		
-		if(scheme.contains(protocol))
+
+		if (scheme.contains(protocol))
 			throw new ProtocolException();
-		
-		scheme.add(protocol);	
+
+		scheme.add(protocol);
 	}
 }

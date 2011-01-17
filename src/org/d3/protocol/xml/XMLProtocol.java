@@ -18,79 +18,78 @@
  */
 package org.d3.protocol.xml;
 
+import java.io.ByteArrayInputStream;
 import java.net.SocketAddress;
-import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.nio.charset.Charset;
+import java.util.HashMap;
 
-import org.d3.ActorNotFoundException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
 import org.d3.InvalidRequestFormatException;
-import org.d3.Protocol;
-import org.d3.Request;
+import org.d3.actor.ActorInternalException;
+import org.d3.protocol.Request;
+import org.d3.protocol.RequestIOProtocol;
+import org.d3.template.Template;
 
-public abstract class XMLProtocol extends Protocol {
+public abstract class XMLProtocol extends RequestIOProtocol {
 	public static final int XML_PROTOCOL_PORT = 10001;
 
-	protected static final String XML_REQUEST_TEMPLATE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+	protected static final String XML_REQUEST_TEMPLATE = "<?xml version=\"1.0\" encoding=\"{%encoding%}\"?>\n"
 			+ "<request>\n"
-			+ "<source>%source%</source>\n"
-			+ "<target>%target%</target>\n" + "</request>\n";
+			+ " <source>{%source%}</source>\n"
+			+ " <target>{%target%}</target>\n"
+			+ " <call>{%call%}</call>\n"
+			+ " <args coding=\"{%coding_method%}\">{%args%}</args>\n"
+			+ " <future>{%future%}</future>\n" + "</request>\n";
 
-	protected static final Pattern XML_REQUEST_PATTERN = Pattern
-			.compile("^\\s*(?:<\\?xml\\s+version=\"[^\"]+\"\\s+encoding=\"[^\"]+\"\\?>)?\\s*"
-					+ "<request>\\s*((?:<source>.*</source>\\s*|<target>.*</target>\\s*){2})</request>\\s*$");
-
-	protected static final Pattern XML_REQUEST_SOURCE_PATTERN = Pattern
-			.compile("<source>(.*)</source>");
-	protected static final Pattern XML_REQUEST_TARGET_PATTERN = Pattern
-			.compile("<target>(.*)</target>");
+	private Template xmlRequestTemplate;
+	private Charset charset;
+	private XMLRequestParser handler;
+	private SAXParser parser;
 
 	protected XMLProtocol(String id, SocketAddress socketAddress) {
 		super("xml", id, socketAddress);
+
+		xmlRequestTemplate = new Template(XML_REQUEST_TEMPLATE);
+		charset = Charset.defaultCharset();
+		handler = new XMLRequestParser();
+
+		try {
+			parser = SAXParserFactory.newInstance().newSAXParser();
+		} catch (Exception e) {
+			throw new ActorInternalException(e);
+		}
 	}
 
 	protected byte[] convert(Request r) {
-		String req = XML_REQUEST_TEMPLATE;
+		HashMap<String, String> env = new HashMap<String, String>();
 
-		req.replace("%source%", r.getSourceURI().toString());
-		req.replace("%target%", r.getTargetURI().toString());
+		env.put("encoding", charset.name());
+		env.put("source", r.getSourceURI().toString());
+		env.put("target", r.getTargetURI().toString());
+		env.put("call", r.getCall());
+		env.put("coding_method", r.getCodingMethod().name());
+		env.put("args", r.getArgs());
+		env.put("future", r.getFutureId());
 
-		return req.getBytes();
+		return xmlRequestTemplate.toString(env).getBytes(charset);
 	}
 
-	protected Request convert(byte[] bytes, int offset, int length)
-			throws InvalidRequestFormatException {
-		String req = new String(bytes,offset,length);
-		
-		Matcher m = XML_REQUEST_PATTERN.matcher(req);
-		if (m.matches()) {
-			Matcher s = XML_REQUEST_SOURCE_PATTERN.matcher(m.group(1));
-			Matcher t = XML_REQUEST_TARGET_PATTERN.matcher(m.group(1));
-
-			if (s.find() && t.find()) {
-				URI source = URI.create(s.group(1));
-				URI target = URI.create(t.group(1));
-
-				return new Request(source, target);
-			}
-		}
-
-		throw new InvalidRequestFormatException();
-	}
-
-	public abstract void sendRequest(Request r);
+	public abstract void writeRequest(Request r);
 
 	public void readRequest(ByteBuffer buffer)
-		throws InvalidRequestFormatException {
+			throws InvalidRequestFormatException {
 		checkProtocolThreadAccess();
 
-		Request req = convert(buffer.array(), buffer.arrayOffset(),
-				buffer.limit());
+		ByteArrayInputStream in = new ByteArrayInputStream(buffer.array(),
+				buffer.arrayOffset(), buffer.limit());
 
 		try {
-			dispatch(req);
-		} catch (ActorNotFoundException e) {
+			parser.parse(in, handler);
+			dispatch(handler.getRequestAndClear());
+		} catch (Exception e) {
 			// TODO
 			e.printStackTrace();
 		}

@@ -19,84 +19,91 @@
 package org.d3;
 
 //import java.lang.reflect.Method;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
 
+import org.d3.actor.ActorInternalException;
+import org.d3.actor.Agency;
+import org.d3.actor.Protocol;
 import org.d3.annotation.ActorPath;
+import org.d3.remote.HostNotFoundException;
+import org.d3.remote.NoRemotePortAvailableException;
+import org.d3.remote.RemotePort;
+import org.d3.remote.UnknownAgencyException;
+import org.d3.tools.Utils;
 
 @ActorPath("/")
 public abstract class Actor {
 	public static enum IdentifiableType {
-		feature, entity, agency, atlas, protocol, application, future, migration, remote
+		feature, entity, agency, protocol, application, migration, remote
 	}
 
 	public static final String VALID_ID_PATTERN = "^[\\w\\d]([\\w\\d_-[.]]*[\\w\\d])?$";
 
-	public static class Tools {
-
-		public static String getArgsPrefix(Actor idObject) {
-			String path = idObject.getPath();// getPath(idObject.getClass());
-
-			if (path == null || path.length() == 0 || path.equals("/"))
-				return null;
-
-			if (path.startsWith("/"))
-				path = path.substring(1);
-
-			return path.replace("/", ".");
-		}
-		
-		public static String getTypePath(Class<? extends Actor> cls) {
-			return getTypePath(cls, null);
-		}
-
-		public static String getTypePath(
-				Class<? extends Actor> idCls, String id) {
-			ActorPath idPath = null;
-			Class<?> cls = idCls;
-
-			while (Actor.class.isAssignableFrom(cls)
-					&& idPath == null) {
-				idPath = cls.getAnnotation(ActorPath.class);
-
-				if (idPath == null) {
-					for (Class<?> i : cls.getInterfaces()) {
-						idPath = i.getAnnotation(ActorPath.class);
-						if (idPath != null)
-							break;
-					}
-				}
-
-				cls = cls.getSuperclass();
-			}
-
-			String path = idPath == null ? "/" : idPath.value();
-
-			if (!path.startsWith("/")) {
-				path = "/" + path;
-			}
-
-			if (!path.endsWith("/") && id != null) {
-				path = path + "/";
-			}
-
-			return path + (id == null ? "" : id);
-		}
+	public static String getTypePath(Class<? extends Actor> cls) {
+		return getTypePath(cls, null);
 	}
-	
+
+	public static String getTypePath(Class<? extends Actor> idCls, String id) {
+		ActorPath idPath = null;
+		Class<?> cls = idCls;
+
+		while (Actor.class.isAssignableFrom(cls) && idPath == null) {
+			idPath = cls.getAnnotation(ActorPath.class);
+
+			if (idPath == null) {
+				for (Class<?> i : cls.getInterfaces()) {
+					idPath = i.getAnnotation(ActorPath.class);
+					if (idPath != null)
+						break;
+				}
+			}
+
+			cls = cls.getSuperclass();
+		}
+
+		String path = idPath == null ? "/" : idPath.value();
+
+		if (!path.startsWith("/")) {
+			path = "/" + path;
+		}
+
+		if (!path.endsWith("/") && id != null) {
+			path = path + "/";
+		}
+
+		return path + (id == null ? "" : id);
+	}
+
 	protected final String id;
 	protected final InetAddress host;
+	protected final String agencyId;
 	private final String path;
 	private transient URI uri;
 
-	protected Actor(InetAddress host, String id) {
+	protected Actor(InetAddress host, String agencyId, String path, String id) {
+		if (id == null || agencyId == null)
+			throw new NullPointerException();
+
 		if (!id.matches(VALID_ID_PATTERN))
-			throw new InvalidIdException(
-					String.format("invalid id: \"%s\"", id));
+			throw new InvalidIdException(id);
+
+		if (path == null)
+			path = getTypePath(getClass());
+
+		if (!path.startsWith("/")) {
+			path = "/" + path;
+		}
+
+		if (!path.endsWith("/")) {
+			path = path + "/";
+		}
 
 		this.host = host;
 		this.id = id;
-		this.path = Tools.getTypePath(getClass());
+		this.agencyId = agencyId;
+		this.path = path;
 		this.uri = null;
 	}
 
@@ -120,37 +127,49 @@ public abstract class Actor {
 	public abstract IdentifiableType getType();
 
 	public abstract void init();
-	
-	public final void register() {
-		Agency.getLocalAgency().registerIdentifiableObject(this);
-	}
 
-	public final void unregister() {
-		Agency.getLocalAgency().unregisterIdentifiableObject(this);
-	}
-
-	public String getPath() {
+	public final String getPath() {
 		return path;
 	}
 
-	public String getFullPath() {
-		String path = getPath();
-
-		if (!path.startsWith("/")) {
-			path = "/" + path;
-		}
-
-		if (!path.endsWith("/")) {
-			path = path + "/";
-		}
-
+	public final String getFullPath() {
 		return path + id;
 	}
 
-	public URI getURI(){
+	public final URI getURI() {
 		if (uri == null) {
+			String uriString;
+			String scheme = null;
+			int port = -1;
+			String host = this.host.getHostAddress();
 			String path = getFullPath();
-			String uriString = String.format("d3://%s%s", host.getHostName(), path);
+
+			if (this.host instanceof Inet6Address)
+				host = String.format("[%s]", host);
+
+			if (isRemote()) {
+				try {
+					RemotePort rp = Utils.getRandomRemotePortFromRemoteAgency(
+							this.host, agencyId);
+
+					scheme = rp.getScheme();
+					port = rp.getPort();
+				} catch (HostNotFoundException e) {
+					throw new ActorInternalException(e);
+				} catch (UnknownAgencyException e) {
+					throw new ActorInternalException(e);
+				} catch (NoRemotePortAvailableException e) {
+					throw new ActorInternalException(e);
+				}
+			} else {
+				Protocol p = Agency.getLocalAgency().getDefaultProtocol();
+
+				scheme = p.getScheme();
+				port = p.getPort();
+			}
+
+			uriString = String.format("%s://%s:%d/%s%s%s", scheme, host, port,
+					agencyId, path);
 
 			try {
 				uri = new URI(uriString);
@@ -162,24 +181,22 @@ public abstract class Actor {
 		return uri;
 	}
 
-	public URI getQueryURI(String query) {
-		getURI();
+	public String getArgsPrefix() {
+		String path = getPath();
 
-		return URI.create(String.format("d3://%s%s?%s", uri.getHost(),
-				uri.getPath(), query));
+		if (path == null || path.length() == 0 || path.equals("/"))
+			return null;
+
+		if (path.startsWith("/"))
+			path = path.substring(1);
+
+		if (path.endsWith("/"))
+			path = path.substring(0, path.length() - 1);
+
+		return path.replace("/", ".");
 	}
 
-	/*
-	 * public Object synchroneCall(IdentifiableObject source, String name,
-	 * Object... args) { return Tools.call(source, this, name, args, false); }
-	 * 
-	 * public Object asynchroneCall(IdentifiableObject source, String name,
-	 * Object... args) { return Tools.call(source, this, name, args, true); }
-	 */
 	public abstract boolean isRemote();
-	
-	public abstract void handle(Request r);
 
-	public abstract Object call(Actor source, String name,
-			Object... args);
+	public abstract Object call(String name, Object... args);
 }

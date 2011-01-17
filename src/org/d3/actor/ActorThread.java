@@ -18,18 +18,49 @@
  */
 package org.d3.actor;
 
+import org.d3.Actor;
+import org.d3.protocol.NotRemoteActorCallException;
+import org.d3.protocol.ProtocolThread;
+
 public class ActorThread extends Thread {
+
+	public static final Actor getCurrentActor() {
+		Thread t = Thread.currentThread();
+
+		if (t instanceof ProtocolThread) {
+			try {
+				Actor a = ((ProtocolThread) t).getCurrentRemoteActor();
+				return a;
+			} catch(NotRemoteActorCallException e) {
+				// Not a remote call
+			}
+		}
+		
+		if (t instanceof ActorThread) {
+			ActorThread rt = (ActorThread) t;
+			return rt.getOwner();
+		}
+
+		return null;
+	}
+	
 	protected final LocalActor owner;
 
 	public ActorThread(LocalActor owner, String threadId) {
 		super(owner.getThreadGroup(), owner.getFullPath() + "/threads/"+threadId);
 		this.owner = owner;
+		
+		setDaemon(true);
 	}
 	
 	public final LocalActor getOwner() {
 		return this.owner;
 	}
 
+	public final boolean isOwner() {
+		return Thread.currentThread() == this;
+	}
+	
 	public final void checkIsOwner() {
 		if (Thread.currentThread() != this)
 			throw new SecurityException();

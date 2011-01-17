@@ -20,9 +20,8 @@ package org.d3.protocol;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.d3.Agency;
-import org.d3.Protocol;
-import org.d3.Request;
+import org.d3.actor.Agency;
+import org.d3.actor.Protocol;
 import org.d3.annotation.ActorPath;
 import org.d3.request.RequestListener;
 

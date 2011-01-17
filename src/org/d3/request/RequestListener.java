@@ -18,7 +18,7 @@
  */
 package org.d3.request;
 
-import org.d3.Request;
+import org.d3.protocol.Request;
 
 public interface RequestListener
 {

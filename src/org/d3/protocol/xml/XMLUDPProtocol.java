@@ -25,9 +25,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 
-import org.d3.Request;
 import org.d3.annotation.ActorPath;
 import org.d3.protocol.InetProtocol;
+import org.d3.protocol.Request;
 
 @ActorPath("/protocols/xml/udp")
 @InetProtocol
@@ -44,7 +44,7 @@ public class XMLUDPProtocol extends XMLProtocol {
 		channel.socket().bind( socketAddress );
 	}
 
-	public void sendRequest(Request request) {
+	public void writeRequest(Request request) {
 		byte[] data = convert(request);
 		URI target = request.getTargetURI();
 		

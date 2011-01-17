@@ -18,63 +18,90 @@
  */
 package org.d3.actor;
 
-import java.net.URI;
-import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
 
-import org.d3.Agency;
-import org.d3.Future;
-import org.d3.Actor;
-import org.d3.ActorNotFoundException;
-import org.d3.Request;
-import org.d3.protocol.Protocols;
+import org.d3.Console;
 
 public class BodyThread extends ActorThread {
 
 	public static enum SpecialAction {
-		STOP
+		STEP, STOP
 	}
 
-	public static final Actor getCurrentIdentifiableObject() {
-		Thread t = Thread.currentThread();
+	private static class SpecialActionTask extends ScheduledTask {
 
-		if (t instanceof ActorThread) {
-			ActorThread rt = (ActorThread) t;
-			return rt.getOwner();
+		SpecialAction action;
+
+		SpecialActionTask(long delay, TimeUnit unit, SpecialAction action) {
+			super(delay, unit);
+			this.action = action;
 		}
-
-		return null;
 	}
 
-	private PriorityBlockingQueue<Object> queue;
+	private DelayQueue<Delayed> queue;
 
 	public BodyThread(LocalActor owner) {
-		super(owner,"request");
-		this.queue = new PriorityBlockingQueue<Object>();
+		super(owner, "request");
+		this.queue = new DelayQueue<Delayed>();
 	}
 
 	public void run() {
+		checkIsOwner();
+
+		owner.register();
+		runBody();
+	}
+
+	protected final void runBody() {
+		checkIsOwner();
+
 		boolean running = true;
 		Object current;
 
-		owner.register();
-		
+		if (owner instanceof StepActor) {
+			StepActor sa = (StepActor) owner;
+			SpecialActionTask sat = new SpecialActionTask(
+					sa.getStepDelay(TimeUnit.NANOSECONDS),
+					TimeUnit.NANOSECONDS, SpecialAction.STEP);
+			
+			queue.add(sat);
+		}
+
 		while (running) {
-			current = queue.poll();
+			try {
+				current = queue.take();
+			} catch (InterruptedException e) {
+				continue;
+			}
 
 			if (current == null)
 				continue;
 
-			if (current instanceof Request) {
-				Request r = (Request) current;
+			if (current instanceof Call) {
+				Call c = (Call) current;
+
 				try {
-					runRequest(r);
+					Object r = owner.call(c.getName(), c.getArgs());
+					c.getFuture().init(r);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-			} else if (current instanceof SpecialAction) {
-				SpecialAction sa = (SpecialAction) current;
+			} else if (current instanceof SpecialActionTask) {
+				SpecialActionTask sat = (SpecialActionTask) current;
 
-				switch (sa) {
+				switch (sat.action) {
+				case STEP:
+					if (owner instanceof StepActor) {
+						StepActor sa = (StepActor) owner;
+						sa.step();
+						sat.delay = sa.getStepDelay(sat.unit);
+						sat.reset();
+						queue.add(sat);
+					}
+
+					break;
 				case STOP:
 					running = false;
 					break;
@@ -83,30 +110,10 @@ public class BodyThread extends ActorThread {
 		}
 	}
 
-	public final void enqueue(Request r) {
-		queue.add(r);
-	}
+	public final Future enqueue(String name, Object[] args) {
+		Call c = new Call(owner, name, args);
+		queue.add(c);
 
-	protected void runRequest(Request r)
-			throws ActorNotFoundException {
-		Actor source = Agency.getLocalAgency()
-				.getIdentifiableObject(r.getSourceURI());
-		Actor target = Agency.getLocalAgency()
-				.getIdentifiableObject(r.getTargetURI());
-
-		Object ret = owner.call(source, r.getCallable(),
-				r.getCallableArguments());
-
-		if (r.hasFuture()) {
-			URI future = r.getFutureURI();
-
-			Object[] args = new Object[] { ret == null ? Future.SpecialReturn.NULL
-					: ret };
-
-			Request back = new Request(target, Agency.getLocalAgency()
-					.getIdentifiableObject(future), "init", args);
-
-			Protocols.sendRequest(back);
-		}
+		return c.getFuture();
 	}
 }

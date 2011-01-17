@@ -26,14 +26,13 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 
-import org.d3.Request;
 import org.d3.annotation.ActorPath;
 import org.d3.protocol.InetProtocol;
+import org.d3.protocol.Request;
 
 @ActorPath("/protocols/xml/tcp")
 @InetProtocol
 public class XMLTCPProtocol extends XMLProtocol {
-	public static final int XML_TCP_PORT = 6003;
 	private ServerSocketChannel channel;
 
 	public XMLTCPProtocol(InetSocketAddress socketAddress) throws IOException {
@@ -44,7 +43,7 @@ public class XMLTCPProtocol extends XMLProtocol {
 		channel.socket().bind( socketAddress );
 	}
 
-	public void sendRequest(Request request) {
+	public void writeRequest(Request request) {
 		byte[] data = convert(request);
 		URI target = request.getTargetURI();
 		

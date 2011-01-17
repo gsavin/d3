@@ -20,7 +20,7 @@ package org.d3.protocol;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.d3.Protocol;
+import org.d3.actor.Protocol;
 
 public class Ports {
 	private final ConcurrentHashMap<Integer, Protocol> ports;
@@ -39,5 +39,9 @@ public class Ports {
 
 			ports.put(port, protocol);
 		}
+	}
+	
+	public Protocol get(int port) {
+		return ports.get(port);
 	}
 }

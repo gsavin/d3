@@ -21,16 +21,15 @@ package org.d3.actor;
 import java.net.InetAddress;
 
 import org.d3.Actor;
-import org.d3.Future;
-import org.d3.Request;
 import org.d3.annotation.ActorPath;
-import org.d3.protocol.Protocols;
 
 @ActorPath("/remotes")
 public class RemoteActor extends Actor {
-	
-	public RemoteActor(InetAddress host, String objectId) {
-		super(host, objectId.startsWith("/") ? objectId.substring(1) : objectId);
+
+	public RemoteActor(InetAddress host, String agencyId, String objectPath,
+			String objectId) {
+		super(host, agencyId, objectPath, objectId.startsWith("/") ? objectId
+				.substring(1) : objectId);
 	}
 
 	public final IdentifiableType getType() {
@@ -40,24 +39,10 @@ public class RemoteActor extends Actor {
 	public void init() {
 		// XXX
 	}
-	
-	public void handle(Request r) {
-		throw new UnsupportedOperationException(
-				"remote object not support request handling");
-	}
 
-	public Object call(Actor source, String name, Object... args) {
-		Future f = new Future();
-		Request r = new Request(source, this, name, args, f);
+	public Object call(String name, Object... args) {
 
-		Protocols.sendRequest(r);
-
-		f.waitForValue();
-
-		if (f.getValue() == Future.SpecialReturn.NULL)
-			return null;
-
-		return f.getValue();
+		return null;
 	}
 
 	public final boolean isRemote() {

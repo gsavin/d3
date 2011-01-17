@@ -18,7 +18,12 @@
  */
 package org.d3.protocol.xml;
 
-public interface XMLStanzaFactory
-{
-	XMLStanza newXMLStanza( String name );
+public interface XMLStanzaFactory {
+	XMLStanza newXMLStanza(String name);
+
+	public final static XMLStanzaFactory DEFAULT = new XMLStanzaFactory() {
+		public XMLStanza newXMLStanza(String name) {
+			return new XMLStanza(name);
+		}
+	};
 }

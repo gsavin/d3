@@ -22,12 +22,12 @@ import java.net.URI;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.d3.Agency;
 import org.d3.Console;
 import org.d3.Actor;
+import org.d3.actor.Agency;
+import org.d3.actor.Entity;
 import org.d3.annotation.ActorPath;
-import org.d3.annotation.RequestCallable;
-import org.d3.entity.Entity;
+import org.d3.annotation.Callable;
 
 import static org.d3.Actor.Tools.call;
 
@@ -47,7 +47,7 @@ public class TestEntity extends Entity {
 		idObjects = new ConcurrentLinkedQueue<Actor>();
 	}
 
-	@RequestCallable("beMyFriend")
+	@Callable("beMyFriend")
 	public void addFriend(URI uri) {
 		Actor idObject = Agency.getLocalAgency().getIdentifiableObject(uri);
 
@@ -55,17 +55,17 @@ public class TestEntity extends Entity {
 			idObjects.add(idObject);
 	}
 	
-	@RequestCallable("ping")
+	@Callable("ping")
 	public void ping() {
 		//Console.info("[%s] ping",getId());
 	}
 
-	@RequestCallable("pong")
+	@Callable("pong")
 	public void pong() {
 		//Console.info("[%s] pong",getId());
 	}
 
-	@RequestCallable("step")
+	@Callable("step")
 	public void step() {
 		//Console.warning("entity step (friends: %d)",idObjects.size());
 		

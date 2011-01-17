@@ -26,11 +26,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.d3.Agency;
 //import org.d3.Console;
 import org.d3.Console;
 import org.d3.Actor;
 import org.d3.Actor.IdentifiableType;
+import org.d3.actor.Agency;
 import org.d3.actor.RemoteActor;
 import org.d3.request.ObjectCoder;
 

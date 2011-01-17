@@ -20,8 +20,8 @@ package org.d3.tools;
 
 import java.util.Arrays;
 
-import org.d3.Agency;
 import org.d3.Application;
+import org.d3.actor.Agency;
 
 public class ApplicationLauncher
 {

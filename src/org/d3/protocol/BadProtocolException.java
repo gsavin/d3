@@ -31,4 +31,8 @@ public class BadProtocolException extends Exception {
 	public BadProtocolException(String msg) {
 		super(msg);
 	}
+	
+	public BadProtocolException(Throwable t) {
+		super(t);
+	}
 }

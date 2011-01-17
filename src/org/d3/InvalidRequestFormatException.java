@@ -18,21 +18,21 @@
  */
 package org.d3;
 
-public class InvalidRequestFormatException
-	extends Exception
-{
+public class InvalidRequestFormatException extends Exception {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 4668598227340937244L;
 
-	public InvalidRequestFormatException()
-	{
+	public InvalidRequestFormatException() {
 		super();
 	}
-	
-	public InvalidRequestFormatException( String msg )
-	{
-		super( msg );
+
+	public InvalidRequestFormatException(String msg) {
+		super(msg);
+	}
+
+	public InvalidRequestFormatException(Throwable t) {
+		super(t);
 	}
 }

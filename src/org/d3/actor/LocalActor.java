@@ -21,70 +21,90 @@ package org.d3.actor;
 import java.lang.reflect.Method;
 
 import org.d3.Actor;
-import org.d3.Agency;
-import org.d3.Request;
-import org.d3.annotation.RequestCallable;
+import org.d3.agency.AgencyThread;
+import org.d3.annotation.Callable;
 
 public abstract class LocalActor extends Actor {
 
 	protected static final ThreadGroup actorsThreads = new ThreadGroup("/");
 
 	private final ThreadGroup threadGroup;
-	private final BodyThread requestThread;
-	
+	private final BodyThread bodyThread;
+
 	public LocalActor(String id) {
-		super(Agency.getLocalHost(), id);
-		requestThread = new BodyThread(this);
+		super(Agency.getLocalHost(), Agency.getLocalAgencyId(), null, id);
+
+		if (this instanceof Agency)
+			bodyThread = new AgencyThread((Agency) this);
+		else
+			bodyThread = new BodyThread(this);
 		threadGroup = new ThreadGroup(actorsThreads, getFullPath());
 	}
-	
+
 	public void init() {
-		requestThread.start();
+		if (!bodyThread.isAlive())
+			bodyThread.start();
 	}
-	
+
+	public final void register() {
+		Agency.getLocalAgency().register(this);
+	}
+
+	public final void unregister() {
+		Agency.getLocalAgency().unregister(this);
+	}
+
 	public final boolean isRemote() {
 		return false;
+	}
+
+	public void join() throws InterruptedException {
+		bodyThread.join();
 	}
 	
 	public final ThreadGroup getThreadGroup() {
 		return threadGroup;
 	}
-	
-	public void handle(Request r) {
-		requestThread.enqueue(r);
+
+	public final void checkBodyThreadAccess() {
+		bodyThread.checkIsOwner();
 	}
-	
-	public Object call(Actor source,
-			String name, Object ... args) {
-		requestThread.checkIsOwner();
-		
-		Class<?> cls = getClass();
-		Method callable = null;
 
-		while (callable == null && cls != Object.class) {
-			Method[] methods = cls.getMethods();
+	public Object call(String name, Object... args) {
+		if (bodyThread.isOwner()) {
+			bodyThread.checkIsOwner();
 
-			if (methods != null) {
-				for (Method m : methods) {
-					if (m.getAnnotation(RequestCallable.class) != null
-							&& m.getAnnotation(RequestCallable.class)
-									.value().equals(name)) {
-						callable = m;
-						break;
+			Class<?> cls = getClass();
+			Method callable = null;
+
+			while (callable == null && cls != Object.class) {
+				Method[] methods = cls.getMethods();
+
+				if (methods != null) {
+					for (Method m : methods) {
+						if (m.getAnnotation(Callable.class) != null
+								&& m.getAnnotation(Callable.class)
+										.value().equals(name)) {
+							callable = m;
+							break;
+						}
 					}
 				}
+
+				cls = cls.getSuperclass();
 			}
 
-			cls = cls.getSuperclass();
-		}
+			if (callable == null)
+				return new CallableNotFoundException(name);
 
-		if (callable == null)
-			return new NullPointerException("callable is null");
-
-		try {
-			return callable.invoke(this, args);
-		} catch (Exception e) {
-			return e;
+			try {
+				return callable.invoke(this, args);
+			} catch (Exception e) {
+				return e;
+			}
+		} else {
+			Future f = bodyThread.enqueue(name, args);
+			return f;
 		}
 	}
 }

@@ -20,8 +20,9 @@ package org.d3.agency;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.d3.Agency;
 import org.d3.Console;
+import org.d3.actor.Agency;
+import org.d3.actor.Feature;
 
 public class FeatureManager
 {
@@ -40,7 +41,7 @@ public class FeatureManager
 	{
 		if( ! features.containsKey(f.getId()) )
 		{
-			if( ! agency.registerIdentifiableObject(f) )
+			if( ! agency.register(f) )
 				return;
 			
 			features.put(f.getId(),f);
@@ -48,7 +49,7 @@ public class FeatureManager
 			if( ! f.initFeature(agency,agency.getArgs().getArgs(f)) )
 			{
 				features.remove(f.getId());
-				agency.unregisterIdentifiableObject(f);
+				agency.unregister(f);
 				
 				Console.error("failed to init feature \"%s\"",f.getId());
 			}
@@ -71,7 +72,7 @@ public class FeatureManager
 		if( features.contains(id) )
 		{
 			Feature f = features.get(id);
-			agency.unregisterIdentifiableObject(f);
+			agency.unregister(f);
 		}
 	}
 }

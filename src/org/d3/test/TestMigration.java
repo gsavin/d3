@@ -21,14 +21,14 @@ package org.d3.test;
 import java.net.URI;
 import java.util.LinkedList;
 
-import org.d3.Agency;
 import org.d3.Application;
 import org.d3.Console;
 import org.d3.Actor;
 import org.d3.Migration.MigrationStatus;
-import org.d3.agency.RemoteAgency;
-import org.d3.annotation.RequestCallable;
-import org.d3.entity.Entity;
+import org.d3.actor.Agency;
+import org.d3.actor.Entity;
+import org.d3.annotation.Callable;
+import org.d3.remote.RemoteAgency;
 import org.d3.tools.StartD3;
 
 import static org.d3.Actor.Tools.call;
@@ -43,7 +43,7 @@ public class TestMigration extends Application {
 		StartD3.init(args);
 
 		Agency.getLocalAgency().addAgencyListener(test);
-		Agency.getLocalAgency().registerIdentifiableObject(test);
+		Agency.getLocalAgency().register(test);
 
 		test.init();
 		test.execute();
@@ -59,7 +59,7 @@ public class TestMigration extends Application {
 			super(id);
 		}
 
-		@RequestCallable("whereAreYou")
+		@Callable("whereAreYou")
 		public String whereIam() {
 			return Agency.getLocalAgency().getId();
 		}

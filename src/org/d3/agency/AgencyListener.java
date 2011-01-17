@@ -18,8 +18,9 @@
  */
 package org.d3.agency;
 
-import org.d3.Agency;
 import org.d3.Actor;
+import org.d3.actor.Agency;
+import org.d3.remote.RemoteAgency;
 
 public interface AgencyListener
 {

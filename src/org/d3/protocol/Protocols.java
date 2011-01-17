@@ -19,112 +19,136 @@
 package org.d3.protocol;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import org.d3.Actor;
-import org.d3.Agency;
 import org.d3.Console;
-import org.d3.Protocol;
-import org.d3.Request;
-import org.d3.agency.RemoteAgency;
+import org.d3.actor.Agency;
+import org.d3.actor.Protocol;
+import org.d3.actor.Agency.Argument;
+import org.d3.tools.Utils;
 
-@SuppressWarnings("unchecked")
 public class Protocols {
-	public static void enableProtocol(String classname)
-			throws BadProtocolException {
-		try {
-			Class<? extends Protocol> cls = (Class<? extends Protocol>) Class
-					.forName(classname);
+	public static void init() {
+		Agency.getLocalAgency().checkBodyThreadAccess();
 
-			if (cls.getAnnotation(InetProtocol.class) != null) {
+		String protocolsToLoad = Agency.getArg(Argument.PROTOCOLS.key);
+
+		if (protocolsToLoad != null) {
+			Pattern protocol = Pattern
+					.compile("(@?[a-zA-Z0-9_]+(?:[.][a-zA-Z0-9_]+)*)\\((?:([^:]+)(?::(\\d+))?)?\\)");
+			Matcher protocols = protocol.matcher(protocolsToLoad);
+
+			while (protocols.find()) {
+				String cls = protocols.group(1);
+				String ifname = protocols.group(2);
+				int port = protocols.group(3) == null ? -1 : Integer
+						.parseInt(protocols.group(3));
+
+				cls = cls.replace("@", Protocols.class.getPackage().getName()
+						+ ".");
+
+				Console.warning("load %s %s%d", cls, ifname, port);
+				
 				try {
-					Constructor<? extends Protocol> c = cls
-							.getConstructor(InetSocketAddress.class);
+					Protocols.enableProtocol(cls, ifname, port);
+				} catch (BadProtocolException e) {
+					Console.exception(e);
+				}
+			}
+		}
+	}
 
-					Protocol p = c.newInstance();
-					enableProtocol(p);
-				} catch (NoSuchMethodException e) {
-					throw new BadProtocolException(e.getMessage());
+	@SuppressWarnings("unchecked")
+	public static void enableProtocol(String classname, String ifname, int port)
+			throws BadProtocolException {
+		Class<? extends Protocol> cls;
+
+		try {
+			cls = (Class<? extends Protocol>) Class.forName(classname);
+		} catch (ClassNotFoundException e) {
+			throw new BadProtocolException(e);
+		}
+
+		if (cls.getAnnotation(InetProtocol.class) != null) {
+			Constructor<? extends Protocol> c;
+			Object[] args;
+
+			if (ifname != null) {
+				if (port > 0) {
+					InetAddress inet;
+
+					try {
+						inet = Utils.getAddressForInterface(ifname);
+					} catch (SocketException e) {
+						throw new BadProtocolException(e);
+					}
+
+					InetSocketAddress inetSocket = new InetSocketAddress(inet,
+							port);
+
+					try {
+						c = cls.getConstructor(InetSocketAddress.class);
+					} catch (Exception e) {
+						throw new BadProtocolException(e);
+					}
+
+					args = new Object[] { inetSocket };
+				} else {
+					NetworkInterface nif;
+					
+					try {
+						nif = NetworkInterface.getByName(ifname);
+						c = cls.getConstructor(NetworkInterface.class);
+					} catch(Exception e) {
+						throw new BadProtocolException(e);
+					}
+					
+					args = new Object[] {nif};
+				}
+			} else {
+				try {
+					c = cls.getConstructor();
+				} catch (Exception e) {
+					throw new BadProtocolException(e);
 				}
 
+				args = null;
 			}
 
-		} catch (Exception e) {
-			System.err.printf("[protocols] error while loading \"%s\"%n",
-					classname);
-			e.printStackTrace();
-		}
-	}
-
-	public static void register(Protocol protocol) throws ProtocolException {
-		protocol.checkProtocolThreadAccess();
-
-		int port = protocol.getPort();
-		
-		if (port > 0) {
-			if (ports.containsKey(port))
-				throw new ProtocolException();
-			
-			ports.put(port, protocol);
-		}
-
-	}
-
-	public static void enableProtocol(Protocol protocol) {
-
-	}
-
-	private static final Protocol getProtocol(String id) {
-		if (knownProtocols.containsKey(id))
-			initProtocol(id);
-
-		return protocols.get(id);
-	}
-
-	private static final Protocol getProtocolTo(RemoteAgency rad) {
-		return getProtocol(rad.getFirstProtocol());
-	}
-
-	public static final void sendRequest(Request r) {
-		if (!r.isLocalTarget()) {
-			RemoteAgency rad = Agency.getLocalAgency()
-					.getRemoteAgencyDescription(r.getTargetAgency());
-
-			Protocol protocol = getProtocolTo(rad);
-
-			if (protocol == null) {
-				Console.error("no protocol to %s", rad.getId());
+			try {
+				Protocol p = c.newInstance(args);
+				p.init();
+			} catch (Exception e) {
+				throw new BadProtocolException(e);
 			}
 
-			protocol.sendRequest(r);
-		} else {
-			InternalProtocol.getInternalProtocol().sendRequest(r);
 		}
 	}
 
-	public static final boolean isLocalPort(int port) {
-		Protocol p = ports.get(port);
-		return p == null ? false : protocols.containsValue(p);
-	}
-
-	public static final Protocol getProtocolTo(Actor actor)
-			throws ProtocolNotFoundException {
-		return null;
-	}
-	
 	private final Ports ports;
 	private final Schemes schemes;
-	
+
 	public Protocols() {
 		this.ports = new Ports();
 		this.schemes = new Schemes();
 	}
-	
+
 	public void register(Protocol protocol) throws ProtocolException {
+		protocol.checkProtocolThreadAccess();
+
 		ports.register(protocol);
 		schemes.register(protocol);
+
+		Console.info("protocol \"%s\" enable", protocol.getFullPath());
+	}
+
+	public boolean isLocalPort(int port) {
+		Protocol p = ports.get(port);
+		return p != null;
 	}
 }
