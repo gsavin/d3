@@ -19,29 +19,43 @@
 package org.d3.feature;
 
 import org.d3.Console;
+import org.d3.actor.ActorsEvent;
 import org.d3.actor.Agency;
 import org.d3.actor.Feature;
-import org.d3.agency.AgencyEvents;
+import org.d3.annotation.ActorPath;
 import org.d3.events.Bindable;
 import org.d3.events.NonBindableActorException;
 
-public class BindTest extends Feature implements Bindable {
+@ActorPath("/features/analyser")
+public class Analyser extends Feature implements Bindable {
 
-	public BindTest() {
-		super("test");
-	}
-	
-	public <K extends Enum<K>> void trigger(K event, Object ... data) {
-		if(event instanceof AgencyEvents) {
-			AgencyEvents aEvent = (AgencyEvents) event;
-			Console.info("agency event: %s, %s", aEvent, data[0]);
-		}
+	public Analyser() {
+		super("default");
 	}
 
 	public void initFeature() {
+		checkBodyThreadAccess();
+
 		try {
-			Agency.getLocalAgency().getEventDispatcher().bind();
-		} catch(NonBindableActorException e) {
+			Agency.getLocalAgency().getActors().getEventDispatcher().bind();
+		} catch (NonBindableActorException e) {
+		}
+	}
+
+	public <K extends Enum<K>> void trigger(K event, Object... data) {
+		if(event instanceof ActorsEvent) {
+			ActorsEvent aEvent = (ActorsEvent) event;
+			
+			switch(aEvent) {
+			case ACTOR_REGISTERED:
+				Console.info("new actor: %s", data[0]);
+				break;
+			case ACTOR_UNREGISTERED:
+				break;
+			case CALL:
+				Console.info("call %s -> %s", data[0], data[1]);
+				break;
+			}
 		}
 	}
 }

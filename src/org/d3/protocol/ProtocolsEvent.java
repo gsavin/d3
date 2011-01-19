@@ -16,33 +16,9 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.d3.migration;
+package org.d3.protocol;
 
-import java.io.Serializable;
-import java.util.Collection;
-
-import org.d3.actor.Entity;
-import org.d3.protocol.Request;
-
-public class MigrationData implements Serializable {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 6441852201508531522L;
-	
-	protected Entity entity;
-	protected Collection<Request> requests;
-	
-	public MigrationData(Entity entity, Collection<Request> requests) {
-		this.entity = entity;
-		this.requests = requests;
-	}
-	
-	public Entity getEntity() {
-		return entity;
-	}
-	
-	public Collection<Request> getRequests() {
-		return requests;
-	}
+public enum ProtocolsEvent {
+	PROTOCOL_REGISTERED,
+	PROTOCOL_UNREGISTERED
 }

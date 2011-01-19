@@ -21,6 +21,7 @@ package org.d3.actor;
 import java.io.Serializable;
 
 import org.d3.annotation.ActorPath;
+import org.d3.remote.RemoteAgency;
 
 @ActorPath("/entities")
 public class Entity extends LocalActor implements Serializable {
@@ -34,7 +35,10 @@ public class Entity extends LocalActor implements Serializable {
 	}
 
 	public final IdentifiableType getType() {
-		return IdentifiableType.entity;
+		return IdentifiableType.ENTITY;
 	}
 
+	public void migrateTo(RemoteAgency remote) {
+		// TODO
+	}
 }

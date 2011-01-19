@@ -19,9 +19,9 @@
 package org.d3.actor;
 
 import java.net.InetAddress;
-import java.net.URI;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
+import java.util.concurrent.Semaphore;
 
 import org.d3.Actor;
 import org.d3.Args;
@@ -32,6 +32,7 @@ import org.d3.agency.IpTables;
 import org.d3.annotation.ActorDescription;
 import org.d3.annotation.ActorPath;
 import org.d3.annotation.Callable;
+import org.d3.events.ActorEventDispatcher;
 import org.d3.events.EventDispatchable;
 import org.d3.events.EventDispatcher;
 import org.d3.feature.Features;
@@ -126,22 +127,26 @@ public class Agency extends LocalActor implements
 	private final Protocols protocols;
 	private final Features features;
 	private final Actors actors;
+	private final Semaphore actorThreadSemaphore;
 
 	private Agency(String id) {
 		super(id);
 
-		// identifiableObjects = new ActorManager();
+		int concurrentActorThreads = 10;
 
-		// remoteAgencies = new ConcurrentHashMap<String, RemoteAgency>();
-		// featureManager = new FeatureManager(this);
+		if (localArgs.has("actors.threads.concurrent"))
+			concurrentActorThreads = localArgs
+					.getInteger("actors.threads.concurrent");
+
 		ipTables = new IpTables();
 
-		this.eventDispatcher = new EventDispatcher<AgencyEvents>(
+		this.eventDispatcher = new ActorEventDispatcher<AgencyEvents>(
 				AgencyEvents.class, this);
 		this.remoteHosts = new RemoteHosts();
 		this.protocols = new Protocols();
 		this.features = new Features();
 		this.actors = new Actors();
+		this.actorThreadSemaphore = new Semaphore(concurrentActorThreads);
 	}
 
 	public final void initAgency() {
@@ -150,11 +155,11 @@ public class Agency extends LocalActor implements
 		Protocols.init();
 		Features.init();
 
-		Console.info("agency \"%s\" operational", id);
+		Console.info("agency enable");
 	}
 
 	public final IdentifiableType getType() {
-		return IdentifiableType.agency;
+		return IdentifiableType.AGENCY;
 	}
 
 	public RemoteHosts getRemoteHosts() {
@@ -169,6 +174,10 @@ public class Agency extends LocalActor implements
 		return features;
 	}
 
+	public Actors getActors() {
+		return actors;
+	}
+
 	public Protocol getDefaultProtocol() {
 		// TODO
 		return null;
@@ -180,6 +189,13 @@ public class Agency extends LocalActor implements
 
 	public IpTables getIpTables() {
 		return ipTables;
+	}
+
+	public Semaphore getActorThreadSemaphore() {
+		if (Thread.currentThread() instanceof ActorThread)
+			return actorThreadSemaphore;
+
+		throw new NotActorThreadException();
 	}
 
 	public void registerAgency(String remoteId, String address,
@@ -198,16 +214,28 @@ public class Agency extends LocalActor implements
 		actors.register(actor);
 
 		try {
-			if (actor instanceof Entity) {
-			} else if (actor instanceof Feature)
+			switch (actor.getType()) {
+			case FEATURE:
 				features.register((Feature) actor);
+				break;
+			}
 		} catch (Exception e) {
 			throw new RegistrationException(e);
 		}
 	}
 
 	public void unregister(LocalActor actor) {
+		actors.unregister(actor);
 
+		try {
+			switch (actor.getType()) {
+			case FEATURE:
+				
+				break;
+			}
+		} catch (Exception e) {
+			throw new RegistrationException(e);
+		}
 	}
 
 	public EventDispatcher<AgencyEvents> getEventDispatcher() {
@@ -246,14 +274,7 @@ public class Agency extends LocalActor implements
 
 	@Callable("getDigest")
 	public String getDigest() {
-		// XXX
-		return "";// identifiableObjects.getDigest();
-	}
-
-	@Callable("getIdentifiableObjectList")
-	public URI[] getIdentifiableObjectList(IdentifiableType type) {
-		// XXX
-		return null;
+		return actors.getDigest();
 	}
 
 	@Callable("ping")

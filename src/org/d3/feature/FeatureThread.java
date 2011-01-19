@@ -16,19 +16,20 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.d3.migration;
+package org.d3.feature;
 
-public class BadMigrationSideException extends RuntimeException {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -740845585890772804L;
+import org.d3.actor.BodyThread;
+import org.d3.actor.Feature;
 
-	public BadMigrationSideException() {
-		super();
+public class FeatureThread extends BodyThread {
+
+	public FeatureThread(Feature feature) {
+		super(feature);
 	}
-	
-	public BadMigrationSideException( String format, Object ... args ) {
-		super( String.format(format,args) );
+
+	public void run() {
+		checkIsOwner();
+		((Feature) owner).initFeature();
+		super.run();
 	}
 }

@@ -16,8 +16,10 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.d3.events;
+package org.d3.actor;
 
-public interface Bindable {
-	<K extends Enum<K>> void trigger(K event, Object ... data);
+public enum ActorsEvent {
+	ACTOR_REGISTERED,
+	ACTOR_UNREGISTERED,
+	CALL
 }

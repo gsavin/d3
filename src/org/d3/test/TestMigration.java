@@ -24,10 +24,10 @@ import java.util.LinkedList;
 import org.d3.Application;
 import org.d3.Console;
 import org.d3.Actor;
-import org.d3.Migration.MigrationStatus;
 import org.d3.actor.Agency;
 import org.d3.actor.Entity;
 import org.d3.annotation.Callable;
+import org.d3.entity.Migration.MigrationStatus;
 import org.d3.remote.RemoteAgency;
 import org.d3.tools.StartD3;
 

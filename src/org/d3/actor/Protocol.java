@@ -46,7 +46,7 @@ public abstract class Protocol extends LocalActor {
 	}
 
 	public final IdentifiableType getType() {
-		return IdentifiableType.protocol;
+		return IdentifiableType.PROTOCOL;
 	}
 
 	public final void checkProtocolThreadAccess() {

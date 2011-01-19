@@ -30,7 +30,7 @@ public class D3SecurityManager extends SecurityManager {
 	}
 	
 	public void checkAccess(Thread t) {
-		System.out.printf("new thread \"%s\" by \"%s\" (%s)%n", t.getName(), Thread.currentThread().getName(),t.isAlive());
+		//System.out.printf("new thread \"%s\" by \"%s\" (%s)%n", t.getName(), Thread.currentThread().getName(),t.isAlive());
 	}
 	
 	public static void main( String ... args ) {

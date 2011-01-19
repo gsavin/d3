@@ -16,8 +16,19 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.d3.events;
+package org.d3.entity.migration;
 
-public interface Bindable {
-	<K extends Enum<K>> void trigger(K event, Object ... data);
+public class BadMigrationSideException extends RuntimeException {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -740845585890772804L;
+
+	public BadMigrationSideException() {
+		super();
+	}
+	
+	public BadMigrationSideException( String format, Object ... args ) {
+		super( String.format(format,args) );
+	}
 }

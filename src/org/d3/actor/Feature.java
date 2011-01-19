@@ -27,8 +27,8 @@ public abstract class Feature extends LocalActor {
 	}
 
 	public final IdentifiableType getType() {
-		return IdentifiableType.feature;
+		return IdentifiableType.FEATURE;
 	}
 
-	public abstract boolean initFeature();
+	public abstract void initFeature();
 }

@@ -36,7 +36,7 @@ import org.d3.tools.Utils;
 @ActorPath("/")
 public abstract class Actor {
 	public static enum IdentifiableType {
-		feature, entity, agency, protocol, application, migration, remote
+		FEATURE, ENTITY, AGENCY, PROTOCOL, APPLICATION, migration, REMOTE
 	}
 
 	public static final String VALID_ID_PATTERN = "^[\\w\\d]([\\w\\d_-[.]]*[\\w\\d])?$";
@@ -136,6 +136,14 @@ public abstract class Actor {
 		return path + id;
 	}
 
+	public final String getAgencyId() {
+		return agencyId;
+	}
+	
+	public final String getAgencyFullPath() {
+		return agencyId + getFullPath();
+	}
+	
 	public final URI getURI() {
 		if (uri == null) {
 			String uriString;
@@ -194,6 +202,11 @@ public abstract class Actor {
 			path = path.substring(0, path.length() - 1);
 
 		return path.replace("/", ".");
+	}
+
+	public String toString() {
+		return String.format("//%s/%s%s", host.getHostAddress(), agencyId,
+				getFullPath());
 	}
 
 	public abstract boolean isRemote();

@@ -18,6 +18,18 @@
  */
 package org.d3.events;
 
-public interface Bindable {
-	<K extends Enum<K>> void trigger(K event, Object ... data);
+import org.d3.actor.LocalActor;
+
+public class ActorEventDispatcher<K extends Enum<K>> extends EventDispatcher<K> {
+	private final LocalActor owner;
+	
+	public ActorEventDispatcher(Class<K> klass, LocalActor owner) {
+		super(klass);
+		this.owner = owner;
+	}
+	
+	public void trigger(K event, Object ... data) {
+		owner.checkActorThreadAccess();
+		super.trigger(event, data);
+	}
 }

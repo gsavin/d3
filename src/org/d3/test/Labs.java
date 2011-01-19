@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 
 import org.d3.annotation.ActorPath;
 import org.d3.atlas.internal.D3Atlas;
-import org.d3.request.ObjectCoder;
+import org.d3.protocol.request.ObjectCoder;
 
 public class Labs {
 

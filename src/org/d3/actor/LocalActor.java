@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import org.d3.Actor;
 import org.d3.agency.AgencyThread;
 import org.d3.annotation.Callable;
+import org.d3.feature.FeatureThread;
 
 public abstract class LocalActor extends Actor {
 
@@ -36,6 +37,8 @@ public abstract class LocalActor extends Actor {
 
 		if (this instanceof Agency)
 			bodyThread = new AgencyThread((Agency) this);
+		else if( this instanceof Feature)
+			bodyThread = new FeatureThread((Feature) this);
 		else
 			bodyThread = new BodyThread(this);
 		threadGroup = new ThreadGroup(actorsThreads, getFullPath());
@@ -70,6 +73,13 @@ public abstract class LocalActor extends Actor {
 		bodyThread.checkIsOwner();
 	}
 
+	public final void checkActorThreadAccess() {
+		if(Thread.currentThread() instanceof ActorThread) {
+			if(((ActorThread) Thread.currentThread()).getOwner() != this)
+				throw new SecurityException();
+		} else throw new SecurityException();
+	}
+	
 	public Object call(String name, Object... args) {
 		if (bodyThread.isOwner()) {
 			bodyThread.checkIsOwner();

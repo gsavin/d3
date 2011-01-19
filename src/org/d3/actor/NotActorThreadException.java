@@ -16,8 +16,15 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.d3.events;
+package org.d3.actor;
 
-public interface Bindable {
-	<K extends Enum<K>> void trigger(K event, Object ... data);
+public class NotActorThreadException extends RuntimeException {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1891887091478232812L;
+
+	public NotActorThreadException() {
+		super();
+	}
 }

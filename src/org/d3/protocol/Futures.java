@@ -16,11 +16,32 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.d3.request;
+package org.d3.protocol;
 
-import org.d3.protocol.Request;
+import java.util.concurrent.ConcurrentHashMap;
 
-public interface RequestListener
-{
-	void requestReceived( Request r );
+import org.d3.actor.Future;
+import org.d3.RegistrationException;
+
+public class Futures {
+
+	private final ConcurrentHashMap<String, Future> futures;
+
+	public Futures() {
+		futures = new ConcurrentHashMap<String, Future>();
+	}
+
+	public void initFuture(String id, Object value) {
+		Future future = futures.get(id);
+
+		if (future != null) {
+			future.init(value);
+			futures.remove(id);
+		}
+	}
+
+	public void register(Future future) throws RegistrationException {
+		if (futures.putIfAbsent(future.getId(), future) != null)
+			throw new RegistrationException();
+	}
 }

@@ -16,13 +16,11 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.d3.request;
+package org.d3.protocol.request;
 
-import org.d3.Actor;
-import org.d3.actor.RemoteActor;
 import org.d3.protocol.Request;
 
-public interface RequestInterpreter
+public interface RequestListener
 {
-	Object handleRequest( RemoteActor rio, Actor target, Request r );
+	void requestReceived( Request r );
 }

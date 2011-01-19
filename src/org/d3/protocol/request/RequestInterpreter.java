@@ -16,10 +16,13 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.d3.request;
+package org.d3.protocol.request;
 
-public interface ExtendableRequestInterpreter
-	extends RequestInterpreter
+import org.d3.Actor;
+import org.d3.actor.RemoteActor;
+import org.d3.protocol.Request;
+
+public interface RequestInterpreter
 {
-	void addInterpreter( String id, RequestInterpreter ri );
+	Object handleRequest( RemoteActor rio, Actor target, Request r );
 }

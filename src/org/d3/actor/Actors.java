@@ -18,16 +18,34 @@
  */
 package org.d3.actor;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.d3.Console;
 import org.d3.RegistrationException;
+import org.d3.events.EventDispatchable;
+import org.d3.events.EventDispatcher;
+import org.d3.protocol.request.ObjectCoder;
 
-public class Actors {
+public class Actors implements Iterable<LocalActor>, EventDispatchable<ActorsEvent> {
 
 	private final ConcurrentHashMap<String, LocalActor> actors;
+	private String digest;
+	private MessageDigest digestAlgorithm;
+	private final EventDispatcher<ActorsEvent> eventDispatcher;
 
 	public Actors() {
 		actors = new ConcurrentHashMap<String, LocalActor>();
+		digest = "";
+		eventDispatcher = new EventDispatcher<ActorsEvent>(ActorsEvent.class);
+
+		try {
+			digestAlgorithm = MessageDigest.getInstance("SHA");
+		} catch (NoSuchAlgorithmException e) {
+			digestAlgorithm = null;
+		}
 	}
 
 	public void register(LocalActor actor) throws RegistrationException {
@@ -37,5 +55,34 @@ public class Actors {
 
 		if (actors.putIfAbsent(fullpath, actor) != null)
 			throw new RegistrationException();
+
+		updateDigest();
+		eventDispatcher.trigger(ActorsEvent.ACTOR_REGISTERED, actor);
+	}
+
+	public void unregister(LocalActor actor) {
+		actors.remove(actor.getFullPath());
+		updateDigest();
+		eventDispatcher.trigger(ActorsEvent.ACTOR_UNREGISTERED, actor);
+
+		Console.warning("unregistered");
+	}
+
+	public String getDigest() {
+		return digest;
+	}
+
+	private void updateDigest() {
+		String date = Long.toString(System.currentTimeMillis());
+		digestAlgorithm.digest(date.getBytes());
+		digest = ObjectCoder.byte2hexa(digestAlgorithm.digest());
+	}
+
+	public EventDispatcher<ActorsEvent> getEventDispatcher() {
+		return eventDispatcher;
+	}
+
+	public Iterator<LocalActor> iterator() {
+		return actors.values().iterator();
 	}
 }

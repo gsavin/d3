@@ -30,31 +30,28 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.d3.Console;
 import org.d3.InvalidRequestFormatException;
-import org.d3.RegistrationException;
+import org.d3.actor.Agency;
 import org.d3.actor.Call;
 import org.d3.actor.Future;
 import org.d3.actor.Protocol;
 
-public abstract class RequestIOProtocol extends Protocol {
+public abstract class Requester extends Protocol {
 
 	private ByteBuffer readBuffer;
-	protected final ConcurrentHashMap<String, Future> futures;
 
-	protected RequestIOProtocol(String scheme, String id,
+	protected Requester(String scheme, String id,
 			SocketAddress socketAddress) {
 		super(scheme, id, socketAddress);
-		
+
 		this.readBuffer = ByteBuffer.allocate(Protocol.REQUEST_MAX_SIZE);
-		this.futures = new ConcurrentHashMap<String, Future>();
 	}
-	
+
 	public void listen() {
 		checkProtocolThreadAccess();
-		
+
 		Selector selector = null;
 		SelectableChannel channel = getChannel();
 
@@ -69,13 +66,11 @@ public abstract class RequestIOProtocol extends Protocol {
 					selector,
 					channel.validOps()
 							& (SelectionKey.OP_ACCEPT | SelectionKey.OP_READ | SelectionKey.OP_CONNECT));
-			
+
 		} catch (ClosedChannelException e) {
 			// TODO
 		}
 
-		Console.info("protocol listening");
-		
 		while (selector.isOpen()) {
 			try {
 				selector.select();
@@ -91,12 +86,12 @@ public abstract class RequestIOProtocol extends Protocol {
 
 			while (it.hasNext()) {
 				SelectionKey sk = it.next();
-				
-				//System.out.printf("<key %s%s%s%s>%n", sk.isValid() ? "valid,"
-				//		: "", sk.isAcceptable() ? "acceptable," : "", sk
-				//		.isReadable() ? "readable," : "",
-				//		sk.isWritable() ? "writable," : "");
-				
+
+				// System.out.printf("<key %s%s%s%s>%n", sk.isValid() ? "valid,"
+				// : "", sk.isAcceptable() ? "acceptable," : "", sk
+				// .isReadable() ? "readable," : "",
+				// sk.isWritable() ? "writable," : "");
+
 				try {
 					processSelectionKey(sk);
 				} catch (IOException e) {
@@ -104,7 +99,7 @@ public abstract class RequestIOProtocol extends Protocol {
 				}
 			}
 		}
-		
+
 		Console.error("protocol end");
 	}
 
@@ -149,7 +144,7 @@ public abstract class RequestIOProtocol extends Protocol {
 			default:
 				try {
 					readRequest(readBuffer);
-				} catch(InvalidRequestFormatException e) {
+				} catch (InvalidRequestFormatException e) {
 					// TODO
 					e.printStackTrace();
 				}
@@ -157,27 +152,23 @@ public abstract class RequestIOProtocol extends Protocol {
 			}
 		}
 	}
-	
+
 	/**
 	 * Send a request to an identifiable object.
 	 * 
 	 * @param target
 	 * @param r
 	 */
-	public Future sendCall(Call c) {
+	public void sendCall(Call c) {
 		Future f = c.getFuture();
-		
-		//writeRequest(r);
-		if(futures.putIfAbsent(f.getId(), f) != null)
-			throw new RegistrationException();
-		
-		return f;
+		Agency.getLocalAgency().getProtocols().getFutures().register(f);
+		writeRequest(new Request(c));
 	}
-	
+
 	protected void dispatch(Request r) {
-		
+
 	}
-	
+
 	public abstract SelectableChannel getChannel();
 
 	public abstract void readRequest(ByteBuffer buffer)

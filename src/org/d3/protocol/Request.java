@@ -22,9 +22,8 @@ import java.io.Serializable;
 import java.net.URI;
 
 import org.d3.actor.Call;
-import org.d3.actor.Protocol;
-import org.d3.request.ObjectCoder;
-import org.d3.request.ObjectCoder.CodingMethod;
+import org.d3.protocol.request.ObjectCoder;
+import org.d3.protocol.request.ObjectCoder.CodingMethod;
 
 public class Request implements Serializable {
 	/**
@@ -39,7 +38,7 @@ public class Request implements Serializable {
 	protected final String args;
 	protected final String call;
 
-	public Request(Protocol protocol, Call call) {
+	public Request(Call call) {
 		this.source = call.getSource().getURI();
 		this.target = call.getTarget().getURI();
 		this.call = call.getName();

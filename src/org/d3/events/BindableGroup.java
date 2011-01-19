@@ -36,7 +36,7 @@ public class BindableGroup implements Bindable {
 		members.remove(member);
 	}
 	
-	public <K extends Enum<K>> void trigger(K event, Object data) {
+	public <K extends Enum<K>> void trigger(K event, Object ... data) {
 		for(Bindable member: members)
 			member.trigger(event, data);
 	}

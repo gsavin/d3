@@ -16,24 +16,26 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.d3;
+package org.d3.entity;
 
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.d3.Actor;
+import org.d3.ActorNotFoundException;
+import org.d3.Actor.IdentifiableType;
 import org.d3.actor.Agency;
 import org.d3.actor.LocalActor;
 import org.d3.annotation.ActorPath;
 import org.d3.annotation.Callable;
+import org.d3.entity.migration.BadMigrationSideException;
+import org.d3.entity.migration.MigrationData;
 //import org.d3.atlas.internal.Body;
-import org.d3.migration.BadMigrationSideException;
-import org.d3.migration.MigrationData;
 import org.d3.protocol.Protocols;
 import org.d3.protocol.Request;
 import org.d3.remote.RemoteAgency;
 
-@ActorPath("/migrations")
-public class Migration extends LocalActor {
+public class Migration {
 	public static enum MigrationStatus {
 		ERROR, PENDING, TRANSFERING, TRANSFERED, SUCCESS, CANCELED, REJECTED
 	}
@@ -55,16 +57,14 @@ public class Migration extends LocalActor {
 	protected final URI sender;
 	protected final RemoteAgency receiver;
 	protected final AtomicReference<MigrationStatus> status;
-	protected final Body body;
 
-	public Migration(URI sender, Body body) {
-		super(newMigrationId());
+	public Migration(URI sender) {
+		
 
 		this.side = MigrationSide.RECEIVER;
 		this.data = null;
 		this.sender = sender;
 		this.receiver = null;
-		this.body = body;
 		this.status = new AtomicReference<MigrationStatus>(
 				MigrationStatus.PENDING);
 
@@ -72,13 +72,10 @@ public class Migration extends LocalActor {
 	}
 
 	public Migration(RemoteAgency remote, MigrationData data) {
-		super(newMigrationId());
-
 		this.side = MigrationSide.SENDER;
 		this.data = data;
 		this.sender = null;
 		this.receiver = remote;
-		this.body = null;
 		this.status = new AtomicReference<MigrationStatus>(
 				MigrationStatus.PENDING);
 

@@ -16,7 +16,7 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.d3.feature;
+package org.d3.protocol;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,12 +37,12 @@ import com.sun.net.httpserver.HttpServer;
 
 @ActorPath("/features")
 @ActorDescription("HTTP Web server")
-public class D3HTTP extends Feature implements HttpHandler {
+public class HTTPProtocol extends Feature implements HttpHandler {
 	protected static final int HTTP_PORT = 6080;
 
 	HttpServer server;
 
-	public D3HTTP() {
+	public HTTPProtocol() {
 		super("http");
 	}
 
@@ -94,7 +94,7 @@ public class D3HTTP extends Feature implements HttpHandler {
 	protected String entitiesList() {
 		StringBuilder buffer = new StringBuilder("<ul>");
 		
-		URI[] entities = Agency.getLocalAgency().getIdentifiableObjectList(IdentifiableType.entity);
+		URI[] entities = Agency.getLocalAgency().getIdentifiableObjectList(IdentifiableType.ENTITY);
 		
 		if (entities != null)
 			for (URI e : entities)

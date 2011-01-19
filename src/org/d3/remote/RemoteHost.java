@@ -85,4 +85,8 @@ public class RemoteHost {
 			ports.remove(port);
 		}
 	}
+	
+	public String toString() {
+		return address.toString();
+	}
 }

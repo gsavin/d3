@@ -28,7 +28,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.d3.protocol.Request;
-import org.d3.request.ObjectCoder.CodingMethod;
+import org.d3.protocol.request.ObjectCoder.CodingMethod;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 

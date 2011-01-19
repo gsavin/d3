@@ -16,8 +16,22 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.d3.events;
+package org.d3.protocol;
 
-public interface Bindable {
-	<K extends Enum<K>> void trigger(K event, Object ... data);
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
+import org.d3.actor.Protocol;
+
+public class ClassLoaderProtocol extends Protocol {
+
+	public ClassLoaderProtocol(InetSocketAddress address) throws IOException {
+		super("cl", Integer.toString(address.getPort()), address);
+	}
+
+	public void listen() {
+		// TODO Auto-generated method stub
+
+	}
+
 }

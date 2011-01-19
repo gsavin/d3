@@ -30,10 +30,10 @@ import javax.xml.parsers.SAXParserFactory;
 import org.d3.InvalidRequestFormatException;
 import org.d3.actor.ActorInternalException;
 import org.d3.protocol.Request;
-import org.d3.protocol.RequestIOProtocol;
+import org.d3.protocol.Requester;
 import org.d3.template.Template;
 
-public abstract class XMLProtocol extends RequestIOProtocol {
+public abstract class XMLProtocol extends Requester {
 	public static final int XML_PROTOCOL_PORT = 10001;
 
 	protected static final String XML_REQUEST_TEMPLATE = "<?xml version=\"1.0\" encoding=\"{%encoding%}\"?>\n"

@@ -217,9 +217,10 @@ public class Discovery extends Protocol implements StepActor {
 	protected void createDiscoveryPacket() {
 		HashMap<String, String> env = new HashMap<String, String>();
 		env.put("id", Agency.getLocalAgencyId());
-		env.put("address", "xx");
-		env.put("protocols", "xx");
-		env.put("digest", "xx");// Agency.getLocalAgency().getDigest());
+		env.put("address", localAddress);
+		env.put("protocols", Agency.getLocalAgency().getProtocols()
+				.exportDescription());
+		env.put("digest", Agency.getLocalAgency().getDigest());
 
 		String message = templates.get(MessageType.AGENCY_AT).toString(env);
 		byte[] messageData = message.getBytes();
@@ -290,7 +291,7 @@ public class Discovery extends Protocol implements StepActor {
 					RemoteHost host = null;
 
 					String id = env.get("id");
-					String address = env.get("address");
+					// String address = env.get("address");
 					String protocols = env.get("protocols");
 					String digest = env.get("digest");
 
@@ -301,7 +302,7 @@ public class Discovery extends Protocol implements StepActor {
 						Future f = (Future) Agency.getLocalAgency().call(
 								"registerNewHost", from);
 						f.waitForValue();
-						
+
 						try {
 							host = f.get();
 						} catch (CallException e1) {
@@ -315,7 +316,8 @@ public class Discovery extends Protocol implements StepActor {
 					try {
 						remote = host.getRemoteAgency(id);
 					} catch (UnknownAgencyException e) {
-						Future f = (Future) Agency.getLocalAgency().call("registerNewAgency", host, id);
+						Future f = (Future) Agency.getLocalAgency().call(
+								"registerNewAgency", host, id);
 						f.waitForValue();
 
 						try {
@@ -325,18 +327,11 @@ public class Discovery extends Protocol implements StepActor {
 							return;
 						}
 					}
-					/*
-					if (remote == null || !remote.getDigest().equals(digest)) {
-						/*
-						 * Send a discovery packet, to allow remote agency to
-						 * recognize this.
-						 *//*
-						try {
-							sendDiscoveryPacket();
-						} catch (IOException e) {
-						}
+
+					if (!remote.getDigest().equals(digest)) {
+						remote.updateDigest(digest);
+						remote.updateProtocols(protocols);
 					}
-					*/
 				}
 			}
 		} else

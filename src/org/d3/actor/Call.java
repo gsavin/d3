@@ -37,7 +37,7 @@ public class Call extends ScheduledTask {
 	public Call(long delay, TimeUnit unit, Actor target, String name,
 			Object... args) {
 		super(delay, unit);
-		
+
 		source = ActorThread.getCurrentActor();
 
 		if (source == null || name == null || target == null)
@@ -47,6 +47,9 @@ public class Call extends ScheduledTask {
 		this.name = name;
 		this.args = args;
 		this.future = new Future();
+
+		Agency.getLocalAgency().getActors().getEventDispatcher()
+				.trigger(ActorsEvent.CALL, source, target);
 	}
 
 	public Actor getSource() {

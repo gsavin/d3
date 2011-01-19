@@ -19,10 +19,11 @@
 package org.d3.actor;
 
 import org.d3.Actor;
+import org.d3.Console;
 import org.d3.protocol.NotRemoteActorCallException;
 import org.d3.protocol.ProtocolThread;
 
-public class ActorThread extends Thread {
+public class ActorThread extends Thread implements Thread.UncaughtExceptionHandler {
 
 	public static final Actor getCurrentActor() {
 		Thread t = Thread.currentThread();
@@ -51,6 +52,7 @@ public class ActorThread extends Thread {
 		this.owner = owner;
 		
 		setDaemon(true);
+		setUncaughtExceptionHandler(this);
 	}
 	
 	public final LocalActor getOwner() {
@@ -64,5 +66,15 @@ public class ActorThread extends Thread {
 	public final void checkIsOwner() {
 		if (Thread.currentThread() != this)
 			throw new SecurityException();
+	}
+
+	public void uncaughtException(Thread t, Throwable e) {
+		// TODO Handle unexpected end of actor thread
+		Console.error("unexpected end of actor thread:\n\t%s", e.getMessage());
+		terminate();
+	}
+	
+	protected void terminate() {
+		checkIsOwner();
 	}
 }

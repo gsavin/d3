@@ -23,6 +23,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.HashSet;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,9 +32,15 @@ import org.d3.Console;
 import org.d3.actor.Agency;
 import org.d3.actor.Protocol;
 import org.d3.actor.Agency.Argument;
+import org.d3.events.EventDispatchable;
+import org.d3.events.EventDispatcher;
 import org.d3.tools.Utils;
 
-public class Protocols {
+public class Protocols implements EventDispatchable<ProtocolsEvent> {
+	public static final Pattern PROTOCOL_EXPORT_PATTERN = Pattern.compile("(\\w+):(\\d+)");
+	public static final int PROTOCOL_EXPORT_PATTERN_SCHEME = 1;
+	public static final int PROTOCOL_EXPORT_PATTERN_PORT = 2;
+	
 	public static void init() {
 		Agency.getLocalAgency().checkBodyThreadAccess();
 
@@ -52,8 +60,8 @@ public class Protocols {
 				cls = cls.replace("@", Protocols.class.getPackage().getName()
 						+ ".");
 
-				Console.warning("load %s %s%d", cls, ifname, port);
-				
+				Console.info("load %s", cls);
+
 				try {
 					Protocols.enableProtocol(cls, ifname, port);
 				} catch (BadProtocolException e) {
@@ -100,15 +108,15 @@ public class Protocols {
 					args = new Object[] { inetSocket };
 				} else {
 					NetworkInterface nif;
-					
+
 					try {
 						nif = NetworkInterface.getByName(ifname);
 						c = cls.getConstructor(NetworkInterface.class);
-					} catch(Exception e) {
+					} catch (Exception e) {
 						throw new BadProtocolException(e);
 					}
-					
-					args = new Object[] {nif};
+
+					args = new Object[] { nif };
 				}
 			} else {
 				try {
@@ -130,25 +138,81 @@ public class Protocols {
 		}
 	}
 
+	private final ReentrantLock lock;
 	private final Ports ports;
 	private final Schemes schemes;
-
+	private final HashSet<Protocol> protocols;
+	private final EventDispatcher<ProtocolsEvent> eventDispatcher;
+	private final Futures futures;
+	
 	public Protocols() {
 		this.ports = new Ports();
 		this.schemes = new Schemes();
+		this.lock = new ReentrantLock();
+		this.protocols = new HashSet<Protocol>();
+		this.eventDispatcher = new EventDispatcher<ProtocolsEvent>(ProtocolsEvent.class);
+		this.futures = new Futures();
 	}
 
 	public void register(Protocol protocol) throws ProtocolException {
 		protocol.checkProtocolThreadAccess();
 
-		ports.register(protocol);
-		schemes.register(protocol);
+		lock();
 
-		Console.info("protocol \"%s\" enable", protocol.getFullPath());
+		if (!protocols.contains(protocol)) {
+			ports.register(protocol);
+			schemes.register(protocol);
+			protocols.add(protocol);
+			
+			Console.info("protocol enable");
+		}
+		
+		unlock();
+		
+		eventDispatcher.trigger(ProtocolsEvent.PROTOCOL_REGISTERED, protocol);
 	}
 
 	public boolean isLocalPort(int port) {
-		Protocol p = ports.get(port);
+		Protocol p;
+		
+		lock();
+		p = ports.get(port);
+		unlock();
+		
 		return p != null;
+	}
+	
+	public String exportDescription() {
+		StringBuilder builder = new StringBuilder();
+		String sep = "";
+		
+		lock();
+		for(Protocol p: protocols) {
+			builder.append(sep);
+			builder.append(p.getScheme());
+			builder.append(":");
+			builder.append(p.getPort());
+			
+			sep = ", ";
+		}
+		unlock();
+		
+		return builder.toString();
+	}
+	
+	public EventDispatcher<ProtocolsEvent> getEventDispatcher() {
+		return eventDispatcher;
+	}
+	
+	public Futures getFutures() {
+		return futures;
+	}
+	
+	private void lock() {
+		lock.lock();
+	}
+	
+	private void unlock() {
+		lock.unlock();
 	}
 }

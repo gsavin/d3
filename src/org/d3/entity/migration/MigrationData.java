@@ -16,8 +16,19 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.d3.events;
+package org.d3.entity.migration;
 
-public interface Bindable {
-	<K extends Enum<K>> void trigger(K event, Object ... data);
+import java.io.Serializable;
+
+public class MigrationData implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6441852201508531522L;
+	
+	protected String className;
+	protected String path;
+	protected String id;
+	
+	
 }

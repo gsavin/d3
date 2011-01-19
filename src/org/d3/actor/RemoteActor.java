@@ -18,22 +18,24 @@
  */
 package org.d3.actor;
 
-import java.net.InetAddress;
-
 import org.d3.Actor;
 import org.d3.annotation.ActorPath;
+import org.d3.remote.RemoteAgency;
 
 @ActorPath("/remotes")
 public class RemoteActor extends Actor {
 
-	public RemoteActor(InetAddress host, String agencyId, String objectPath,
+	private RemoteAgency remoteAgency;
+
+	public RemoteActor(RemoteAgency remoteAgency, String objectPath,
 			String objectId) {
-		super(host, agencyId, objectPath, objectId.startsWith("/") ? objectId
-				.substring(1) : objectId);
+		super(remoteAgency.getRemoteHost().getAddress(), remoteAgency.getId(),
+				objectPath, objectId.startsWith("/") ? objectId.substring(1)
+						: objectId);
 	}
 
 	public final IdentifiableType getType() {
-		return IdentifiableType.remote;
+		return IdentifiableType.REMOTE;
 	}
 
 	public void init() {
@@ -41,11 +43,15 @@ public class RemoteActor extends Actor {
 	}
 
 	public Object call(String name, Object... args) {
-
-		return null;
+		Call call = new Call(this, name, args);
+		return call.getFuture();
 	}
 
 	public final boolean isRemote() {
 		return true;
+	}
+	
+	public RemoteAgency getRemoteAgency() {
+		return remoteAgency;
 	}
 }

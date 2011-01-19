@@ -18,23 +18,23 @@
  */
 package org.d3.feature;
 
-import java.awt.BorderLayout;
-import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.util.concurrent.TimeUnit;
-
-import javax.swing.JFrame;
 
 import org.d3.Args;
 import org.d3.Console;
 import org.d3.Actor;
+import org.d3.actor.ActorInternalException;
+import org.d3.actor.ActorsEvent;
 import org.d3.actor.Agency;
 import org.d3.actor.Feature;
-import org.d3.actor.RemoteActor;
-import org.d3.agency.AgencyListener;
+import org.d3.actor.LocalActor;
+import org.d3.actor.StepActor;
 import org.d3.annotation.ActorPath;
+import org.d3.events.Bindable;
+import org.d3.events.NonBindableActorException;
 import org.d3.feature.model.MultiThreadProxyPipe;
-import org.d3.remote.RemoteAgency;
+import org.d3.feature.model.ResizableView;
 import org.graphstream.algorithm.DynamicAlgorithm;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
@@ -44,85 +44,12 @@ import org.graphstream.stream.thread.ThreadProxyPipe;
 import org.graphstream.ui.layout.Layout;
 import org.graphstream.ui.layout.Layouts;
 import org.graphstream.ui.swingViewer.DefaultView;
-import org.graphstream.ui.swingViewer.GraphRenderer;
 import org.graphstream.ui.swingViewer.Viewer;
+import org.graphstream.ui.swingViewer.Viewer.CloseFramePolicy;
 
 @ActorPath("/features/model")
-public class Model extends Feature implements AgencyListener {
+public class Model extends Feature implements StepActor, Bindable {
 	protected static long MODEL_ID_GENERATOR = 0;
-
-	protected static class ResizableView extends DefaultView {
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = -4534471579509816964L;
-
-		int width, height;
-
-		public ResizableView(Viewer viewer, String identifier,
-				GraphRenderer renderer) {
-			super(viewer, identifier, renderer);
-
-			GraphicsDevice dev = GraphicsEnvironment
-					.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-			resize(dev.getDisplayMode().getWidth() / 2, dev.getDisplayMode()
-					.getHeight() / 2);
-		}
-
-		@Override
-		public void openInAFrame(boolean on) {
-			if (on) {
-				if (frame == null) {
-					frame = new JFrame("D3 Execution Model");
-					frame.setLayout(new BorderLayout());
-					frame.add(this, BorderLayout.CENTER);
-					frame.setSize(width, height);
-					frame.setVisible(true);
-					frame.addWindowListener(this);
-					frame.addKeyListener(shortcuts);
-				} else {
-					frame.setVisible(true);
-				}
-			} else {
-				if (frame != null) {
-					frame.removeWindowListener(this);
-					frame.removeKeyListener(shortcuts);
-					frame.remove(this);
-					frame.setVisible(false);
-					frame.dispose();
-				}
-			}
-		}
-
-		public void resize(int width, int height) {
-			this.width = width;
-			this.height = height;
-
-			if (frame != null)
-				frame.setSize(width, height);
-		}
-	}
-
-	private class ModelMaintenance implements Runnable {
-		boolean run = true;
-		
-		public void run() {
-			while (run) {
-				for (Edge e : model.getEachEdge())
-					decreaseWeight(e);
-
-				if( Model.this.loadBalancer != null )
-					Model.this.loadBalancer.compute();
-				
-				try {
-					Thread.sleep(TimeUnit.MILLISECONDS.convert(
-							weightDecreaserPeriod, weightDecreaserUnit));
-				} catch (InterruptedException e) {
-
-				}
-			}
-		}
-	}
 
 	protected static String defaultStyleSheet = "graph {" + " padding: 50px;"
 			+ "} " + "node { fill-color: black; } "
@@ -144,7 +71,6 @@ public class Model extends Feature implements AgencyListener {
 	protected Viewer viewer;
 	protected long weightDecreaserPeriod = 500;
 	protected TimeUnit weightDecreaserUnit = TimeUnit.MILLISECONDS;
-	protected ModelMaintenance weightDecreaser = new ModelMaintenance();
 	protected boolean justEntities = true;
 	protected DynamicAlgorithm loadBalancer;
 
@@ -152,17 +78,13 @@ public class Model extends Feature implements AgencyListener {
 		super(String.format("model%x", MODEL_ID_GENERATOR++));
 	}
 
-	public boolean initFeature(Agency agency, Args args) {
+	public void initFeature() {
+		Args args = Agency.getActorArgs(this);
+
 		model = new ConcurrentGraph(getId(), false, true);
 		model.addAttribute("ui.stylesheet", defaultStyleSheet);
 		model.addAttribute("ui.quality");
 		model.addAttribute("ui.antialias");
-
-		agency.addAgencyListener(this);
-
-		Thread t = new Thread(weightDecreaser, "d3.features.model.decreaser");
-		t.setDaemon(true);
-		t.start();
 
 		if (args.has("display") && Boolean.parseBoolean(args.get("display"))
 				&& isDisplayable())
@@ -188,22 +110,18 @@ public class Model extends Feature implements AgencyListener {
 				this.loadBalancer = cls.newInstance();
 				this.loadBalancer.init(model);
 			} catch (Exception e) {
-				Console.error(e.getMessage());
+				throw new ActorInternalException(e);
 			}
 		}
 
-		return true;
-	}
-	
-	public void terminateFeature() {
-		Agency.getLocalAgency().removeAgencyListener(this);
-		weightDecreaser.run = false;
+		try {
+			Agency.getLocalAgency().getActors().getEventDispatcher().bind();
+		} catch (NonBindableActorException e) {
+			Console.exception(e);
+		}
 		
-		if( this.loadBalancer != null )
-			this.loadBalancer.terminate();
-		
-		if( this.viewer != null )
-			this.viewer.close();
+		for(LocalActor actor: Agency.getLocalAgency().getActors())
+			createNode(actor);
 	}
 
 	protected void display(boolean autolayout) {
@@ -214,12 +132,14 @@ public class Model extends Feature implements AgencyListener {
 				ThreadProxyPipe pipe = new MultiThreadProxyPipe(model);
 
 				viewer = new Viewer(pipe);
-
+				viewer.setCloseFramePolicy(CloseFramePolicy.CLOSE_VIEWER);
+				
 				DefaultView view = new ResizableView(viewer,
 						Viewer.DEFAULT_VIEW_ID, Viewer.newGraphRenderer());
 
 				viewer.addView(view);
 				view.openInAFrame(true);
+				
 
 				if (autolayout) {
 					Layout layout = Layouts.newLayoutAlgorithm();
@@ -229,101 +149,49 @@ public class Model extends Feature implements AgencyListener {
 		}
 	}
 
-	public void agencyExit(Agency agency) {
+	protected Node createNode(Actor actor) {
+		String id;
+		id = actor.isRemote() ? actor.getAgencyFullPath() : actor.getFullPath();
 
-	}
-
-	public void newAgencyRegistered(RemoteAgency rad) {
-
-	}
-
-	public void remoteAgencyDescriptionUpdated(RemoteAgency rad) {
-
-	}
-
-	protected Node createNode(String id, String type, boolean isRemote) {
 		Node n = model.getNode(id);
 
 		if (n == null) {
+			String type = actor.getType().name();
+
 			n = model.addNode(id);
 			n.addAttribute("type", type);
-			// n.addAttribute("ui.label", id);
-
-			if (isRemote)
-				setNodeRemote(id);
-			else
-				n.setAttribute("ui.class", type);
+			n.setAttribute("ui.class", type);
+			n.setAttribute("label", id);
 		}
 
 		return n;
 	}
 
-	protected void setNodeRemote(String id) {
-		Node n = model.getNode(id);
+	protected void deleteNode(Actor actor) {
+		String id;
+		id = actor.isRemote() ? actor.getAgencyFullPath() : actor.getFullPath();
 
-		if (n != null) {
-			n.addAttribute("remote");
-			n.addAttribute("ui.class", "remote," + n.getAttribute("type"));
-		}
+		model.removeNode(id);
 	}
 
-	public void requestReceived(Actor source,
-			Actor target, String name) {
-		// Console.warning("receiving request \"%s\"",name);
+	protected void updateEdge(Actor source, Actor target) {
+		Node sourceNode, targetNode;
+		Edge edge;
 
-		if (source == null)
-			throw new NullPointerException("source is null");
-		if (target == null)
-			throw new NullPointerException("target is null");
+		sourceNode = createNode(source);
+		targetNode = createNode(target);
 
-		if (justEntities && source.getType() != IdentifiableType.entity
-				|| target.getType() != IdentifiableType.entity) {
-			Console.warning("not entities");
-			return;
-		}
+		edge = sourceNode.getEdgeToward(targetNode.getId());
 
-		Node targetNode = model.getNode(target.getId());
-
-		if (targetNode == null) {
-			targetNode = createNode(target.getId(), target.getType().name(),
-					(target instanceof RemoteActor));
-		}
-
-		if (target instanceof RemoteActor)
-			setNodeRemote(targetNode.getId());
-
-		Node sourceNode = model.getNode(source.getId());
-
-		if (sourceNode == null) {
-			sourceNode = createNode(source.getId(), source.getType().name(),
-					(source instanceof RemoteActor));
-		}
-
-		if (source instanceof RemoteActor)
-			setNodeRemote(sourceNode.getId());
-
-		Edge e = targetNode.getEdgeFrom(sourceNode.getId());
-
-		if (e == null) {
-			e = model.addEdge(
-					String.format("%s--%s", source.getId(), target.getId()),
-					source.getId(), targetNode.getId(), true);
-			e.addAttribute("weight", 1);
+		if (edge == null) {
+			edge = model.addEdge(
+					String.format("%s--%s", sourceNode.getId(),
+							targetNode.getId()), sourceNode.getId(),
+					targetNode.getId(), true);
+			edge.addAttribute("weight", 1);
 		} else {
-			double w = e.getNumber("weight");
-			w *= 1.25;
-			e.changeAttribute("weight", w);
+			increaseWeight(edge);
 		}
-	}
-
-	public void identifiableObjectRegistered(Actor idObject) {
-		if (!justEntities || idObject.getType() == IdentifiableType.entity)
-			createNode(idObject.getId(), idObject.getType().name(),
-					idObject instanceof RemoteActor);
-	}
-
-	public void identifiableObjectUnregistered(Actor idObject) {
-		model.removeNode(idObject.getId());
 	}
 
 	protected boolean isDisplayable() {
@@ -344,14 +212,51 @@ public class Model extends Feature implements AgencyListener {
 			Node src = e.getNode0();
 			Node trg = e.getNode1();
 			model.removeEdge(e.getId());
-			
-			if(src.hasAttribute("remote")&&src.getDegree()==0)
+
+			if (src.hasAttribute("remote") && src.getDegree() == 0)
 				model.removeNode(src.getId());
-			
-			if(trg.hasAttribute("remote")&&trg.getDegree()==0)
+
+			if (trg.hasAttribute("remote") && trg.getDegree() == 0)
 				model.removeNode(trg.getId());
 		} else {
 			e.changeAttribute("weight", w);
 		}
+	}
+
+	public <K extends Enum<K>> void trigger(K event, Object... data) {
+		if (event instanceof ActorsEvent) {
+			ActorsEvent aEvent = (ActorsEvent) event;
+
+			switch (aEvent) {
+			case ACTOR_REGISTERED: {
+				Actor actor = (Actor) data[0];
+				createNode(actor);
+				break;
+			}
+			case ACTOR_UNREGISTERED: {
+				Actor actor = (Actor) data[0];
+				deleteNode(actor);
+				break;
+			}
+			case CALL: {
+				Actor source = (Actor) data[0];
+				Actor target = (Actor) data[1];
+				updateEdge(source, target);
+				break;
+			}
+			}
+		}
+	}
+
+	public long getStepDelay(TimeUnit unit) {
+		return unit.convert(weightDecreaserPeriod, weightDecreaserUnit);
+	}
+
+	public void step() {
+		for (Edge e : model.getEachEdge())
+			decreaseWeight(e);
+
+		if (Model.this.loadBalancer != null)
+			Model.this.loadBalancer.compute();
 	}
 }

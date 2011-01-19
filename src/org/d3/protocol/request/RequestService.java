@@ -16,7 +16,7 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.d3.request;
+package org.d3.protocol.request;
 
 import java.util.Collection;
 import java.util.concurrent.LinkedBlockingQueue;

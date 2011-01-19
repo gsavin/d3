@@ -32,7 +32,7 @@ public abstract class Application extends LocalActor implements
 	}
 
 	public final IdentifiableType getType() {
-		return IdentifiableType.application;
+		return IdentifiableType.APPLICATION;
 	}
 
 	public void handleRequest(Actor source,

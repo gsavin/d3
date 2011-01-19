@@ -20,9 +20,8 @@ package org.d3.actor;
 
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-
-import org.d3.Console;
 
 public class BodyThread extends ActorThread {
 
@@ -52,6 +51,7 @@ public class BodyThread extends ActorThread {
 
 		owner.register();
 		runBody();
+		terminate();
 	}
 
 	protected final void runBody() {
@@ -65,9 +65,12 @@ public class BodyThread extends ActorThread {
 			SpecialActionTask sat = new SpecialActionTask(
 					sa.getStepDelay(TimeUnit.NANOSECONDS),
 					TimeUnit.NANOSECONDS, SpecialAction.STEP);
-			
+
 			queue.add(sat);
 		}
+
+		Semaphore actorThreadSemaphore = Agency.getLocalAgency()
+				.getActorThreadSemaphore();
 
 		while (running) {
 			try {
@@ -79,33 +82,39 @@ public class BodyThread extends ActorThread {
 			if (current == null)
 				continue;
 
-			if (current instanceof Call) {
-				Call c = (Call) current;
+			try {
+				actorThreadSemaphore.acquireUninterruptibly();
+				
+				if (current instanceof Call) {
+					Call c = (Call) current;
 
-				try {
-					Object r = owner.call(c.getName(), c.getArgs());
-					c.getFuture().init(r);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			} else if (current instanceof SpecialActionTask) {
-				SpecialActionTask sat = (SpecialActionTask) current;
-
-				switch (sat.action) {
-				case STEP:
-					if (owner instanceof StepActor) {
-						StepActor sa = (StepActor) owner;
-						sa.step();
-						sat.delay = sa.getStepDelay(sat.unit);
-						sat.reset();
-						queue.add(sat);
+					try {
+						Object r = owner.call(c.getName(), c.getArgs());
+						c.getFuture().init(r);
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
+				} else if (current instanceof SpecialActionTask) {
+					SpecialActionTask sat = (SpecialActionTask) current;
 
-					break;
-				case STOP:
-					running = false;
-					break;
+					switch (sat.action) {
+					case STEP:
+						if (owner instanceof StepActor) {
+							StepActor sa = (StepActor) owner;
+							sa.step();
+							sat.delay = sa.getStepDelay(sat.unit);
+							sat.reset();
+							queue.add(sat);
+						}
+
+						break;
+					case STOP:
+						running = false;
+						break;
+					}
 				}
+			} finally {
+				actorThreadSemaphore.release();
 			}
 		}
 	}
@@ -115,5 +124,10 @@ public class BodyThread extends ActorThread {
 		queue.add(c);
 
 		return c.getFuture();
+	}
+	
+	protected void terminate() {
+		super.terminate();
+		owner.unregister();
 	}
 }

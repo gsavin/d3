@@ -18,40 +18,95 @@
  */
 package org.d3.remote;
 
-import java.net.InetAddress;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
 
-import org.d3.actor.RemoteActor;
+import org.d3.Console;
 import org.d3.annotation.ActorPath;
+import org.d3.protocol.Protocols;
 
 @ActorPath("/agencies")
-public class RemoteAgency extends RemoteActor {
-	// protected String[] protocols;
-	protected ConcurrentHashMap<Integer, RemotePort> ports;
+public class RemoteAgency {
+	protected final ConcurrentHashMap<Integer, RemotePort> ports;
+	protected final RemoteHost remoteHost;
+	protected final String id;
 	protected long lastPresenceDate;
 	protected String digest;
 
-	public RemoteAgency(InetAddress host, String agencyId) {
-		this(host, agencyId, null, "");
+	public RemoteAgency(RemoteHost remoteHost, String agencyId) {
+		this(remoteHost, agencyId, null, "");
 	}
 
-	public RemoteAgency(InetAddress host, String agencyId, String protocols,
-			String digest) {
-		super(host, agencyId, "/", agencyId);
-
-		// this.protocols = protocols.trim().split("\\s*,\\s*");
+	public RemoteAgency(RemoteHost remoteHost, String agencyId,
+			String protocols, String digest) {
 		this.ports = new ConcurrentHashMap<Integer, RemotePort>();
 		this.lastPresenceDate = System.currentTimeMillis();
-		this.digest = digest;
+		this.remoteHost = remoteHost;
+		this.id = agencyId;
+		
+		if (protocols != null)
+			updateProtocols(protocols);
+
+		if (digest != null)
+			updateDigest(digest);
 	}
 
+	public RemoteHost getRemoteHost() {
+		return remoteHost;
+	}
+	
+	public String getId() {
+		return id;
+	}
+	
 	public void udpatePresence(long date) {
 		this.lastPresenceDate = date;
 	}
 
 	public void updateDigest(String digest) {
 		this.digest = digest;
+	}
+
+	public void updateProtocols(String protocols) {
+		Matcher m = Protocols.PROTOCOL_EXPORT_PATTERN.matcher(protocols);
+
+		LinkedList<String> schemes = new LinkedList<String>();
+		LinkedList<Integer> ports = new LinkedList<Integer>();
+
+		while (m.find()) {
+			String scheme = m.group(Protocols.PROTOCOL_EXPORT_PATTERN_SCHEME);
+			int port = Integer.parseInt(m
+					.group(Protocols.PROTOCOL_EXPORT_PATTERN_PORT));
+
+			schemes.addLast(scheme);
+			ports.addLast(port);
+		}
+
+		LinkedList<Integer> portsToRemove = new LinkedList<Integer>();
+
+		for (Integer i : this.ports.keySet())
+			if (!ports.contains(i))
+				portsToRemove.add(i);
+
+		for (int i = 0; i < portsToRemove.size(); i++)
+			this.ports.remove(portsToRemove.get(i));
+
+		portsToRemove.clear();
+
+		for (int i = 0; i < ports.size(); i++) {
+			if (!this.ports.containsKey(ports.get(i))) {
+				try {
+					registerPort(ports.get(i), schemes.get(i));
+				} catch (RemotePortException rpe) {
+					Console.exception(rpe);
+				}
+			}
+		}
+
+		ports.clear();
+		schemes.clear();
 	}
 
 	public String getDigest() {
@@ -64,6 +119,7 @@ public class RemoteAgency extends RemoteActor {
 			throw new RemotePortException();
 
 		ports.put(port, new RemotePort(scheme, port));
+		Console.warning("register port %s:%d on %s", scheme, port, id);
 	}
 
 	public void unregisterPort(int port) {

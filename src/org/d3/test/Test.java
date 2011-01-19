@@ -18,48 +18,29 @@
  */
 package org.d3.test;
 
-import java.security.SecureRandom;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.net.URI;
-import java.nio.charset.Charset;
+public class Test implements Thread.UncaughtExceptionHandler {
+	
+	public static class TThread extends Thread {
+		public TThread(Thread.UncaughtExceptionHandler ueh, String name) {
+			super(name);
+			setUncaughtExceptionHandler(ueh);
+		}
+		
+		public void run() {
+			throw new RuntimeException();
+		}
+	}
 
-import org.d3.Console;
-import org.d3.actor.Agency.Argument;
-import org.d3.protocol.BadProtocolException;
-import org.d3.protocol.Protocols;
-
-public class Test {
+	public void uncaughtException(Thread t, Throwable e) {
+		System.out.printf("%s terminate due to %s, from %s%n", t.getName(), e.getMessage(), Thread.currentThread().getName());
+	}
+	
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		/*
-		 * SecureRandom random = new SecureRandom(); String agencyId;
-		 * 
-		 * agencyId = String.format("%x%x", System.nanoTime(),
-		 * random.nextLong());
-		 * 
-		 * String uriString = "//host/object/path"; URI uri = new
-		 * URI(uriString);
-		 * 
-		 * System.out.printf("> scheme=\"%s\", host=\"%s\", path=\"%s\"%n",
-		 * uri.getScheme(), uri.getHost(), uri.getPath());
-		 * System.out.println(Charset.defaultCharset().name());
-		 */
-
-		long m1, m2;
-		String uri = "scheme://host:port/path/id";
-		int size = 100000;
-
-		m1 = System.nanoTime();
-		for (int i = 0; i < size; i++)
-			//new URI(uri);
-			new URI("scheme", null, "host", 1, "/path", null, null);
-		
-		m2 = System.nanoTime();
-
-		System.out.printf("> average : %d ns%n", (m2 - m1) / size);
+		Test t = new Test();
+		TThread tthread = new TThread(t, "test");
+		tthread.start();
 	}
-
 }

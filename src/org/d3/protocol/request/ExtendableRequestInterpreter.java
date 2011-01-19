@@ -16,8 +16,10 @@
  * 
  * Copyright 2010 Guilhelm Savin
  */
-package org.d3.events;
+package org.d3.protocol.request;
 
-public interface Bindable {
-	<K extends Enum<K>> void trigger(K event, Object ... data);
+public interface ExtendableRequestInterpreter
+	extends RequestInterpreter
+{
+	void addInterpreter( String id, RequestInterpreter ri );
 }

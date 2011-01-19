@@ -18,7 +18,6 @@
  */
 package org.d3.protocol;
 
-import org.d3.Console;
 import org.d3.RegistrationException;
 import org.d3.actor.ActorThread;
 import org.d3.actor.Agency;
@@ -42,10 +41,6 @@ public class ProtocolThread extends ActorThread {
 			throw new RegistrationException();
 		}
 
-		Console.info("protocol listening");
-		
 		((Protocol) owner).listen();
-		
-		Console.error("protocol end");
 	}
 }
