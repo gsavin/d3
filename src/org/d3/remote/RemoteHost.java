@@ -51,18 +51,32 @@ public class RemoteHost {
 
 	public RemoteAgency registerAgency(String id) {
 		Agency.getLocalAgency().checkBodyThreadAccess();
-		
-		if(!agencies.containsKey(id)) {
-			agencies.put(id, new RemoteAgency(address, id));
-			Console.info("register agency \"%s\" @ %s", id, address);
+		RemoteAgency remote = agencies.get(id);
+
+		if (remote == null) {
+			remote = new RemoteAgency(this, id);
+			agencies.put(id, remote);
+			Console.info("register agency \"%s\" @ %s", id,
+					address.getHostAddress());
+			Agency.getLocalAgency().getRemoteHosts().getEventDispatcher()
+					.trigger(RemoteEvent.REMOTE_AGENCY_REGISTERED, remote);
 		}
-		
-		return agencies.get(id);
+
+		return remote;
 	}
-	
-	public void registerPort(int port, String scheme,
-			RemoteAgency remoteAgency) throws RemotePortException,
-			UnknownAgencyException {
+
+	public void unregisterAgency(RemoteAgency remote) {
+		Agency.getLocalAgency().checkBodyThreadAccess();
+
+		if (agencies.containsKey(remote.getId())) {
+			Agency.getLocalAgency().getRemoteHosts().getEventDispatcher()
+					.trigger(RemoteEvent.REMOTE_AGENCY_UNREGISTERED, remote);
+			agencies.remove(remote.getId());
+		}
+	}
+
+	public void registerPort(int port, String scheme, RemoteAgency remoteAgency)
+			throws RemotePortException, UnknownAgencyException {
 		Agency.getLocalAgency().checkBodyThreadAccess();
 
 		if (ports.containsKey(port))
@@ -85,7 +99,7 @@ public class RemoteHost {
 			ports.remove(port);
 		}
 	}
-	
+
 	public String toString() {
 		return address.toString();
 	}

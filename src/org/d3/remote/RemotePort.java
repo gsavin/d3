@@ -18,21 +18,42 @@
  */
 package org.d3.remote;
 
+import org.d3.actor.Agency;
+import org.d3.actor.Protocol;
+import org.d3.protocol.Transmitter;
+
 public class RemotePort {
 
 	private final String scheme;
 	private final int port;
-	
-	public RemotePort(String scheme, int port) {
+	private final RemoteAgency remoteAgency;
+	private Protocol protocol;
+
+	public RemotePort(RemoteAgency remoteAgency, String scheme, int port) {
+		this.remoteAgency = remoteAgency;
 		this.scheme = scheme;
 		this.port = port;
+		this.protocol = Agency.getLocalAgency().getProtocols().getSchemes()
+				.getCompatibleProtocol(scheme);
+	}
+
+	public RemoteAgency getRemoteAgency() {
+		return remoteAgency;
 	}
 	
 	public String getScheme() {
 		return scheme;
 	}
-	
+
 	public int getPort() {
 		return port;
+	}
+
+	public Protocol getCompatibleProtocol() {
+		return protocol;
+	}
+
+	public boolean isTransmitter() {
+		return protocol == null ? false : (protocol instanceof Transmitter);
 	}
 }

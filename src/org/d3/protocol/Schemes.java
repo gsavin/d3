@@ -54,4 +54,13 @@ public class Schemes {
 
 		scheme.add(protocol);
 	}
+
+	public Protocol getCompatibleProtocol(String scheme) {
+		Scheme sch = schemes.get(scheme);
+
+		if (sch == null)
+			return null;
+
+		return sch.peek();
+	}
 }

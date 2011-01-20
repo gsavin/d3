@@ -34,8 +34,17 @@ public class Call extends ScheduledTask {
 		this(0, TimeUnit.NANOSECONDS, target, name, args);
 	}
 
+	public Call(Actor target, String name, Future future, Object... args) {
+		this(0, TimeUnit.NANOSECONDS, target, name, future, args);
+	}
+
 	public Call(long delay, TimeUnit unit, Actor target, String name,
 			Object... args) {
+		this(delay, unit, target, name, new Future(), args);
+	}
+
+	public Call(long delay, TimeUnit unit, Actor target, String name,
+			Future future, Object... args) {
 		super(delay, unit);
 
 		source = ActorThread.getCurrentActor();
@@ -46,7 +55,7 @@ public class Call extends ScheduledTask {
 		this.target = target;
 		this.name = name;
 		this.args = args;
-		this.future = new Future();
+		this.future = future;
 
 		Agency.getLocalAgency().getActors().getEventDispatcher()
 				.trigger(ActorsEvent.CALL, source, target);

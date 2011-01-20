@@ -208,6 +208,10 @@ public class Protocols implements EventDispatchable<ProtocolsEvent> {
 		return futures;
 	}
 	
+	public Schemes getSchemes() {
+		return schemes;
+	}
+	
 	private void lock() {
 		lock.lock();
 	}

@@ -316,6 +316,16 @@ public class Discovery extends Protocol implements StepActor {
 					try {
 						remote = host.getRemoteAgency(id);
 					} catch (UnknownAgencyException e) {
+						/*
+						 * Send a discovery packet to be detected by the remote
+						 * agency.
+						 */
+						try {
+							sendDiscoveryPacket();
+						} catch (IOException ioe) {
+							Console.exception(ioe);
+						}
+
 						Future f = (Future) Agency.getLocalAgency().call(
 								"registerNewAgency", host, id);
 						f.waitForValue();

@@ -19,17 +19,50 @@
 package org.d3.protocol;
 
 import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.Inet6Address;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.d3.actor.Call;
 import org.d3.protocol.request.ObjectCoder;
 import org.d3.protocol.request.ObjectCoder.CodingMethod;
+import org.d3.remote.RemotePort;
 
 public class Request implements Serializable {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -836303930336000404L;
+
+	private static URI format(URI uri, Transmitter transmitter) {
+		InetAddress address = transmitter.getAddress();
+		String host = address.getHostAddress();
+
+		if (address instanceof Inet6Address) {
+			if (host.indexOf('%') > 0)
+				host = host.substring(0, host.indexOf('%'));
+			host = String.format("[%s]", host);
+		}
+
+		try {
+			return new URI(String.format("%s://%s:%d%s",
+					transmitter.getScheme(), host, transmitter.getPort(),
+					uri.getPath()));
+		} catch (URISyntaxException e) {
+			return uri;
+		}
+	}
+
+	private static URI format(URI uri, RemotePort remotePort) {
+		try {
+			return new URI(String.format("%s://%s:%d%s",
+					remotePort.getScheme(), uri.getHost(),
+					remotePort.getPort(), uri.getPath()));
+		} catch (URISyntaxException e) {
+			return uri;
+		}
+	}
 
 	protected final URI source;
 	protected final URI target;
@@ -38,9 +71,12 @@ public class Request implements Serializable {
 	protected final String args;
 	protected final String call;
 
-	public Request(Call call) {
-		this.source = call.getSource().getURI();
-		this.target = call.getTarget().getURI();
+	public Request(Call call, Transmitter transmitter, RemotePort remotePort) {
+		URI s = call.getSource().getURI();
+		URI t = call.getTarget().getURI();
+
+		this.source = format(s, transmitter);
+		this.target = format(t, remotePort);
 		this.call = call.getName();
 		this.codingMethod = CodingMethod.HEXABYTES;
 		this.args = ObjectCoder.encode(codingMethod, call.getArgs());
@@ -64,7 +100,7 @@ public class Request implements Serializable {
 	public URI getTargetURI() {
 		return target;
 	}
-	
+
 	public String getCall() {
 		return call;
 	}

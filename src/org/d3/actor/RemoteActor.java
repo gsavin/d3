@@ -20,7 +20,10 @@ package org.d3.actor;
 
 import org.d3.Actor;
 import org.d3.annotation.ActorPath;
+import org.d3.protocol.Transmitter;
+import org.d3.remote.NoRemotePortAvailableException;
 import org.d3.remote.RemoteAgency;
+import org.d3.remote.RemotePort;
 
 @ActorPath("/remotes")
 public class RemoteActor extends Actor {
@@ -30,8 +33,9 @@ public class RemoteActor extends Actor {
 	public RemoteActor(RemoteAgency remoteAgency, String objectPath,
 			String objectId) {
 		super(remoteAgency.getRemoteHost().getAddress(), remoteAgency.getId(),
-				objectPath, objectId.startsWith("/") ? objectId.substring(1)
-						: objectId);
+				objectPath, objectId);
+		
+		this.remoteAgency = remoteAgency;
 	}
 
 	public final IdentifiableType getType() {
@@ -44,6 +48,16 @@ public class RemoteActor extends Actor {
 
 	public Object call(String name, Object... args) {
 		Call call = new Call(this, name, args);
+		
+		try {
+			RemotePort rp = remoteAgency.getRandomRemotePortTransmittable();
+			Transmitter t = (Transmitter) rp.getCompatibleProtocol();
+			
+			t.transmit(rp, call);
+		} catch (NoRemotePortAvailableException e) {
+			return e;
+		}
+		
 		return call.getFuture();
 	}
 

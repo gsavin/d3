@@ -26,21 +26,46 @@ import org.d3.actor.RemoteActor;
 
 public class ProtocolThread extends ActorThread {
 
+	private RemoteActor role;
+
 	public ProtocolThread(Protocol owner) {
 		super(owner, "server");
+		role = null;
 	}
 
-	public RemoteActor getCurrentRemoteActor() throws NotRemoteActorCallException {
-		throw new NotRemoteActorCallException();
+	public void assumeRole(RemoteActor remote) {
+		checkIsOwner();
+
+		if (remote == null)
+			throw new NullPointerException();
+
+		role = remote;
 	}
-	
+
+	public void stopAssuming() {
+		checkIsOwner();
+		role = null;
+	}
+
+	public RemoteActor getCurrentRemoteActor()
+			throws NotRemoteActorCallException {
+		if (role == null)
+			throw new NotRemoteActorCallException();
+
+		return role;
+	}
+
 	public void run() {
 		try {
 			Agency.getLocalAgency().getProtocols().register((Protocol) owner);
-		} catch(ProtocolException e) {
+		} catch (ProtocolException e) {
 			throw new RegistrationException();
 		}
 
-		((Protocol) owner).listen();
+		try {
+			((Protocol) owner).listen();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
 	}
 }

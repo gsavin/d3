@@ -55,7 +55,7 @@ public class Actors implements Iterable<LocalActor>, EventDispatchable<ActorsEve
 
 		if (actors.putIfAbsent(fullpath, actor) != null)
 			throw new RegistrationException();
-
+		
 		updateDigest();
 		eventDispatcher.trigger(ActorsEvent.ACTOR_REGISTERED, actor);
 	}
@@ -72,6 +72,10 @@ public class Actors implements Iterable<LocalActor>, EventDispatchable<ActorsEve
 		return digest;
 	}
 
+	public LocalActor get(String fullPath) {
+		return actors.get(fullPath);
+	}
+	
 	private void updateDigest() {
 		String date = Long.toString(System.currentTimeMillis());
 		digestAlgorithm.digest(date.getBytes());
@@ -84,5 +88,10 @@ public class Actors implements Iterable<LocalActor>, EventDispatchable<ActorsEve
 
 	public Iterator<LocalActor> iterator() {
 		return actors.values().iterator();
+	}
+	
+	public String[] exportActorsPath() {
+		String[] a = new String[1];
+		return actors.keySet().toArray(a);
 	}
 }

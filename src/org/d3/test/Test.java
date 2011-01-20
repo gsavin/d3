@@ -18,29 +18,31 @@
  */
 package org.d3.test;
 
-public class Test implements Thread.UncaughtExceptionHandler {
-	
-	public static class TThread extends Thread {
-		public TThread(Thread.UncaughtExceptionHandler ueh, String name) {
-			super(name);
-			setUncaughtExceptionHandler(ueh);
-		}
-		
-		public void run() {
-			throw new RuntimeException();
-		}
-	}
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.URI;
+import java.util.Enumeration;
 
-	public void uncaughtException(Thread t, Throwable e) {
-		System.out.printf("%s terminate due to %s, from %s%n", t.getName(), e.getMessage(), Thread.currentThread().getName());
-	}
-	
+public class Test {
+
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		Test t = new Test();
-		TThread tthread = new TThread(t, "test");
-		tthread.start();
+		Enumeration<NetworkInterface> ifs = NetworkInterface.getNetworkInterfaces();
+		
+		while(ifs.hasMoreElements()) {
+			NetworkInterface ni = ifs.nextElement();
+			System.out.printf("%s%n", ni.getDisplayName());
+			Enumeration<InetAddress> addresses = ni.getInetAddresses();
+			while(addresses.hasMoreElements()) {
+				InetAddress inet = addresses.nextElement();
+				System.out.printf("- %s%n", inet.getHostAddress());
+			}
+		}
+		
+		String t = "xml://host:10000";
+		URI uri = new URI(t);
+		System.out.printf("-----%n%s%n------%n",uri);
 	}
 }

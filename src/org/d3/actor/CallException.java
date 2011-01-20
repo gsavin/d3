@@ -24,6 +24,14 @@ public class CallException extends Exception {
 	 */
 	private static final long serialVersionUID = -155268498191042806L;
 
+	public CallException() {
+		super();
+	}
+	
+	public CallException(String msg) {
+		super(msg);
+	}
+	
 	public CallException(Throwable t) {
 		super(t);
 	}

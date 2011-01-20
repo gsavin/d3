@@ -31,4 +31,8 @@ public class HostNotFoundException extends Exception {
 	public HostNotFoundException(String msg) {
 		super(msg);
 	}
+	
+	public HostNotFoundException(Throwable cause) {
+		super(cause);
+	}
 }

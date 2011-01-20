@@ -18,8 +18,8 @@
  */
 package org.d3.actor;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 import org.d3.annotation.ActorPath;
 import org.d3.protocol.ProtocolThread;
@@ -28,11 +28,11 @@ import org.d3.protocol.ProtocolThread;
 public abstract class Protocol extends LocalActor {
 	public static final int REQUEST_MAX_SIZE = 1024000;
 
-	protected final SocketAddress socketAddress;
+	protected final InetSocketAddress socketAddress;
 	private final ProtocolThread protocolThread;
 	protected final String scheme;
 	
-	protected Protocol(String scheme, String id, SocketAddress socketAddress) {
+	protected Protocol(String scheme, String id, InetSocketAddress socketAddress) {
 		super(id);
 		
 		this.socketAddress = socketAddress;
@@ -53,6 +53,10 @@ public abstract class Protocol extends LocalActor {
 		protocolThread.checkIsOwner();
 	}
 
+	public final InetAddress getAddress() {
+		return socketAddress.getAddress();
+	}
+	
 	public final int getPort() {
 		if (socketAddress instanceof InetSocketAddress)
 			return ((InetSocketAddress) socketAddress).getPort();

@@ -84,7 +84,7 @@ public class BodyThread extends ActorThread {
 
 			try {
 				actorThreadSemaphore.acquireUninterruptibly();
-				
+
 				if (current instanceof Call) {
 					Call c = (Call) current;
 
@@ -92,7 +92,7 @@ public class BodyThread extends ActorThread {
 						Object r = owner.call(c.getName(), c.getArgs());
 						c.getFuture().init(r);
 					} catch (Exception e) {
-						e.printStackTrace();
+						c.getFuture().init(new CallException(e));
 					}
 				} else if (current instanceof SpecialActionTask) {
 					SpecialActionTask sat = (SpecialActionTask) current;
@@ -125,7 +125,11 @@ public class BodyThread extends ActorThread {
 
 		return c.getFuture();
 	}
-	
+
+	public final void enqueue(Call c) {
+		queue.add(c);
+	}
+
 	protected void terminate() {
 		super.terminate();
 		owner.unregister();

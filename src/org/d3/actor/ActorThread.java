@@ -70,7 +70,8 @@ public class ActorThread extends Thread implements Thread.UncaughtExceptionHandl
 
 	public void uncaughtException(Thread t, Throwable e) {
 		// TODO Handle unexpected end of actor thread
-		Console.error("unexpected end of actor thread:\n\t%s", e.getMessage());
+		Console.error("unexpected end of actor thread:\n\t%s: %s", e.getClass(), e.getMessage());
+		e.printStackTrace();
 		terminate();
 	}
 	

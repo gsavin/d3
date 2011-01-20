@@ -18,12 +18,19 @@
  */
 package org.d3.remote;
 
+import java.net.InetAddress;
+import java.net.Inet6Address;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 
 import org.d3.Console;
+import org.d3.RegistrationException;
+import org.d3.actor.Agency;
+import org.d3.actor.RemoteActor;
 import org.d3.annotation.ActorPath;
 import org.d3.protocol.Protocols;
 
@@ -34,7 +41,8 @@ public class RemoteAgency {
 	protected final String id;
 	protected long lastPresenceDate;
 	protected String digest;
-
+	protected final URI uri;
+	
 	public RemoteAgency(RemoteHost remoteHost, String agencyId) {
 		this(remoteHost, agencyId, null, "");
 	}
@@ -45,22 +53,36 @@ public class RemoteAgency {
 		this.lastPresenceDate = System.currentTimeMillis();
 		this.remoteHost = remoteHost;
 		this.id = agencyId;
-		
+
 		if (protocols != null)
 			updateProtocols(protocols);
 
 		if (digest != null)
 			updateDigest(digest);
+		
+		InetAddress address = remoteHost.getAddress();
+		String host = address.getHostAddress();
+		
+		if(address instanceof Inet6Address)
+			host = String.format("[%s]", host);
+		
+		String uri = String.format("//%s/%s/%s", host, agencyId, agencyId);
+		
+		try {
+			this.uri = new URI(uri);
+		} catch(URISyntaxException e) {
+			throw new RegistrationException(e);
+		}
 	}
 
 	public RemoteHost getRemoteHost() {
 		return remoteHost;
 	}
-	
+
 	public String getId() {
 		return id;
 	}
-	
+
 	public void udpatePresence(long date) {
 		this.lastPresenceDate = date;
 	}
@@ -118,8 +140,11 @@ public class RemoteAgency {
 		if (ports.containsKey(port))
 			throw new RemotePortException();
 
-		ports.put(port, new RemotePort(scheme, port));
-		Console.warning("register port %s:%d on %s", scheme, port, id);
+		RemotePort rp = new RemotePort(this, scheme, port);
+		ports.put(port, rp);
+		Console.warning("register %s %s:%d on %s",
+				rp.isTransmitter() ? "transmitter" : "protocol", scheme, port,
+				id);
 	}
 
 	public void unregisterPort(int port) {
@@ -134,5 +159,28 @@ public class RemoteAgency {
 			return it.next();
 
 		throw new NoRemotePortAvailableException();
+	}
+
+	public RemotePort getRandomRemotePortTransmittable()
+			throws NoRemotePortAvailableException {
+		Iterator<RemotePort> it = ports.values().iterator();
+
+		while (it.hasNext()) {
+			RemotePort rp = it.next();
+
+			if (rp.isTransmitter())
+				return rp;
+		}
+
+		throw new NoRemotePortAvailableException();
+	}
+	
+	public RemoteActor asRemoteActor() {
+		try {
+			return Agency.getLocalAgency().getRemoteActors().get(uri);
+		} catch( Exception e) {
+			Console.exception(e);
+			return null;
+		}
 	}
 }

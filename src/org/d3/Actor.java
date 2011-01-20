@@ -18,20 +18,11 @@
  */
 package org.d3;
 
-//import java.lang.reflect.Method;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
 
-import org.d3.actor.ActorInternalException;
-import org.d3.actor.Agency;
-import org.d3.actor.Protocol;
 import org.d3.annotation.ActorPath;
-import org.d3.remote.HostNotFoundException;
-import org.d3.remote.NoRemotePortAvailableException;
-import org.d3.remote.RemotePort;
-import org.d3.remote.UnknownAgencyException;
-import org.d3.tools.Utils;
 
 @ActorPath("/")
 public abstract class Actor {
@@ -139,45 +130,38 @@ public abstract class Actor {
 	public final String getAgencyId() {
 		return agencyId;
 	}
-	
+
 	public final String getAgencyFullPath() {
 		return agencyId + getFullPath();
 	}
-	
+
 	public final URI getURI() {
 		if (uri == null) {
 			String uriString;
-			String scheme = null;
-			int port = -1;
+			//String scheme = null;
+			//int port = -1;
 			String host = this.host.getHostAddress();
 			String path = getFullPath();
 
 			if (this.host instanceof Inet6Address)
 				host = String.format("[%s]", host);
 
-			if (isRemote()) {
-				try {
-					RemotePort rp = Utils.getRandomRemotePortFromRemoteAgency(
-							this.host, agencyId);
+			/*
+			 * if (isRemote()) { try { RemotePort rp =
+			 * Utils.getRandomRemotePortFromRemoteAgency( this.host, agencyId);
+			 * 
+			 * scheme = rp.getScheme(); port = rp.getPort(); } catch
+			 * (HostNotFoundException e) { throw new ActorInternalException(e);
+			 * } catch (UnknownAgencyException e) { throw new
+			 * ActorInternalException(e); } catch
+			 * (NoRemotePortAvailableException e) { throw new
+			 * ActorInternalException(e); } } else { Protocol p =
+			 * Agency.getLocalAgency().getDefaultProtocol();
+			 * 
+			 * scheme = p.getScheme(); port = p.getPort(); }
+			 */
 
-					scheme = rp.getScheme();
-					port = rp.getPort();
-				} catch (HostNotFoundException e) {
-					throw new ActorInternalException(e);
-				} catch (UnknownAgencyException e) {
-					throw new ActorInternalException(e);
-				} catch (NoRemotePortAvailableException e) {
-					throw new ActorInternalException(e);
-				}
-			} else {
-				Protocol p = Agency.getLocalAgency().getDefaultProtocol();
-
-				scheme = p.getScheme();
-				port = p.getPort();
-			}
-
-			uriString = String.format("%s://%s:%d/%s%s%s", scheme, host, port,
-					agencyId, path);
+			uriString = String.format("//%s/%s%s", host, agencyId, path);
 
 			try {
 				uri = new URI(uriString);

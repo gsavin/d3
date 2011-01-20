@@ -18,7 +18,7 @@
  */
 package org.d3.actor;
 
-public class CallableNotFoundException extends Exception {
+public class CallableNotFoundException extends CallException {
 	/**
 	 * 
 	 */

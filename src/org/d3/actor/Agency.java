@@ -28,6 +28,7 @@ import org.d3.Args;
 import org.d3.Console;
 import org.d3.RegistrationException;
 import org.d3.agency.AgencyEvents;
+import org.d3.agency.AgencyExitThread;
 import org.d3.agency.IpTables;
 import org.d3.annotation.ActorDescription;
 import org.d3.annotation.ActorPath;
@@ -38,6 +39,7 @@ import org.d3.events.EventDispatcher;
 import org.d3.feature.Features;
 import org.d3.protocol.Protocols;
 import org.d3.remote.HostNotFoundException;
+import org.d3.remote.RemoteActors;
 import org.d3.remote.RemoteAgency;
 import org.d3.remote.RemoteHost;
 import org.d3.remote.RemoteHosts;
@@ -127,6 +129,7 @@ public class Agency extends LocalActor implements
 	private final Protocols protocols;
 	private final Features features;
 	private final Actors actors;
+	private final RemoteActors remoteActors;
 	private final Semaphore actorThreadSemaphore;
 
 	private Agency(String id) {
@@ -138,6 +141,12 @@ public class Agency extends LocalActor implements
 			concurrentActorThreads = localArgs
 					.getInteger("actors.threads.concurrent");
 
+		int remoteActorsCapacity = 1000;
+
+		if (localArgs.has("actors.remote.cache"))
+			concurrentActorThreads = localArgs
+					.getInteger("actors.remote.cache");
+		
 		ipTables = new IpTables();
 
 		this.eventDispatcher = new ActorEventDispatcher<AgencyEvents>(
@@ -146,6 +155,7 @@ public class Agency extends LocalActor implements
 		this.protocols = new Protocols();
 		this.features = new Features();
 		this.actors = new Actors();
+		this.remoteActors = new RemoteActors(remoteActorsCapacity);
 		this.actorThreadSemaphore = new Semaphore(concurrentActorThreads);
 	}
 
@@ -155,6 +165,8 @@ public class Agency extends LocalActor implements
 		Protocols.init();
 		Features.init();
 
+		Runtime.getRuntime().addShutdownHook(new AgencyExitThread());
+		
 		Console.info("agency enable");
 	}
 
@@ -177,6 +189,10 @@ public class Agency extends LocalActor implements
 	public Actors getActors() {
 		return actors;
 	}
+	
+	public RemoteActors getRemoteActors() {
+		return remoteActors;
+	}
 
 	public Protocol getDefaultProtocol() {
 		// TODO
@@ -196,18 +212,6 @@ public class Agency extends LocalActor implements
 			return actorThreadSemaphore;
 
 		throw new NotActorThreadException();
-	}
-
-	public void registerAgency(String remoteId, String address,
-			String protocols, String digest) {
-		// boolean blacklisted = ipTables.isBlacklisted(address);
-
-		Console.info("agency %s digest: %s", remoteId, digest);
-
-	}
-
-	public void unregisterAgency(RemoteAgency rad) {
-
 	}
 
 	public void register(LocalActor actor) throws RegistrationException {
@@ -230,7 +234,7 @@ public class Agency extends LocalActor implements
 		try {
 			switch (actor.getType()) {
 			case FEATURE:
-				
+
 				break;
 			}
 		} catch (Exception e) {
@@ -250,8 +254,6 @@ public class Agency extends LocalActor implements
 			remoteHost = remoteHosts.get(host);
 		} catch (HostNotFoundException e) {
 			remoteHost = remoteHosts.registerHost(host);
-			eventDispatcher.trigger(AgencyEvents.REMOTE_HOST_REGISTERED,
-					remoteHost);
 		}
 
 		return remoteHost;
@@ -265,10 +267,8 @@ public class Agency extends LocalActor implements
 			remoteAgency = host.getRemoteAgency(id);
 		} catch (UnknownAgencyException e) {
 			remoteAgency = host.registerAgency(id);
-			eventDispatcher.trigger(AgencyEvents.REMOTE_AGENCY_REGISTERED,
-					remoteAgency);
 		}
-
+		
 		return remoteAgency;
 	}
 
@@ -279,6 +279,12 @@ public class Agency extends LocalActor implements
 
 	@Callable("ping")
 	public Boolean ping() {
+		Console.info("[[ ping ]]");
 		return Boolean.TRUE;
+	}
+	
+	@Callable("actors_list")
+	public String[] getActorsList() {
+		return actors.exportActorsPath();
 	}
 }

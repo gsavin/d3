@@ -37,7 +37,7 @@ public abstract class LocalActor extends Actor {
 
 		if (this instanceof Agency)
 			bodyThread = new AgencyThread((Agency) this);
-		else if( this instanceof Feature)
+		else if (this instanceof Feature)
 			bodyThread = new FeatureThread((Feature) this);
 		else
 			bodyThread = new BodyThread(this);
@@ -64,7 +64,7 @@ public abstract class LocalActor extends Actor {
 	public void join() throws InterruptedException {
 		bodyThread.join();
 	}
-	
+
 	public final ThreadGroup getThreadGroup() {
 		return threadGroup;
 	}
@@ -74,12 +74,17 @@ public abstract class LocalActor extends Actor {
 	}
 
 	public final void checkActorThreadAccess() {
-		if(Thread.currentThread() instanceof ActorThread) {
-			if(((ActorThread) Thread.currentThread()).getOwner() != this)
+		if (Thread.currentThread() instanceof ActorThread) {
+			if (((ActorThread) Thread.currentThread()).getOwner() != this)
 				throw new SecurityException();
-		} else throw new SecurityException();
+		} else
+			throw new SecurityException();
 	}
-	
+
+	public void call(Call c) {
+		bodyThread.enqueue(c);
+	}
+
 	public Object call(String name, Object... args) {
 		if (bodyThread.isOwner()) {
 			bodyThread.checkIsOwner();
@@ -93,8 +98,8 @@ public abstract class LocalActor extends Actor {
 				if (methods != null) {
 					for (Method m : methods) {
 						if (m.getAnnotation(Callable.class) != null
-								&& m.getAnnotation(Callable.class)
-										.value().equals(name)) {
+								&& m.getAnnotation(Callable.class).value()
+										.equals(name)) {
 							callable = m;
 							break;
 						}
@@ -110,7 +115,7 @@ public abstract class LocalActor extends Actor {
 			try {
 				return callable.invoke(this, args);
 			} catch (Exception e) {
-				return e;
+				return new CallException(e);
 			}
 		} else {
 			Future f = bodyThread.enqueue(name, args);

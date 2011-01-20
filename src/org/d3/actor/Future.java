@@ -37,14 +37,18 @@ public class Future {
 
 	private final String id;
 	private Object value;
-	private AtomicBoolean available;
+	private final AtomicBoolean available;
 
 	public Future() {
-		id = newFutureId();
-		value = null;
-		available = new AtomicBoolean(false);
+		this(newFutureId());
 	}
 
+	protected Future(String id) {
+		this.id = id;
+		this.value = null;
+		this.available = new AtomicBoolean(false);
+	}
+	
 	public Object getValue() throws CallException {
 		synchronized (available) {
 			try {
@@ -87,8 +91,14 @@ public class Future {
 
 	@SuppressWarnings("unchecked")
 	public <T> T get() throws CallException {
-		if(available.get())
-			return (T) getValue();
+		if(available.get()) {
+			Object obj = getValue();
+			
+			if(obj instanceof CallException)
+				throw (CallException) obj;
+			
+			return (T) obj;
+		}
 		
 		throw new ValueNotAvailableException();
 	}
