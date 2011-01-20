@@ -1,0 +1,227 @@
+/*
+ * This file is part of d3.
+ * 
+ * d3 is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * d3 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with d3.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * Copyright 2010 Guilhelm Savin
+ */
+package org.d3.protocol;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.nio.channels.Channel;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.util.Iterator;
+
+import org.d3.ActorNotFoundException;
+import org.d3.Console;
+import org.d3.actor.Agency;
+import org.d3.actor.Call;
+import org.d3.actor.Future;
+import org.d3.actor.LocalActor;
+import org.d3.actor.Protocol;
+import org.d3.actor.RemoteActor;
+import org.d3.remote.HostNotFoundException;
+import org.d3.remote.RemotePort;
+import org.d3.remote.UnknownAgencyException;
+
+public abstract class Transmitter extends Protocol {
+
+	protected Transmitter(String scheme, String id,
+			InetSocketAddress socketAddress) {
+		super(scheme, id, socketAddress);
+	}
+
+	public void listen() {
+		checkProtocolThreadAccess();
+
+		Selector selector = null;
+		SelectableChannel channel = getChannel();
+
+		try {
+			selector = Selector.open();
+		} catch (IOException e) {
+			// TODO
+		}
+
+		try {
+			channel.register(
+					selector,
+					channel.validOps()
+							& (SelectionKey.OP_ACCEPT | SelectionKey.OP_READ | SelectionKey.OP_CONNECT));
+
+		} catch (ClosedChannelException e) {
+			// TODO
+		}
+
+		while (selector.isOpen()) {
+			try {
+				selector.select();
+			} catch (IOException e) {
+				// TODO
+				e.printStackTrace();
+			} catch (ClosedSelectorException e) {
+				// TODO
+				e.printStackTrace();
+			}
+
+			Iterator<SelectionKey> it = selector.selectedKeys().iterator();
+
+			while (it.hasNext()) {
+				SelectionKey sk = it.next();
+
+				// System.out.printf("<key %s%s%s%s>%n", sk.isValid() ? "valid,"
+				// : "", sk.isAcceptable() ? "acceptable," : "", sk
+				// .isReadable() ? "readable," : "",
+				// sk.isWritable() ? "writable," : "");
+
+				try {
+					processSelectionKey(sk);
+				} catch (IOException e) {
+					// TODO
+					e.printStackTrace();
+				}
+			}
+		}
+
+		Console.error("protocol end");
+	}
+
+	protected void processSelectionKey(SelectionKey sk) throws IOException {
+		if (sk.isValid() && sk.isAcceptable()) {
+			ServerSocketChannel ch = (ServerSocketChannel) sk.channel();
+
+			try {
+				SocketChannel sc = ch.accept();
+
+				if (sc != null) {
+					sc.configureBlocking(false);
+					sc.register(sk.selector(), SelectionKey.OP_READ);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		if (sk.isValid() && sk.isConnectable()) {
+			SocketChannel sChannel = (SocketChannel) sk.channel();
+
+			if (!sChannel.finishConnect())
+				sk.cancel();
+		}
+
+		if (sk.isValid() && sk.isReadable()) {
+			ReadableByteChannel ch = (ReadableByteChannel) sk.channel();
+
+			int r = read(ch);
+
+			if (r < 0) {
+				close(ch);
+				ch.close();
+			}
+		}
+	}
+
+	/**
+	 * Send a request to an identifiable object.
+	 * 
+	 * @param target
+	 * @param r
+	 */
+	public void transmit(RemotePort port, Call c) {
+		if (c.getTarget().isRemote()) {
+			Future f = c.getFuture();
+			Agency.getLocalAgency().getProtocols().getFutures().register(f);
+			write(new Request(c, this, port));
+		} else {
+			// TODO
+			Console.error("local call on a transmitter");
+		}
+	}
+
+	public void transmitFuture(RemotePort remote, String futureId, Object value) {
+		FutureRequest fr = new FutureRequest(futureId, value, remote);
+		write(fr);
+	}
+
+	protected void dispatch(Request r) throws HostNotFoundException,
+			UnknownAgencyException {
+		URI target = r.getTargetURI();
+		InetAddress address;
+
+		try {
+			address = InetAddress.getByName(target.getHost());
+		} catch (UnknownHostException e) {
+			Console.exception(e);
+			return;
+		}
+
+		if (address.isLinkLocalAddress()) {
+			RemoteActor source;
+
+			source = Agency.getLocalAgency().getRemoteActors()
+					.get(r.getSourceURI());
+
+			String path = target.getPath();
+			String agencyId = path.substring(1, path.indexOf('/', 1));
+
+			if (Agency.getLocalAgencyId().equals(agencyId)) {
+				String fullPath = path.substring(path.indexOf('/', 1));
+				LocalActor targetActor = Agency.getLocalAgency().getActors()
+						.get(fullPath);
+
+				RemoteFuture future = new RemoteFuture(
+						source.getRemoteAgency(), r.getFutureId());
+
+				if (targetActor != null) {
+					Call c = new Call(targetActor, r.getCall(), future,
+							r.getDecodedArgs());
+					targetActor.call(c);
+				} else {
+					Console.error(path);
+					future.init(new ActorNotFoundException());
+				}
+			} else
+				Console.error("not local agency : %s", agencyId);
+			// writeRequest(r);
+		} else
+			Console.error("not local address : %s", address);
+		// writeRequest(r);
+	}
+
+	protected void dispatch(FutureRequest fr) {
+		Agency.getLocalAgency().getProtocols().getFutures()
+				.initFuture(fr.getFutureId(), fr.getDecodedValue());
+	}
+
+	public abstract SelectableChannel getChannel();
+
+	public abstract int read(ReadableByteChannel ch);
+
+	public abstract void close(Channel ch);
+
+	public abstract void write(Request r);
+
+	public abstract void write(FutureRequest fr);
+}
