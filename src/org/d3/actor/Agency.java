@@ -26,6 +26,7 @@ import java.util.concurrent.Semaphore;
 import org.d3.Actor;
 import org.d3.Args;
 import org.d3.Console;
+import org.d3.HostAddress;
 import org.d3.RegistrationException;
 import org.d3.agency.AgencyEvents;
 import org.d3.agency.AgencyExitThread;
@@ -33,10 +34,12 @@ import org.d3.agency.IpTables;
 import org.d3.annotation.ActorDescription;
 import org.d3.annotation.ActorPath;
 import org.d3.annotation.Callable;
+import org.d3.entity.migration.MigrationProtocol;
 import org.d3.events.ActorEventDispatcher;
 import org.d3.events.EventDispatchable;
 import org.d3.events.EventDispatcher;
 import org.d3.feature.Features;
+import org.d3.protocol.BadProtocolException;
 import org.d3.protocol.Protocols;
 import org.d3.remote.HostNotFoundException;
 import org.d3.remote.RemoteActors;
@@ -45,6 +48,7 @@ import org.d3.remote.RemoteHost;
 import org.d3.remote.RemoteHosts;
 import org.d3.remote.UnknownAgencyException;
 import org.d3.security.D3SecurityManager;
+import org.d3.tools.Utils;
 
 /**
  * Agencies are the base of the distribution environment.
@@ -70,6 +74,7 @@ public class Agency extends LocalActor implements
 	private static Agency localAgency;
 	private static String localAgencyId;
 	private static Args localArgs;
+	private static HostAddress localHost;
 
 	public static String getArg(String key) {
 		return localArgs.get(key);
@@ -88,8 +93,28 @@ public class Agency extends LocalActor implements
 
 			localAgencyId = String.format("%x%x", System.nanoTime(),
 					random.nextLong());
-
+			
 			localArgs = args;
+
+			try {
+				String ifname = localArgs.get("system.net.interface");
+				InetAddress address;
+				boolean inet6 = localArgs.getBoolean("system.net.inet6");
+				
+				if(ifname==null)
+					address = InetAddress.getLocalHost();
+				else try {
+					address = Utils.getAddressForInterface(ifname, inet6);
+				} catch(Exception e) {
+					address = InetAddress.getLocalHost();
+				}
+				
+				localHost = new HostAddress(address);
+				Console.info("localhost is %s", localHost);
+			} catch (UnknownHostException e) {
+				throw new RegistrationException(e);
+			}
+			
 			localAgency = new Agency(localAgencyId);
 			localAgency.init();
 
@@ -111,15 +136,8 @@ public class Agency extends LocalActor implements
 		return localAgencyId;
 	}
 
-	public static InetAddress getLocalHost() {
-		try {
-			return InetAddress.getLocalHost();
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		return null;
+	public static HostAddress getLocalHost() {
+		return localHost;
 	}
 
 	private IpTables ipTables;
@@ -146,7 +164,7 @@ public class Agency extends LocalActor implements
 		if (localArgs.has("actors.remote.cache"))
 			concurrentActorThreads = localArgs
 					.getInteger("actors.remote.cache");
-		
+
 		ipTables = new IpTables();
 
 		this.eventDispatcher = new ActorEventDispatcher<AgencyEvents>(
@@ -162,10 +180,26 @@ public class Agency extends LocalActor implements
 	public final void initAgency() {
 		checkBodyThreadAccess();
 
+		Runtime.getRuntime().addShutdownHook(new AgencyExitThread());
+
 		Protocols.init();
 		Features.init();
 
-		Runtime.getRuntime().addShutdownHook(new AgencyExitThread());
+		if(localArgs.getBoolean("system.entity.migration")) {
+			int port;
+			
+			if(localArgs.has("system.entity.migration.port"))
+				port = localArgs.getInteger("system.entity.migration.port");
+			else
+				port = MigrationProtocol.DEFAULT_PORT;
+			
+			try {
+				Protocols.enableProtocol(MigrationProtocol.class.getName(), null, port);
+			} catch (BadProtocolException e) {
+				Console.error("unable to enable migration");
+				Console.exception(e);
+			}
+		}
 		
 		Console.info("agency enable");
 	}
@@ -189,7 +223,7 @@ public class Agency extends LocalActor implements
 	public Actors getActors() {
 		return actors;
 	}
-	
+
 	public RemoteActors getRemoteActors() {
 		return remoteActors;
 	}
@@ -247,7 +281,7 @@ public class Agency extends LocalActor implements
 	}
 
 	@Callable("registerNewHost")
-	public RemoteHost registerNewHost(InetAddress host) {
+	public RemoteHost registerNewHost(HostAddress host) {
 		RemoteHost remoteHost;
 
 		try {
@@ -268,7 +302,7 @@ public class Agency extends LocalActor implements
 		} catch (UnknownAgencyException e) {
 			remoteAgency = host.registerAgency(id);
 		}
-		
+
 		return remoteAgency;
 	}
 
@@ -282,7 +316,7 @@ public class Agency extends LocalActor implements
 		Console.info("[[ ping ]]");
 		return Boolean.TRUE;
 	}
-	
+
 	@Callable("actors_list")
 	public String[] getActorsList() {
 		return actors.exportActorsPath();

@@ -19,16 +19,33 @@
 package org.d3.entity.migration;
 
 import java.io.Serializable;
+import java.util.LinkedList;
+
+import org.d3.actor.Entity;
 
 public class MigrationData implements Serializable {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 6441852201508531522L;
-	
+
 	protected String className;
 	protected String path;
 	protected String id;
+	protected LinkedList<CallData> calls;
+
+	public MigrationData(Entity e, LinkedList<CallData> calls) {
+		this.className = e.getClass().getName();
+		this.path = e.getPath();
+		this.id = e.getId();
+		this.calls = calls;
+	}
 	
+	public String getPath() {
+		return path;
+	}
 	
+	public String getId() {
+		return id;
+	}
 }

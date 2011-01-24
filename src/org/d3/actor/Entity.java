@@ -41,4 +41,8 @@ public class Entity extends LocalActor implements Serializable {
 	public void migrateTo(RemoteAgency remote) {
 		// TODO
 	}
+	
+	public RemoteAgency getMigrationDestination() {
+		return null;
+	}
 }

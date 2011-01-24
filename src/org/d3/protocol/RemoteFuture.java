@@ -18,6 +18,9 @@
  */
 package org.d3.protocol;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import org.d3.Console;
 import org.d3.actor.Future;
 import org.d3.remote.NoRemotePortAvailableException;
@@ -27,22 +30,31 @@ import org.d3.remote.RemotePort;
 public class RemoteFuture extends Future {
 
 	private RemoteAgency remote;
-	
+
 	public RemoteFuture(RemoteAgency ra, String id) {
 		super(id);
 		this.remote = ra;
 	}
-	
+
 	public void init(Object value) {
 		super.init(value);
-		
+
 		try {
 			RemotePort rp = remote.getRandomRemotePortTransmittable();
 			Transmitter t = (Transmitter) rp.getCompatibleProtocol();
-			
+
 			t.transmitFuture(rp, getId(), value);
-		} catch(NoRemotePortAvailableException e) {
+		} catch (NoRemotePortAvailableException e) {
 			Console.exception(e);
+		}
+	}
+
+	public URI getURI() {
+		try {
+			return new URI(String.format("//%s/%s/%s", remote.getRemoteHost()
+					.getAddress().getHost(), remote.getId(), getId()));
+		} catch (URISyntaxException e) {
+			return null;
 		}
 	}
 }

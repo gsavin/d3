@@ -18,24 +18,24 @@
  */
 package org.d3.remote;
 
-import java.net.InetAddress;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.d3.Console;
+import org.d3.HostAddress;
 import org.d3.actor.Agency;
 
 public class RemoteHost {
 	private final ConcurrentHashMap<String, RemoteAgency> agencies;
 	private final ConcurrentHashMap<Integer, RemoteAgency> ports;
-	private final InetAddress address;
+	private final HostAddress address;
 
-	public RemoteHost(InetAddress address) {
+	public RemoteHost(HostAddress address) {
 		this.address = address;
 		this.agencies = new ConcurrentHashMap<String, RemoteAgency>();
 		this.ports = new ConcurrentHashMap<Integer, RemoteAgency>();
 	}
 
-	public InetAddress getAddress() {
+	public HostAddress getAddress() {
 		return address;
 	}
 
@@ -56,8 +56,7 @@ public class RemoteHost {
 		if (remote == null) {
 			remote = new RemoteAgency(this, id);
 			agencies.put(id, remote);
-			Console.info("register agency \"%s\" @ %s", id,
-					address.getHostAddress());
+			Console.info("register agency \"%s\" @ %s", id, address.getHost());
 			Agency.getLocalAgency().getRemoteHosts().getEventDispatcher()
 					.trigger(RemoteEvent.REMOTE_AGENCY_REGISTERED, remote);
 		}

@@ -20,6 +20,7 @@ package org.d3.protocol.xml;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.ReadableByteChannel;
@@ -90,7 +91,7 @@ public abstract class XMLTransmitter extends Transmitter {
 		return charset.encode(xmlFutureTemplate.toString(env));
 	}
 
-	public abstract void write(Request r);
+	protected abstract void write(ByteBuffer data, String host, int port);
 
 	public void close(Channel ch) {
 		if (parsers.containsKey(ch))
@@ -132,5 +133,17 @@ public abstract class XMLTransmitter extends Transmitter {
 		}
 
 		return r;
+	}
+	
+	public void write(Request request) {
+		ByteBuffer data = convert(request);
+		URI target = request.getTargetURI();
+		write(data, target.getHost(), target.getPort());
+	}
+	
+	public void write(FutureRequest request) {
+		ByteBuffer data = convert(request);
+		URI target = request.getTarget();
+		write(data, target.getHost(), target.getPort());
 	}
 }

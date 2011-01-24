@@ -21,10 +21,10 @@ package org.d3.tools;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
-import java.net.SocketAddress;
 import java.net.SocketException;
 import java.util.Enumeration;
 
+import org.d3.HostAddress;
 import org.d3.actor.Agency;
 import org.d3.remote.HostNotFoundException;
 import org.d3.remote.NoRemotePortAvailableException;
@@ -37,7 +37,8 @@ public class Utils {
 	public static RemotePort getRandomRemotePortFromRemoteAgency(
 			InetAddress address, String agencyId) throws HostNotFoundException,
 			UnknownAgencyException, NoRemotePortAvailableException {
-		RemoteHost rh = Agency.getLocalAgency().getRemoteHosts().get(address);
+		RemoteHost rh = Agency.getLocalAgency().getRemoteHosts()
+				.get(HostAddress.getByInetAddress(address));
 		RemoteAgency ra = rh.getRemoteAgency(agencyId);
 		RemotePort rp = ra.getRandomRemotePort();
 
@@ -52,7 +53,12 @@ public class Utils {
 	public static InetAddress getAddressForInterface(String ifname,
 			boolean inet6) throws SocketException {
 		NetworkInterface networkInterface = NetworkInterface.getByName(ifname);
+		return getAddressForInterface(networkInterface, inet6);
+	}
 
+	public static InetAddress getAddressForInterface(
+			NetworkInterface networkInterface, boolean inet6)
+			throws SocketException {
 		if (networkInterface == null) {
 			Enumeration<NetworkInterface> nie = NetworkInterface
 					.getNetworkInterfaces();
@@ -82,9 +88,16 @@ public class Utils {
 		return local;
 	}
 
-	public static SocketAddress createSocketAddress(String ifname, int port,
-			boolean inet6) throws SocketException {
+	public static InetSocketAddress createSocketAddress(String ifname,
+			int port, boolean inet6) throws SocketException {
 		InetAddress inet = getAddressForInterface(ifname, inet6);
+		return new InetSocketAddress(inet, port);
+	}
+
+	public static InetSocketAddress createSocketAddress(
+			NetworkInterface networkInterface, int port, boolean inet6)
+			throws SocketException {
+		InetAddress inet = getAddressForInterface(networkInterface, inet6);
 		return new InetSocketAddress(inet, port);
 	}
 }

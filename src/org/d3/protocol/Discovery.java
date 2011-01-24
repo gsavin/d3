@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 
 import org.d3.Args;
 import org.d3.Console;
+import org.d3.HostAddress;
 import org.d3.actor.ActorInternalException;
 import org.d3.actor.Agency;
 import org.d3.actor.CallException;
@@ -169,9 +170,19 @@ public class Discovery extends Protocol implements StepActor {
 		this(discoveryPort);
 	}
 
+	public Discovery(NetworkInterface networkInterface) throws IOException {
+		this(Utils.createSocketAddress(networkInterface, discoveryPort, true));
+	}
+	
 	public Discovery(int port) throws IOException {
-		super("discovery", Integer.toString(port), new InetSocketAddress(port));
+		this(new InetSocketAddress(port));
+	}
+	
+	public Discovery(InetSocketAddress isa) throws IOException {
+		super("discovery", Integer.toString(isa.getPort()), isa);
 
+		Console.info("%s", isa);
+		
 		templates = new EnumMap<MessageType, Template>(MessageType.class);
 		templates.put(MessageType.AGENCY_AT, new Template(
 				DISCOVERY_MESSAGE_TEMPLATE));
@@ -288,6 +299,7 @@ public class Discovery extends Protocol implements StepActor {
 				}
 
 				if (!Agency.getLocalAgencyId().equals(env.get("id"))) {
+					HostAddress address = HostAddress.getByInetAddress(from);
 					RemoteHost host = null;
 
 					String id = env.get("id");
@@ -297,10 +309,10 @@ public class Discovery extends Protocol implements StepActor {
 
 					try {
 						host = Agency.getLocalAgency().getRemoteHosts()
-								.get(from);
+								.get(address);
 					} catch (HostNotFoundException e) {
 						Future f = (Future) Agency.getLocalAgency().call(
-								"registerNewHost", from);
+								"registerNewHost", address);
 						f.waitForValue();
 
 						try {

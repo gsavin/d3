@@ -18,8 +18,6 @@
  */
 package org.d3.remote;
 
-import java.net.InetAddress;
-import java.net.Inet6Address;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Iterator;
@@ -28,21 +26,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 
 import org.d3.Console;
+import org.d3.HostAddress;
 import org.d3.RegistrationException;
 import org.d3.actor.Agency;
 import org.d3.actor.RemoteActor;
-import org.d3.annotation.ActorPath;
 import org.d3.protocol.Protocols;
 
-@ActorPath("/agencies")
 public class RemoteAgency {
 	protected final ConcurrentHashMap<Integer, RemotePort> ports;
+	protected final ConcurrentHashMap<String, RemotePort> schemes;
 	protected final RemoteHost remoteHost;
 	protected final String id;
 	protected long lastPresenceDate;
 	protected String digest;
 	protected final URI uri;
-	
+
 	public RemoteAgency(RemoteHost remoteHost, String agencyId) {
 		this(remoteHost, agencyId, null, "");
 	}
@@ -50,6 +48,7 @@ public class RemoteAgency {
 	public RemoteAgency(RemoteHost remoteHost, String agencyId,
 			String protocols, String digest) {
 		this.ports = new ConcurrentHashMap<Integer, RemotePort>();
+		this.schemes = new ConcurrentHashMap<String, RemotePort>();
 		this.lastPresenceDate = System.currentTimeMillis();
 		this.remoteHost = remoteHost;
 		this.id = agencyId;
@@ -59,18 +58,14 @@ public class RemoteAgency {
 
 		if (digest != null)
 			updateDigest(digest);
-		
-		InetAddress address = remoteHost.getAddress();
-		String host = address.getHostAddress();
-		
-		if(address instanceof Inet6Address)
-			host = String.format("[%s]", host);
-		
-		String uri = String.format("//%s/%s/%s", host, agencyId, agencyId);
-		
+
+		HostAddress address = remoteHost.getAddress();
+		String uri = String.format("//%s/%s/%s", address.getHost(), agencyId,
+				agencyId);
+
 		try {
 			this.uri = new URI(uri);
-		} catch(URISyntaxException e) {
+		} catch (URISyntaxException e) {
 			throw new RegistrationException(e);
 		}
 	}
@@ -142,13 +137,35 @@ public class RemoteAgency {
 
 		RemotePort rp = new RemotePort(this, scheme, port);
 		ports.put(port, rp);
+		schemes.putIfAbsent(scheme, rp);
 		Console.warning("register %s %s:%d on %s",
 				rp.isTransmitter() ? "transmitter" : "protocol", scheme, port,
 				id);
 	}
 
 	public void unregisterPort(int port) {
-		ports.remove(port);
+		RemotePort rp = ports.remove(port);
+
+		if (rp != null) {
+			if (schemes.remove(rp.getScheme(), rp)) {
+				for (RemotePort rpn : ports.values()) {
+					if (rpn.getScheme().equals(rp.getScheme())) {
+						schemes.put(rpn.getScheme(), rpn);
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	public RemotePort getCompatibleRemotePort(String scheme)
+			throws NoRemotePortAvailableException {
+		RemotePort rp = schemes.get(scheme);
+
+		if (rp == null)
+			throw new NoRemotePortAvailableException();
+
+		return rp;
 	}
 
 	public RemotePort getRandomRemotePort()
@@ -174,11 +191,11 @@ public class RemoteAgency {
 
 		throw new NoRemotePortAvailableException();
 	}
-	
+
 	public RemoteActor asRemoteActor() {
 		try {
 			return Agency.getLocalAgency().getRemoteActors().get(uri);
-		} catch( Exception e) {
+		} catch (Exception e) {
 			Console.exception(e);
 			return null;
 		}

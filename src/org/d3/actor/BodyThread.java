@@ -18,18 +18,18 @@
  */
 package org.d3.actor;
 
-import java.util.concurrent.DelayQueue;
-import java.util.concurrent.Delayed;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+
+import org.d3.actor.body.BodyQueue;
 
 public class BodyThread extends ActorThread {
 
 	public static enum SpecialAction {
-		STEP, STOP
+		MIGRATE, STEP, STOP
 	}
 
-	private static class SpecialActionTask extends ScheduledTask {
+	protected static class SpecialActionTask extends ScheduledTask {
 
 		SpecialAction action;
 
@@ -39,11 +39,15 @@ public class BodyThread extends ActorThread {
 		}
 	}
 
-	private DelayQueue<Delayed> queue;
+	protected final BodyQueue queue;
+
+	protected BodyThread(LocalActor owner, BodyQueue queue) {
+		super(owner, "request");
+		this.queue = queue;
+	}
 
 	public BodyThread(LocalActor owner) {
-		super(owner, "request");
-		this.queue = new DelayQueue<Delayed>();
+		this(owner, new BodyQueue());
 	}
 
 	public void run() {
@@ -98,15 +102,11 @@ public class BodyThread extends ActorThread {
 					SpecialActionTask sat = (SpecialActionTask) current;
 
 					switch (sat.action) {
+					case MIGRATE:
+						specialActionMigrate(sat);
+						break;
 					case STEP:
-						if (owner instanceof StepActor) {
-							StepActor sa = (StepActor) owner;
-							sa.step();
-							sat.delay = sa.getStepDelay(sat.unit);
-							sat.reset();
-							queue.add(sat);
-						}
-
+						specialActionStep(sat);
 						break;
 					case STOP:
 						running = false;
@@ -116,6 +116,20 @@ public class BodyThread extends ActorThread {
 			} finally {
 				actorThreadSemaphore.release();
 			}
+		}
+	}
+
+	protected void specialActionMigrate(SpecialActionTask sat) {
+		throw new ActorInternalException();
+	}
+	
+	protected void specialActionStep(SpecialActionTask sat) {
+		if (owner instanceof StepActor) {
+			StepActor sa = (StepActor) owner;
+			sa.step();
+			sat.delay = sa.getStepDelay(sat.unit);
+			sat.reset();
+			queue.add(sat);
 		}
 	}
 

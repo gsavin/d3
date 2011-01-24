@@ -40,7 +40,7 @@ public class RemotePort {
 	public RemoteAgency getRemoteAgency() {
 		return remoteAgency;
 	}
-	
+
 	public String getScheme() {
 		return scheme;
 	}
@@ -55,5 +55,16 @@ public class RemotePort {
 
 	public boolean isTransmitter() {
 		return protocol == null ? false : (protocol instanceof Transmitter);
+	}
+
+	public boolean equals(Object obj) {
+		if (obj instanceof RemotePort) {
+			RemotePort rp = (RemotePort) obj;
+
+			return rp.scheme.equals(scheme) && rp.port == port
+					&& rp.remoteAgency.getId().equals(remoteAgency.getId());
+		}
+
+		return false;
 	}
 }

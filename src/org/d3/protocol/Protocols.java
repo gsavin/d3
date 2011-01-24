@@ -37,10 +37,11 @@ import org.d3.events.EventDispatcher;
 import org.d3.tools.Utils;
 
 public class Protocols implements EventDispatchable<ProtocolsEvent> {
-	public static final Pattern PROTOCOL_EXPORT_PATTERN = Pattern.compile("(\\w+):(\\d+)");
+	public static final Pattern PROTOCOL_EXPORT_PATTERN = Pattern
+			.compile("(\\w+):(\\d+)");
 	public static final int PROTOCOL_EXPORT_PATTERN_SCHEME = 1;
 	public static final int PROTOCOL_EXPORT_PATTERN_PORT = 2;
-	
+
 	public static void init() {
 		Agency.getLocalAgency().checkBodyThreadAccess();
 
@@ -82,6 +83,9 @@ public class Protocols implements EventDispatchable<ProtocolsEvent> {
 			throw new BadProtocolException(e);
 		}
 
+		// if (ifname == null && Agency.getArg("system.net.interface") != null)
+		// ifname = Agency.getArg("system.net.interface");
+
 		if (cls.getAnnotation(InetProtocol.class) != null) {
 			Constructor<? extends Protocol> c;
 			Object[] args;
@@ -119,13 +123,25 @@ public class Protocols implements EventDispatchable<ProtocolsEvent> {
 					args = new Object[] { nif };
 				}
 			} else {
-				try {
-					c = cls.getConstructor();
-				} catch (Exception e) {
-					throw new BadProtocolException(e);
-				}
+				if (port > 0) {
+					InetSocketAddress inetSocket = new InetSocketAddress(port);
 
-				args = null;
+					try {
+						c = cls.getConstructor(InetSocketAddress.class);
+					} catch (Exception e) {
+						throw new BadProtocolException(e);
+					}
+
+					args = new Object[] { inetSocket };
+				} else {
+					try {
+						c = cls.getConstructor();
+					} catch (Exception e) {
+						throw new BadProtocolException(e);
+					}
+
+					args = null;
+				}
 			}
 
 			try {
@@ -135,6 +151,8 @@ public class Protocols implements EventDispatchable<ProtocolsEvent> {
 				throw new BadProtocolException(e);
 			}
 
+		} else {
+			Console.error("not an inet protocol : %s", classname);
 		}
 	}
 
@@ -144,13 +162,14 @@ public class Protocols implements EventDispatchable<ProtocolsEvent> {
 	private final HashSet<Protocol> protocols;
 	private final EventDispatcher<ProtocolsEvent> eventDispatcher;
 	private final Futures futures;
-	
+
 	public Protocols() {
 		this.ports = new Ports();
 		this.schemes = new Schemes();
 		this.lock = new ReentrantLock();
 		this.protocols = new HashSet<Protocol>();
-		this.eventDispatcher = new EventDispatcher<ProtocolsEvent>(ProtocolsEvent.class);
+		this.eventDispatcher = new EventDispatcher<ProtocolsEvent>(
+				ProtocolsEvent.class);
 		this.futures = new Futures();
 	}
 
@@ -163,59 +182,59 @@ public class Protocols implements EventDispatchable<ProtocolsEvent> {
 			ports.register(protocol);
 			schemes.register(protocol);
 			protocols.add(protocol);
-			
+
 			Console.info("protocol enable");
 		}
-		
+
 		unlock();
-		
+
 		eventDispatcher.trigger(ProtocolsEvent.PROTOCOL_REGISTERED, protocol);
 	}
 
 	public boolean isLocalPort(int port) {
 		Protocol p;
-		
+
 		lock();
 		p = ports.get(port);
 		unlock();
-		
+
 		return p != null;
 	}
-	
+
 	public String exportDescription() {
 		StringBuilder builder = new StringBuilder();
 		String sep = "";
-		
+
 		lock();
-		for(Protocol p: protocols) {
+		for (Protocol p : protocols) {
 			builder.append(sep);
 			builder.append(p.getScheme());
 			builder.append(":");
 			builder.append(p.getPort());
-			
+
 			sep = ", ";
 		}
 		unlock();
-		
+
 		return builder.toString();
 	}
-	
+
 	public EventDispatcher<ProtocolsEvent> getEventDispatcher() {
 		return eventDispatcher;
 	}
-	
+
 	public Futures getFutures() {
 		return futures;
 	}
-	
+
 	public Schemes getSchemes() {
 		return schemes;
 	}
-	
+
 	private void lock() {
 		lock.lock();
 	}
-	
+
 	private void unlock() {
 		lock.unlock();
 	}

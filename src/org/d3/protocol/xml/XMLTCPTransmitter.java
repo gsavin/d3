@@ -20,16 +20,14 @@ package org.d3.protocol.xml;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 
+import org.d3.Console;
 import org.d3.annotation.ActorPath;
-import org.d3.protocol.FutureRequest;
 import org.d3.protocol.InetProtocol;
-import org.d3.protocol.Request;
 
 @ActorPath("/protocols/xml/tcp")
 @InetProtocol
@@ -54,21 +52,8 @@ public class XMLTCPTransmitter extends XMLTransmitter {
 			out.write(data);
 			out.close();
 		} catch(IOException e) {
-			// TODO
-			e.printStackTrace();
+			Console.exception(e);
 		}
-	}
-	
-	public void write(Request request) {
-		ByteBuffer data = convert(request);
-		URI target = request.getTargetURI();
-		write(data, target.getHost(), target.getPort());
-	}
-	
-	public void write(FutureRequest request) {
-		ByteBuffer data = convert(request);
-		URI target = request.getTarget();
-		write(data, target.getHost(), target.getPort());
 	}
 	
 	public final SelectableChannel getChannel() {

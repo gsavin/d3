@@ -20,14 +20,13 @@ package org.d3.protocol.xml;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 
+import org.d3.Console;
 import org.d3.annotation.ActorPath;
 import org.d3.protocol.InetProtocol;
-import org.d3.protocol.Request;
 
 @ActorPath("/protocols/xml/udp")
 @InetProtocol
@@ -36,29 +35,28 @@ public class XMLUDPTransmitter extends XMLTransmitter {
 
 	private DatagramChannel channel;
 
-	public XMLUDPTransmitter(InetSocketAddress socketAddress) throws IOException {
+	public XMLUDPTransmitter(InetSocketAddress socketAddress)
+			throws IOException {
 		super(Integer.toString(socketAddress.getPort()), socketAddress);
-		
+
 		channel = DatagramChannel.open();
 		channel.configureBlocking(false);
-		channel.socket().bind( socketAddress );
+		channel.socket().bind(socketAddress);
 	}
 
-	public void write(Request request) {
-		byte[] data = convert(request);
-		URI target = request.getTargetURI();
-		
+	protected void write(ByteBuffer data, String host, int port) {
+		InetSocketAddress socket = new InetSocketAddress(host, port);
+
 		try {
 			DatagramChannel out = DatagramChannel.open();
-			out.connect( new InetSocketAddress(target.getHost(), target.getPort()));
-			out.write(ByteBuffer.wrap(data));
+			out.connect(socket);
+			out.write(data);
 			out.close();
-		} catch(IOException e) {
-			// TODO
-			e.printStackTrace();
+		} catch (IOException e) {
+			Console.exception(e);
 		}
 	}
-	
+
 	public final SelectableChannel getChannel() {
 		return channel;
 	}

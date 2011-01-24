@@ -19,17 +19,21 @@
 package org.d3.protocol;
 
 import java.io.Serializable;
-import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.d3.Console;
+import org.d3.HostAddress;
 import org.d3.protocol.request.ObjectCoder;
 import org.d3.protocol.request.ObjectCoder.CodingMethod;
 import org.d3.remote.RemotePort;
 
-public class FutureRequest {
+public class FutureRequest implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3651816320747757365L;
+	
 	private String id;
 	private CodingMethod coding;
 	private String value;
@@ -42,12 +46,9 @@ public class FutureRequest {
 		this.value = ObjectCoder.encode(coding, (Serializable) value);
 
 		try {
-			InetAddress address = remotePort.getRemoteAgency().getRemoteHost()
+			HostAddress address = remotePort.getRemoteAgency().getRemoteHost()
 					.getAddress();
-			String host = address.getHostAddress();
-
-			if (address instanceof Inet6Address)
-				host = String.format("[%s]", host);
+			String host = address.getHost();
 
 			this.target = new URI(String.format("%s://%s:%d",
 					remotePort.getScheme(), host, remotePort.getPort()));

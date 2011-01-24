@@ -24,106 +24,95 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-public class ObjectCoder
-{
+public class ObjectCoder {
 	public static enum CodingMethod {
-		HEXABYTES,
-		BASE_64
+		HEXABYTES, BASE_64
 	}
-	
-	private static byte [] encodeObject( Serializable obj )
-	{
-		try
-		{
+
+	private static byte[] encodeObject(Serializable obj) {
+		try {
 			ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-			ObjectOutputStream out 		= new ObjectOutputStream(bytes);
-			
+			ObjectOutputStream out = new ObjectOutputStream(bytes);
+
 			out.writeObject(obj);
 			out.flush();
-			
+
 			return bytes.toByteArray();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		catch( Exception e ) { e.printStackTrace(); }
-		
-		return new byte [0];
+
+		return new byte[0];
 	}
-	
-	public static String byte2hexa( byte [] data )
-	{
+
+	public static String byte2hexa(byte[] data) {
 		StringBuilder buffer = new StringBuilder();
-		
-		if( data != null )
-		{
-			for( int i = 0; i < data.length; i++ )
-				buffer.append( String.format("%02X",data[i]) );
+
+		if (data != null) {
+			for (int i = 0; i < data.length; i++)
+				buffer.append(String.format("%02X", data[i]));
 		}
-		
+
 		return buffer.toString();
 	}
-	
-	public static byte [] hexa2byte( String hexa )
-	{
+
+	public static byte[] hexa2byte(String hexa) {
 		hexa = hexa.trim();
-		
-		if( ! hexa.matches("^[0-9a-fA-F]*$") )
-			return new byte [0];
-		
-		byte [] data = new byte [hexa.length()/2];
-		
-		for( int i = 0; i < hexa.length()-1; i+=2 )
-			data [i/2] = (byte) Integer.parseInt( hexa.substring(i,i+2),16);
-		
+
+		if (!hexa.matches("^[0-9a-fA-F]*$"))
+			return new byte[0];
+
+		byte[] data = new byte[hexa.length() / 2];
+
+		for (int i = 0; i < hexa.length() - 1; i += 2)
+			data[i / 2] = (byte) Integer.parseInt(hexa.substring(i, i + 2), 16);
+
 		return data;
 	}
-	
-	private static Object decodeObject( byte [] data )
-	{
-		try
-		{
-			ByteArrayInputStream bytes  = new ByteArrayInputStream(data);
-			ObjectInputStream 	 in		= new ObjectInputStream(bytes);
-			
+
+	private static Object decodeObject(byte[] data) {
+		try {
+			ByteArrayInputStream bytes = new ByteArrayInputStream(data);
+			ObjectInputStream in = new ObjectInputStream(bytes);
+
 			return in.readObject();
+		} catch (Exception e) {
 		}
-		catch( Exception e ) {}
-		
+
 		return null;
 	}
-	
-	public static Object decode( String hexa )
-	{
-		if( hexa == null )
+
+	public static Object decode(String hexa) {
+		if (hexa == null)
 			return null;
-		
-		byte [] data = hexa2byte(hexa);
+
+		byte[] data = hexa2byte(hexa);
 		return decodeObject(data);
 	}
-	
-	public static String encode( Serializable obj )
-	{
-		if( obj == null )
+
+	public static String encode(Serializable obj) {
+		if (obj == null)
 			return null;
-		
-		byte [] data = encodeObject(obj);
+
+		byte[] data = encodeObject(obj);
 		return byte2hexa(data);
 	}
-	
-	public static String encode( CodingMethod method, Serializable data ) {
-		switch(method) {
+
+	public static String encode(CodingMethod method, Serializable data) {
+		switch (method) {
 		case HEXABYTES:
 			return encode(data);
 		}
-		
+
 		return null;
 	}
-	
-	public static Object decode( CodingMethod method, String data )
-	{
-		switch(method) {
+
+	public static Object decode(CodingMethod method, String data) {
+		switch (method) {
 		case HEXABYTES:
 			return decode(data);
 		}
-		
+
 		return data;
 	}
 }

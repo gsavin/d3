@@ -45,6 +45,7 @@ import org.d3.actor.RemoteActor;
 import org.d3.remote.HostNotFoundException;
 import org.d3.remote.RemotePort;
 import org.d3.remote.UnknownAgencyException;
+import org.d3.tools.CacheCreationException;
 
 public abstract class Transmitter extends Protocol {
 
@@ -90,11 +91,6 @@ public abstract class Transmitter extends Protocol {
 
 			while (it.hasNext()) {
 				SelectionKey sk = it.next();
-
-				// System.out.printf("<key %s%s%s%s>%n", sk.isValid() ? "valid,"
-				// : "", sk.isAcceptable() ? "acceptable," : "", sk
-				// .isReadable() ? "readable," : "",
-				// sk.isWritable() ? "writable," : "");
 
 				try {
 					processSelectionKey(sk);
@@ -180,8 +176,12 @@ public abstract class Transmitter extends Protocol {
 		if (address.isLinkLocalAddress()) {
 			RemoteActor source;
 
-			source = Agency.getLocalAgency().getRemoteActors()
-					.get(r.getSourceURI());
+			try {
+				source = Agency.getLocalAgency().getRemoteActors()
+						.get(r.getSourceURI());
+			} catch (CacheCreationException e) {
+				source = null;
+			}
 
 			String path = target.getPath();
 			String agencyId = path.substring(1, path.indexOf('/', 1));

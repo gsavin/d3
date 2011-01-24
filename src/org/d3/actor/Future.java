@@ -18,6 +18,8 @@
  */
 package org.d3.actor;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.SecureRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -48,7 +50,7 @@ public class Future {
 		this.value = null;
 		this.available = new AtomicBoolean(false);
 	}
-	
+
 	public Object getValue() throws CallException {
 		synchronized (available) {
 			try {
@@ -59,21 +61,21 @@ public class Future {
 			}
 		}
 
-		if( value instanceof CallException)
+		if (value instanceof CallException)
 			throw (CallException) value;
-		
+
 		return value;
 	}
 
 	public String getId() {
 		return id;
 	}
-	
+
 	public void init(Object value) {
-		if(value instanceof SpecialReturn) {
+		if (value instanceof SpecialReturn) {
 			SpecialReturn sr = (SpecialReturn) value;
-			
-			switch(sr) {
+
+			switch (sr) {
 			case VOID:
 			case NULL:
 			default:
@@ -82,7 +84,7 @@ public class Future {
 		} else {
 			this.value = value;
 		}
-		
+
 		synchronized (available) {
 			available.set(true);
 			available.notifyAll();
@@ -91,18 +93,18 @@ public class Future {
 
 	@SuppressWarnings("unchecked")
 	public <T> T get() throws CallException {
-		if(available.get()) {
+		if (available.get()) {
 			Object obj = getValue();
-			
-			if(obj instanceof CallException)
+
+			if (obj instanceof CallException)
 				throw (CallException) obj;
-			
+
 			return (T) obj;
 		}
-		
+
 		throw new ValueNotAvailableException();
 	}
-	
+
 	public boolean isAvailable() {
 		return available.get();
 	}
@@ -110,7 +112,7 @@ public class Future {
 	public void waitForValue() {
 		while (!available.get()) {
 			try {
-				synchronized(available) {
+				synchronized (available) {
 					available.wait(200);
 				}
 			} catch (InterruptedException e) {
@@ -118,17 +120,26 @@ public class Future {
 			}
 		}
 	}
-	
-	public void waitForValue( long timeout ) {
-		if(available.get())
+
+	public void waitForValue(long timeout) {
+		if (available.get())
 			return;
-		
+
 		try {
-			synchronized(available) {
+			synchronized (available) {
 				available.wait(timeout);
 			}
 		} catch (InterruptedException e) {
 
+		}
+	}
+
+	public URI getURI() {
+		try {
+			return new URI(String.format("//%s/%s/%s", Agency.getLocalHost()
+					.getHost(), Agency.getLocalAgencyId(), getId()));
+		} catch (URISyntaxException e) {
+			return null;
 		}
 	}
 }

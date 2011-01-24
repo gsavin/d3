@@ -18,25 +18,25 @@
  */
 package org.d3.remote;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.d3.Console;
+import org.d3.HostAddress;
 import org.d3.actor.Agency;
 import org.d3.events.EventDispatchable;
 import org.d3.events.EventDispatcher;
 
 public class RemoteHosts implements EventDispatchable<RemoteEvent> {
-	private final ConcurrentHashMap<InetAddress, RemoteHost> hosts;
+	private final ConcurrentHashMap<HostAddress, RemoteHost> hosts;
 	private final EventDispatcher<RemoteEvent> eventDispatcher;
 
 	public RemoteHosts() {
-		hosts = new ConcurrentHashMap<InetAddress, RemoteHost>();
+		hosts = new ConcurrentHashMap<HostAddress, RemoteHost>();
 		eventDispatcher = new EventDispatcher<RemoteEvent>(RemoteEvent.class);
 	}
 
-	public RemoteHost registerHost(InetAddress address) {
+	public RemoteHost registerHost(HostAddress address) {
 		Agency.getLocalAgency().checkBodyThreadAccess();
 		RemoteHost host = hosts.get(address);
 
@@ -53,7 +53,7 @@ public class RemoteHosts implements EventDispatchable<RemoteEvent> {
 	public void unregisterHost(RemoteHost host) {
 		Agency.getLocalAgency().checkBodyThreadAccess();
 
-		InetAddress address = host.getAddress();
+		HostAddress address = host.getAddress();
 
 		if (address != null) {
 			eventDispatcher.trigger(RemoteEvent.REMOTE_HOST_UNREGISTERED, host);
@@ -62,11 +62,10 @@ public class RemoteHosts implements EventDispatchable<RemoteEvent> {
 	}
 
 	public RemoteHost get(String host) throws HostNotFoundException {
-		InetAddress address;
+		HostAddress address;
 
 		try {
-			// TODO Add some cache features
-			address = InetAddress.getByName(host);
+			address = HostAddress.getByName(host);
 		} catch (UnknownHostException e) {
 			throw new HostNotFoundException(e);
 		}
@@ -74,7 +73,7 @@ public class RemoteHosts implements EventDispatchable<RemoteEvent> {
 		return get(address);
 	}
 
-	public RemoteHost get(InetAddress address) throws HostNotFoundException {
+	public RemoteHost get(HostAddress address) throws HostNotFoundException {
 		RemoteHost rh = hosts.get(address);
 
 		if (rh == null)

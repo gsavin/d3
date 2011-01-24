@@ -18,20 +18,36 @@
  */
 package org.d3.actor;
 
-import java.lang.reflect.Method;
-
 import org.d3.Actor;
+import org.d3.actor.body.BodyMap;
 import org.d3.agency.AgencyThread;
-import org.d3.annotation.Callable;
+import org.d3.entity.EntityThread;
 import org.d3.feature.FeatureThread;
 
+/**
+ * Local actors are these actors hosted on the local agency. They have a
+ * dedicated thread, called body. This body is used to handle requests received
+ * by the actor.
+ * 
+ * Actor threads, like the body thread, are special threads associated to a
+ * local actor. So, when such thread is currently running, the actor owning the
+ * thread can be easily determined.
+ * 
+ * Local actors needs to be registered on the agency. This is done by the body
+ * when it is started. When the body thread stop, the associated actor is
+ * unregistered.
+ * 
+ * @author Guilhelm Savin
+ * 
+ */
 public abstract class LocalActor extends Actor {
 
 	protected static final ThreadGroup actorsThreads = new ThreadGroup("/");
 
 	private final ThreadGroup threadGroup;
 	private final BodyThread bodyThread;
-
+	private final BodyMap bodyMap;
+	
 	public LocalActor(String id) {
 		super(Agency.getLocalHost(), Agency.getLocalAgencyId(), null, id);
 
@@ -39,9 +55,13 @@ public abstract class LocalActor extends Actor {
 			bodyThread = new AgencyThread((Agency) this);
 		else if (this instanceof Feature)
 			bodyThread = new FeatureThread((Feature) this);
+		else if ((this instanceof Entity))
+			bodyThread = new EntityThread((Entity) this);
 		else
 			bodyThread = new BodyThread(this);
+		
 		threadGroup = new ThreadGroup(actorsThreads, getFullPath());
+		bodyMap = BodyMap.getBodyMap(getClass());
 	}
 
 	public void init() {
@@ -81,39 +101,37 @@ public abstract class LocalActor extends Actor {
 			throw new SecurityException();
 	}
 
+	/**
+	 * Enqueue a call in the body queue.
+	 * 
+	 * @param c
+	 */
 	public void call(Call c) {
 		bodyThread.enqueue(c);
 	}
 
+	/**
+	 * This method can have two issue depending of the thread invoking it. If
+	 * the thread is the body thread of the actor, then the callable is invoked
+	 * and the result directly returned. Else, the call is enqueued as a request
+	 * in the body and a future is returned. This future will be initialized
+	 * once the associated request will be executed.
+	 * 
+	 * @param name
+	 *            name of the callable.
+	 * @param args
+	 *            arguments of the invocation.
+	 * @return result of the invocation if in body thread, a future else.
+	 */
 	public Object call(String name, Object... args) {
 		if (bodyThread.isOwner()) {
 			bodyThread.checkIsOwner();
 
-			Class<?> cls = getClass();
-			Method callable = null;
-
-			while (callable == null && cls != Object.class) {
-				Method[] methods = cls.getMethods();
-
-				if (methods != null) {
-					for (Method m : methods) {
-						if (m.getAnnotation(Callable.class) != null
-								&& m.getAnnotation(Callable.class).value()
-										.equals(name)) {
-							callable = m;
-							break;
-						}
-					}
-				}
-
-				cls = cls.getSuperclass();
-			}
-
-			if (callable == null)
+			if (!bodyMap.has(name))
 				return new CallableNotFoundException(name);
 
 			try {
-				return callable.invoke(this, args);
+				return bodyMap.invoke(this, name, args);
 			} catch (Exception e) {
 				return new CallException(e);
 			}

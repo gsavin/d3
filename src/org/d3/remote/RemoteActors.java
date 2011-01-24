@@ -19,58 +19,19 @@
 package org.d3.remote;
 
 import java.net.URI;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.d3.actor.Agency;
 import org.d3.actor.RemoteActor;
+import org.d3.tools.Cache;
+import org.d3.tools.CacheCreationException;
 
-public class RemoteActors {
-
-	private ReentrantLock lock;
-	private HashMap<URI, RemoteActor> remoteActors;
-	private LinkedList<URI> availables;
-	private final int capacity;
+public class RemoteActors extends Cache<URI, RemoteActor> {
 
 	public RemoteActors(int capacity) {
-		this.lock = new ReentrantLock();
-		this.remoteActors = new HashMap<URI, RemoteActor>();
-		this.availables = new LinkedList<URI>();
-		this.capacity = capacity;
+		super(capacity);
 	}
 
-	public RemoteActor get(URI uri) throws HostNotFoundException,
-			UnknownAgencyException {
-		RemoteActor ra = null;
-
-		try {
-			lock();
-
-			int index = availables.indexOf(uri);
-
-			if (index < 0)
-				index = create(uri);
-
-			moveToTop(index);
-
-			ra = remoteActors.get(uri);
-		} finally {
-			unlock();
-		}
-
-		return ra;
-	}
-
-	private void moveToTop(int index) {
-		if (index < availables.size() - 1) {
-			URI uri = availables.remove(index);
-			availables.push(uri);
-		}
-	}
-
-	private int create(URI uri) throws HostNotFoundException,
-			UnknownAgencyException {
+	protected RemoteActor createObject(URI uri) throws CacheCreationException {
 		RemoteHost remoteHost;
 		RemoteAgency remoteAgency;
 		RemoteActor remoteActor;
@@ -78,37 +39,19 @@ public class RemoteActors {
 
 		path = uri.getPath();
 
-		remoteHost = Agency.getLocalAgency().getRemoteHosts()
-				.get(uri.getHost());
-		remoteAgency = remoteHost.getRemoteAgency(path.substring(1,
-				path.indexOf('/', 1)));
+		try {
+			remoteHost = Agency.getLocalAgency().getRemoteHosts()
+					.get(uri.getHost());
+			remoteAgency = remoteHost.getRemoteAgency(path.substring(1,
+					path.indexOf('/', 1)));
+		} catch (Exception e) {
+			throw new CacheCreationException(e);
+		}
 
 		id = path.substring(path.lastIndexOf('/') + 1);
 		path = path.substring(path.indexOf('/', 1), path.lastIndexOf('/'));
 
 		remoteActor = new RemoteActor(remoteAgency, path, id);
-
-		while (availables.size() >= capacity)
-			pop();
-
-		availables.add(uri);
-		remoteActors.put(uri, remoteActor);
-
-		return availables.size() - 1;
-	}
-
-	private void pop() {
-		URI uri = availables.poll();
-
-		if (uri != null)
-			remoteActors.remove(uri);
-	}
-
-	private void lock() {
-		lock.lock();
-	}
-
-	private void unlock() {
-		lock.unlock();
+		return remoteActor;
 	}
 }
