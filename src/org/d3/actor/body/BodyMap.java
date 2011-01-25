@@ -23,9 +23,14 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.CtMethod;
+
 import org.d3.Console;
 import org.d3.actor.LocalActor;
 import org.d3.annotation.Callable;
+import org.d3.template.Template;
 
 public class BodyMap {
 	private static final ConcurrentHashMap<Class<? extends LocalActor>, BodyMap> maps = new ConcurrentHashMap<Class<? extends LocalActor>, BodyMap>();
@@ -38,13 +43,37 @@ public class BodyMap {
 		return maps.get(clazz);
 	}
 
-	protected HashMap<String, Method> callables;
+	public static interface CallRoutine {
+		Object call(Object target, Object[] args);
+	}
+
+	public static class ReflectRoutine implements CallRoutine {
+		protected Method method;
+
+		public ReflectRoutine(Method m) {
+			this.method = m;
+		}
+
+		public Object call(Object target, Object[] args) {
+			try {
+				return method.invoke(target, args);
+			} catch (Exception e) {
+				return e;
+			}
+		}
+	}
+
+	private static RoutineLoader loader = new RoutineLoader();
+
+	protected HashMap<String, CallRoutine> callables;
 
 	public BodyMap(Class<? extends LocalActor> clazz) {
-		callables = new HashMap<String, Method>();
+		callables = new HashMap<String, CallRoutine>();
 
 		Class<?> cls = clazz;
+		long m1, m2;
 
+		m1 = System.currentTimeMillis();
 		while (LocalActor.class.isAssignableFrom(cls) && cls != Object.class) {
 			Method[] methods = cls.getMethods();
 
@@ -56,7 +85,7 @@ public class BodyMap {
 						if (callables.containsKey(name)) {
 							Console.warning("duplicate callable \"%s\"", name);
 						} else {
-							callables.put(name, m);
+							create(name, m);
 						}
 					}
 				}
@@ -64,6 +93,15 @@ public class BodyMap {
 
 			cls = cls.getSuperclass();
 		}
+		m2 = System.currentTimeMillis();
+
+		Console.info("actor \"%s\" map build in %d ms", clazz.getSimpleName(),
+				m2 - m1);
+	}
+
+	protected void create(String name, Method m) {
+		CallRoutine cr = loader.getOrCreate(name, m);
+		callables.put(name, cr);
 	}
 
 	public boolean has(String name) {
@@ -73,6 +111,66 @@ public class BodyMap {
 	public Object invoke(LocalActor obj, String name, Object... args)
 			throws IllegalArgumentException, IllegalAccessException,
 			InvocationTargetException {
-		return callables.get(name).invoke(obj, args);
+		return callables.get(name).call(obj, args);
+	}
+
+	private static final String ROUTINE_TEMPLATE = "public Object call(Object target, Object [] args) {"
+			+ " return (({%class%}) target).{%name%}({%args%}); }";
+
+	private static class RoutineLoader extends ClassLoader {
+		protected ClassPool classPool;
+		protected Template template;
+
+		RoutineLoader() {
+			classPool = ClassPool.getDefault();
+			template = new Template(ROUTINE_TEMPLATE);
+		}
+
+		CallRoutine getOrCreate(String name, Method m) {
+			String routineName = "Routine_" + m.getDeclaringClass().getName()
+					+ "_" + name;
+			routineName = routineName.replaceAll("[^\\w\\d_]", "_");
+
+			try {
+				Class<?> cls = findClass(routineName);
+				return (CallRoutine) cls.newInstance();
+			} catch (Exception e) {
+			}
+
+			try {
+				HashMap<String, String> env = new HashMap<String, String>();
+				env.put("class", m.getDeclaringClass().getName());
+				env.put("name", m.getName());
+
+				Class<?>[] params = m.getParameterTypes();
+				StringBuilder args = new StringBuilder();
+
+				if (params != null) {
+					for (int i = 0; i < params.length; i++)
+						args.append(String.format("%s(%s) args[%d]",
+								i > 0 ? ", " : "", params[i].getName(), i));
+				}
+
+				env.put("args", args.toString());
+
+				String code = template.toString(env);
+
+				CtClass cc = classPool.makeClass(routineName);
+				cc.addInterface(classPool.get(CallRoutine.class.getName()));
+				CtMethod cm = CtMethod.make(code, cc);
+				cc.addMethod(cm);
+
+				byte[] data = cc.toBytecode();
+				Class<?> cls = defineClass(routineName, data, 0, data.length);
+
+				Console.info("create routine \"%s\"", routineName);
+
+				return (CallRoutine) cls.newInstance();
+			} catch (Exception e) {
+				Console.exception(e);
+				Console.warning("failed to compil routine, create a reflect routine");
+				return new ReflectRoutine(m);
+			}
+		}
 	}
 }

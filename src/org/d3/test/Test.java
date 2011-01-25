@@ -24,52 +24,77 @@ import java.net.NetworkInterface;
 import java.net.URI;
 import java.util.Enumeration;
 
-public class Test {
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.CtMethod;
 
+public class Test extends ClassLoader {
+
+	public static interface C {
+		void call();
+	}
+	
+	public static class D implements C {
+		public void call() {
+			
+		}
+	}
+	
 	public void test() {
 		//Math.pow(Math.tanh(10.3444), 10.333);
 	}
 
+	public C createCall(String name) throws Exception {
+		ClassPool cp = ClassPool.getDefault();
+		CtClass cc = cp.makeClass("call_"+name);
+		cc.addInterface(cp.get(C.class.getName()));
+		CtMethod cm = CtMethod.make("public void call() {}", cc);
+		cc.addMethod(cm);
+		
+		byte[] data = cc.toBytecode();
+		Class<?> cls = defineClass(cc.getName(), data, 0, data.length);
+		C c = (C) cls.newInstance();
+		return c;
+	}
+	
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		Enumeration<NetworkInterface> ifs = NetworkInterface
-				.getNetworkInterfaces();
-
-		while (ifs.hasMoreElements()) {
-			NetworkInterface ni = ifs.nextElement();
-			System.out.printf("%s%n", ni.getDisplayName());
-			Enumeration<InetAddress> addresses = ni.getInetAddresses();
-			while (addresses.hasMoreElements()) {
-				InetAddress inet = addresses.nextElement();
-				System.out.printf("- %s%n", inet.getHostAddress());
-			}
-		}
-
-		long m1, m2, m3, m4;
-		int size = 100000;
 
 		Test t = new Test();
 		
+		C d1 = new D();
+		
+		long m1, m2;
+		int size = 100000;
+		
 		m1 = System.nanoTime();
 		for (int i = 0; i < size; i++) {
-			t.test();
+			d1.call();
 		}
 		m2 = System.nanoTime();
 		
 		System.out.printf("> average [direct] : %d ns%n", (m2-m1)/size);
 
-		Method m = Test.class.getMethod("test");
-		m3 = 0;
 		m1 = System.nanoTime();
+		Method m = D.class.getMethod("call");
 		for (int i = 0; i < size; i++) {
-			m4 = System.nanoTime();
-			m3 += System.nanoTime() - m4;
-			m.invoke(t);
+			m.invoke(d1);
 		}
 		m2 = System.nanoTime();
 		
-		System.out.printf("> average [reflect] : %d ns, %d ns%n", (m2-m1)/size, (m2-m1-m3)/size);
+		System.out.printf("> average [reflect] : %d ns%n", (m2-m1)/size);
+
+		C c1 = t.createCall("test");
+		m1 = System.nanoTime();
+		for (int i = 0; i < size; i++) {
+			c1.call();
+		}
+		m2 = System.nanoTime();
+		
+		System.out.printf("> average [compil] : %d ns%n", (m2-m1)/size);
+		
+		System.out.println("qopç_aàzupeeé;!:;!09808".replaceAll("[^\\w\\d_]", "_"));
 	}
 }
