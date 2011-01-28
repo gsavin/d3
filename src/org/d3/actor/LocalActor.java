@@ -47,7 +47,7 @@ public abstract class LocalActor extends Actor {
 	private final ThreadGroup threadGroup;
 	private final BodyThread bodyThread;
 	private final BodyMap bodyMap;
-	
+
 	public LocalActor(String id) {
 		super(Agency.getLocalHost(), Agency.getLocalAgencyId(), null, id);
 
@@ -59,7 +59,7 @@ public abstract class LocalActor extends Actor {
 			bodyThread = new EntityThread((Entity) this);
 		else
 			bodyThread = new BodyThread(this);
-		
+
 		threadGroup = new ThreadGroup(actorsThreads, getFullPath());
 		bodyMap = BodyMap.getBodyMap(getClass());
 	}
@@ -67,6 +67,17 @@ public abstract class LocalActor extends Actor {
 	public void init() {
 		if (!bodyThread.isAlive())
 			bodyThread.start();
+	}
+
+	public void terminate() {
+
+	}
+
+	void migrate() {
+		if (!(this instanceof Entity))
+			throw new SecurityException();
+		
+		bodyThread.migrate();
 	}
 
 	public final void register() {

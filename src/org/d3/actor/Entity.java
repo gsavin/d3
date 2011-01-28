@@ -21,6 +21,7 @@ package org.d3.actor;
 import java.io.Serializable;
 
 import org.d3.annotation.ActorPath;
+import org.d3.entity.migration.MigrationException;
 import org.d3.remote.RemoteAgency;
 
 @ActorPath("/entities")
@@ -30,19 +31,30 @@ public class Entity extends LocalActor implements Serializable {
 	 */
 	private static final long serialVersionUID = -2008980313521087227L;
 	
+	private transient RemoteAgency migrationDestination;
+	
 	protected Entity(String id) {
 		super(id);
 	}
 
+	public void initEntity() {
+		
+	}
+	
 	public final IdentifiableType getType() {
 		return IdentifiableType.ENTITY;
 	}
 
 	public void migrateTo(RemoteAgency remote) {
-		// TODO
+		migrationDestination = remote;
+		migrate();
 	}
 	
 	public RemoteAgency getMigrationDestination() {
-		return null;
+		return migrationDestination;
+	}
+	
+	public void migrationFailed(RemoteAgency dest, MigrationException e) {
+		// Override by child to handle migration failed
 	}
 }

@@ -26,13 +26,8 @@ import java.nio.charset.Charset;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.d3.Console;
-import org.d3.actor.Agency;
-import org.d3.actor.CallException;
-import org.d3.actor.Future;
-import org.d3.protocol.request.ObjectCoder;
-import org.d3.protocol.request.ObjectCoder.CodingMethod;
 
-class Negociation {
+abstract class Negociation {
 
 	private static class Data {
 		int req;
@@ -65,19 +60,13 @@ class Negociation {
 	protected Charset charset;
 	protected SocketChannel channel;
 	protected ByteBuffer header;
-	protected Status status;
-	protected MigrationData entity;
-	protected Future future;
 	protected Throwable cause;
 	protected ConcurrentLinkedQueue<Data> toWrite;
 	protected InetSocketAddress address;
 
-	public Negociation(SocketChannel channel, MigrationData entity,
+	public Negociation(SocketChannel channel,
 			InetSocketAddress address) {
 		this(channel);
-		this.entity = entity;
-		this.status = Status.SENDER;
-		this.future = new Future();
 		this.address = address;
 	}
 
@@ -85,7 +74,6 @@ class Negociation {
 		this.channel = channel;
 		this.charset = Charset.forName("UTF-8");
 		this.header = ByteBuffer.allocate(3 * Integer.SIZE);
-		this.status = Status.RECEIVER;
 		this.toWrite = new ConcurrentLinkedQueue<Data>();
 		this.address = null;
 	}
@@ -93,7 +81,7 @@ class Negociation {
 	public InetSocketAddress getAddress() {
 		return address;
 	}
-
+	/*
 	public boolean waitTheResult() {
 		if (future == null)
 			return false;
@@ -106,15 +94,7 @@ class Negociation {
 			return false;
 		}
 	}
-
-	public void begin() {
-		String message = String.format("%s;%s;%s;%s",
-				Agency.getLocalAgencyId(), entity.getClass().getName(),
-				entity.getPath(), entity.getId());
-
-		write(HEADER_REQUEST, message);
-	}
-
+	*/
 	protected void write(int req, String message) {
 		ByteBuffer buffer = charset.encode(message);
 		toWrite.add(new Data(req, 0x00, buffer));
@@ -135,6 +115,8 @@ class Negociation {
 		}
 	}
 
+	protected abstract void handle(int req, String[] data);
+	
 	protected void read() throws IOException {
 		header.clear();
 		channel.read(header);
@@ -150,72 +132,7 @@ class Negociation {
 		buffer.reset();
 
 		String[] data = buffer.toString().split("\\s*;\\s*");
-
-		switch (status) {
-		case RECEIVER:
-			switch (req) {
-			case HEADER_REQUEST:
-				// String agencyId = data[0];
-				String className = data[1];
-				String entityPath = data[2];
-				// String entityId = data[3];
-
-				checkClassName(className);
-				checkEntityPath(entityPath);
-
-				write(HEADER_REQUEST_RESPONSE,
-						Response.MIGRATION_ACCEPTED.name());
-				break;
-			case HEADER_SEND:
-				CodingMethod coding = CodingMethod.valueOf(data[0]);
-				entity = (MigrationData) ObjectCoder.decode(coding, data[1]);
-
-				write(HEADER_SEND_RESPONSE, Response.MIGRATION_SUCCEED.name());
-
-				close();
-
-				break;
-			default:
-			}
-		case SENDER:
-			Response r = Response.valueOf(data[0]);
-
-			switch (req) {
-			case HEADER_REQUEST_RESPONSE:
-				switch (r) {
-				case MIGRATION_ACCEPTED:
-					CodingMethod coding = CodingMethod.HEXABYTES;
-					String encodedData = ObjectCoder.encode(coding, entity);
-					String message = String
-							.format("%s;%s", coding, encodedData);
-
-					write(HEADER_SEND, message);
-					break;
-				case MIGRATION_REJECTED:
-					future.init(Boolean.FALSE);
-					break;
-				default:
-					future.init(Boolean.FALSE);
-				}
-
-				break;
-			case HEADER_SEND_RESPONSE:
-				switch (r) {
-				case MIGRATION_SUCCEED:
-					future.init(Boolean.TRUE);
-					break;
-				case MIGRATION_FAILED:
-					future.init(Boolean.FALSE);
-					break;
-				default:
-				}
-
-				close();
-
-				break;
-			default:
-			}
-		}
+		handle(req, data);
 	}
 
 	protected void close() {
@@ -224,12 +141,5 @@ class Negociation {
 		} catch (Exception e) {
 			Console.exception(e);
 		}
-	}
-
-	protected void checkEntityPath(String entityPath) {
-
-	}
-
-	protected void checkClassName(String className) {
 	}
 }

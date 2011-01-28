@@ -26,7 +26,7 @@ import org.d3.actor.body.BodyQueue;
 public class BodyThread extends ActorThread {
 
 	public static enum SpecialAction {
-		MIGRATE, STEP, STOP
+		MIGRATE, STEP
 	}
 
 	protected static class SpecialActionTask extends ScheduledTask {
@@ -39,11 +39,29 @@ public class BodyThread extends ActorThread {
 		}
 	}
 
+	public static enum StopPolicy {
+		/**
+		 * Execute all call which delay has expired, then send a redirection
+		 * exception.
+		 */
+		FINISH_EXECUTE_REQUEST_AND_STOP,
+		/**
+		 * Send a redirection exception to all remaining calls, expired and
+		 * unexpired.
+		 */
+		SEND_REDIRECTION_AND_STOP
+	}
+
 	protected final BodyQueue queue;
+	protected volatile boolean running;
+	protected StopPolicy stopPolicy;
+
+	protected Throwable stopCause;
 
 	protected BodyThread(LocalActor owner, BodyQueue queue) {
 		super(owner, "request");
 		this.queue = queue;
+		this.running = false;
 	}
 
 	public BodyThread(LocalActor owner) {
@@ -53,15 +71,22 @@ public class BodyThread extends ActorThread {
 	public void run() {
 		checkIsOwner();
 
+		running = true;
 		owner.register();
+		
+		onRun();
+		
 		runBody();
 		terminate();
 	}
 
+	protected void onRun() {
+		
+	}
+	
 	protected final void runBody() {
 		checkIsOwner();
 
-		boolean running = true;
 		Object current;
 
 		if (owner instanceof StepActor) {
@@ -91,13 +116,7 @@ public class BodyThread extends ActorThread {
 
 				if (current instanceof Call) {
 					Call c = (Call) current;
-
-					try {
-						Object r = owner.call(c.getName(), c.getArgs());
-						c.getFuture().init(r);
-					} catch (Exception e) {
-						c.getFuture().init(new CallException(e));
-					}
+					executeCall(c);
 				} else if (current instanceof SpecialActionTask) {
 					SpecialActionTask sat = (SpecialActionTask) current;
 
@@ -108,44 +127,92 @@ public class BodyThread extends ActorThread {
 					case STEP:
 						specialActionStep(sat);
 						break;
-					case STOP:
-						running = false;
-						break;
 					}
 				}
 			} finally {
 				actorThreadSemaphore.release();
 			}
 		}
+
+		switch (stopPolicy) {
+		case FINISH_EXECUTE_REQUEST_AND_STOP: {
+			ScheduledTask sat;
+
+			while ((sat = queue.poll()) != null) {
+				if (sat instanceof Call) {
+					executeCall((Call) sat);
+				}
+			}
+		}
+		case SEND_REDIRECTION_AND_STOP: {
+			for (ScheduledTask sat : queue) {
+				if (sat instanceof Call) {
+					Call c = (Call) sat;
+					c.getFuture().init(stopCause);
+				}
+			}
+
+			break;
+		}
+		}
+	}
+
+	private void executeCall(Call c) {
+		try {
+			Object r = owner.call(c.getName(), c.getArgs());
+			c.getFuture().init(r);
+		} catch (Exception e) {
+			c.getFuture().init(new CallException(e));
+		}
 	}
 
 	protected void specialActionMigrate(SpecialActionTask sat) {
 		throw new ActorInternalException();
 	}
-	
+
 	protected void specialActionStep(SpecialActionTask sat) {
 		if (owner instanceof StepActor) {
 			StepActor sa = (StepActor) owner;
 			sa.step();
 			sat.delay = sa.getStepDelay(sat.unit);
 			sat.reset();
+
 			queue.add(sat);
 		}
 	}
 
 	public final Future enqueue(String name, Object[] args) {
 		Call c = new Call(owner, name, args);
-		queue.add(c);
+		enqueue(c);
 
 		return c.getFuture();
 	}
 
 	public final void enqueue(Call c) {
-		queue.add(c);
+		if (running) {
+			queue.add(c);
+		} else {
+			c.getFuture().init(stopCause);
+		}
+	}
+
+	void migrate() {
+		checkIsOwner();
+		
+		SpecialActionTask sat = new SpecialActionTask(0, TimeUnit.SECONDS,
+				SpecialAction.MIGRATE);
+		queue.add(sat);
 	}
 
 	protected void terminate() {
 		super.terminate();
 		owner.unregister();
+	}
+
+	protected void terminateBody(StopPolicy stop) {
+		checkIsOwner();
+		stopPolicy = stop;
+		running = false;
+		interrupt();
 	}
 }

@@ -18,22 +18,31 @@
  */
 package org.d3.actor.body;
 
+import java.util.Iterator;
 import java.util.concurrent.DelayQueue;
 
 import org.d3.actor.ScheduledTask;
 
-public class BodyQueue {
+public class BodyQueue implements Iterable<ScheduledTask> {
 	protected DelayQueue<ScheduledTask> theQueue;
-	
+
 	public BodyQueue() {
 		theQueue = new DelayQueue<ScheduledTask>();
 	}
-	
+
 	public void add(ScheduledTask task) {
 		theQueue.add(task);
 	}
-	
+
 	public ScheduledTask take() throws InterruptedException {
 		return theQueue.take();
+	}
+
+	public Iterator<ScheduledTask> iterator() {
+		return theQueue.iterator();
+	}
+
+	public ScheduledTask poll() {
+		return theQueue.poll();
 	}
 }

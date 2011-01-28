@@ -34,6 +34,7 @@ import org.d3.agency.IpTables;
 import org.d3.annotation.ActorDescription;
 import org.d3.annotation.ActorPath;
 import org.d3.annotation.Callable;
+import org.d3.entity.Traveller;
 import org.d3.entity.migration.MigrationProtocol;
 import org.d3.events.ActorEventDispatcher;
 import org.d3.events.EventDispatchable;
@@ -200,6 +201,9 @@ public class Agency extends LocalActor implements
 				Console.exception(e);
 			}
 		}
+		
+		Traveller t = new Traveller();
+		t.init();
 		
 		Console.info("agency enable");
 	}

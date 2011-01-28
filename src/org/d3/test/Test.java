@@ -18,83 +18,102 @@
  */
 package org.d3.test;
 
-import java.lang.reflect.Method;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.URI;
-import java.util.Enumeration;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.lang.reflect.Field;
 
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtMethod;
+public class Test {
 
-public class Test extends ClassLoader {
-
-	public static interface C {
-		void call();
-	}
-	
-	public static class D implements C {
-		public void call() {
-			
+	static class A {
+		final int a;
+		
+		A(int a) {
+			this.a = a;
 		}
 	}
 	
-	public void test() {
-		//Math.pow(Math.tanh(10.3444), 10.333);
-	}
-
-	public C createCall(String name) throws Exception {
-		ClassPool cp = ClassPool.getDefault();
-		CtClass cc = cp.makeClass("call_"+name);
-		cc.addInterface(cp.get(C.class.getName()));
-		CtMethod cm = CtMethod.make("public void call() {}", cc);
-		cc.addMethod(cm);
+	static class B extends A implements Serializable {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 8645516531113093947L;
 		
-		byte[] data = cc.toBytecode();
-		Class<?> cls = defineClass(cc.getName(), data, 0, data.length);
-		C c = (C) cls.newInstance();
-		return c;
+		int b;
+		
+		B(int a) {
+			super(a);
+			b = 1;
+		}
+		
+		private void writeObject(ObjectOutputStream out) throws IOException {
+			out.writeInt(a);
+			out.writeInt(b);
+		}
+		
+		private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+			int a = in.readInt();
+			
+			try {
+				Field f_a = A.class.getDeclaredField("a");
+				f_a.setAccessible(true);
+				f_a.set(this, a);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+
+			b = in.readInt();
+		}
+	}
+	
+	static class C extends B {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 8645516531113093947L;
+		
+		int c;
+		
+		C(int a) {
+			super(a);
+			c = 2;
+		}
+		
+		public void set(int b, int c) {
+			this.b = b;
+			this.c = c;
+		}
+		
+		public String toString() {
+			return String.format("%d;%d;%d", a, b, c);
+		}
 	}
 	
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-
-		Test t = new Test();
+		ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+		ObjectOutputStream out = new ObjectOutputStream(byteOut);
 		
-		C d1 = new D();
+		C c1 = new C(11);
+		c1.set(987,9876);
 		
-		long m1, m2;
-		int size = 100000;
+		System.out.println(c1);
 		
-		m1 = System.nanoTime();
-		for (int i = 0; i < size; i++) {
-			d1.call();
-		}
-		m2 = System.nanoTime();
+		out.writeObject(c1);
+		out.flush();
+		out.close();
 		
-		System.out.printf("> average [direct] : %d ns%n", (m2-m1)/size);
-
-		m1 = System.nanoTime();
-		Method m = D.class.getMethod("call");
-		for (int i = 0; i < size; i++) {
-			m.invoke(d1);
-		}
-		m2 = System.nanoTime();
+		byte[] data = byteOut.toByteArray();
 		
-		System.out.printf("> average [reflect] : %d ns%n", (m2-m1)/size);
-
-		C c1 = t.createCall("test");
-		m1 = System.nanoTime();
-		for (int i = 0; i < size; i++) {
-			c1.call();
-		}
-		m2 = System.nanoTime();
+		ByteArrayInputStream byteIn = new ByteArrayInputStream(data);
+		ObjectInputStream in = new ObjectInputStream(byteIn);
 		
-		System.out.printf("> average [compil] : %d ns%n", (m2-m1)/size);
-		
-		System.out.println("qopç_aàzupeeé;!:;!09808".replaceAll("[^\\w\\d_]", "_"));
+		C c2 = (C) in.readObject();
+		System.out.println(c2);
 	}
 }
