@@ -18,17 +18,27 @@
  */
 package org.d3.entity.migration;
 
-public class BadStateException extends Exception {
+import java.io.Serializable;
+
+public class MigratableField implements Serializable {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -8698294966240579028L;
-	
-	public BadStateException() {
-		super();
+	private static final long serialVersionUID = 3770550761910659031L;
+
+	protected String name;
+	protected Object value;
+
+	public MigratableField(String name, Object value) {
+		this.name = name;
+		this.value = value;
 	}
-	
-	public BadStateException(String msg) {
-		super(msg);
+
+	public String getName() {
+		return name;
+	}
+
+	public Object getValue() {
+		return value;
 	}
 }

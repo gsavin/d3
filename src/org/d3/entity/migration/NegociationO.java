@@ -21,108 +21,95 @@ package org.d3.entity.migration;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 
+import org.d3.Console;
 import org.d3.actor.Agency;
-import org.d3.actor.CallException;
 import org.d3.actor.Entity;
-import org.d3.actor.Future;
 import org.d3.entity.EntityThread;
 import org.d3.protocol.request.ObjectCoder;
 import org.d3.protocol.request.ObjectCoder.CodingMethod;
+import org.d3.tools.AtomicState;
 
-class NegociationSender extends Negociation {
+class NegociationO extends Negociation {
 
 	public static enum State {
-		INIT,
-		AUTHORIZATION_REQUEST_SENT,
-		GOT_AUTHORIZATION,
-		REQUEST_REJECTED,
-		DATA_SENT,
-		MIGRATION_DONE,
-		MIGRATION_FAILED,
-		ERROR
+		INIT, AUTHORIZATION_REQUEST_SENT, GOT_AUTHORIZATION, REQUEST_REJECTED, DATA_SENT, MIGRATION_DONE, MIGRATION_FAILED, ERROR
 	}
-	
-	State state;
-	Future migrationAccepted;
-	Future migrationSucceed;
+
+	AtomicState<State> stateRef;
 	Entity entity;
 	EntityThread thread;
-	
-	NegociationSender(SocketChannel channel, EntityThread thread,
+
+	NegociationO(SocketChannel channel, EntityThread thread,
 			InetSocketAddress address) {
 		super(channel, address);
 		this.entity = thread.getOwnerAsEntity();
 		this.thread = thread;
-		this.migrationAccepted = new Future();
-		this.state = State.INIT;
+		stateRef = new AtomicState<State>(State.class, State.INIT);
 	}
 
 	public boolean isAuthorized() throws BadStateException {
-		switch(state) {
-		case INIT:
-			throw new BadStateException();
-		}
-		
-		try {
-			return (Boolean) migrationAccepted.getValue();
-		} catch (CallException e) {
-			// TODO Handle why request failed
+		stateRef.waitForState(State.GOT_AUTHORIZATION);
+
+		switch (stateRef.get()) {
+		case DATA_SENT:
+		case MIGRATION_DONE:
+		case MIGRATION_FAILED:
+		case GOT_AUTHORIZATION:
+			return true;
+		case REQUEST_REJECTED:
 			return false;
+		default:
+			throw new BadStateException(stateRef.get().name());
 		}
 	}
 
 	public boolean isMigrationDoneSuccessfully() throws BadStateException {
-		switch(state) {
-		case INIT:
-		case AUTHORIZATION_REQUEST_SENT:
-		case REQUEST_REJECTED:
-			throw new BadStateException();
-		}
-		
-		try {
-			return (Boolean) migrationAccepted.getValue();
-		} catch (CallException e) {
-			// TODO Handle why request failed
+		stateRef.waitForState(State.MIGRATION_DONE);
+
+		switch (stateRef.get()) {
+		case MIGRATION_DONE:
+			return true;
+		case ERROR:
+		case MIGRATION_FAILED:
 			return false;
+		default:
+			throw new BadStateException();
 		}
 	}
 	
 	protected void requestAuthorization() throws BadStateException {
-		switch(state) {
+		switch (stateRef.get()) {
 		case INIT:
 			break;
 		default:
 			throw new BadStateException();
 		}
-		
+
 		String message = String.format("%s;%s;%s;%s",
 				Agency.getLocalAgencyId(), entity.getClass().getName(),
 				entity.getPath(), entity.getId());
 
 		write(HEADER_REQUEST, message);
-		
-		state = State.AUTHORIZATION_REQUEST_SENT;
+
+		stateRef.set(State.AUTHORIZATION_REQUEST_SENT);
 	}
 
 	protected void sendData(MigrationData data) throws BadStateException {
-		switch(state) {
+		switch (stateRef.get()) {
 		case GOT_AUTHORIZATION:
 			break;
 		default:
 			throw new BadStateException();
 		}
-		
+
 		CodingMethod coding = CodingMethod.HEXABYTES;
 		String encodedData = ObjectCoder.encode(coding, data);
 		String message = String.format("%s;%s", coding, encodedData);
 
 		write(HEADER_SEND, message);
-
-		migrationSucceed = new Future();
-		
-		state = State.DATA_SENT;
+		stateRef.set(State.DATA_SENT);
 	}
-	
+
 	protected void handle(int req, String[] data) {
 		Response r = Response.valueOf(data[0]);
 
@@ -130,37 +117,50 @@ class NegociationSender extends Negociation {
 		case HEADER_REQUEST_RESPONSE:
 			switch (r) {
 			case MIGRATION_ACCEPTED:
-				migrationAccepted.init(Boolean.TRUE);
-				state = State.GOT_AUTHORIZATION;
+				stateRef.set(State.GOT_AUTHORIZATION);
 				break;
 			case MIGRATION_REJECTED:
-				migrationAccepted.init(Boolean.FALSE);
-				state = State.REQUEST_REJECTED;
+				stateRef.set(State.REQUEST_REJECTED);
 				break;
 			default:
-				migrationAccepted.init(Boolean.FALSE);
-				state = State.ERROR;
+				Console.error("error#1");
+				stateRef.set(State.ERROR);
 			}
-			
+
 			break;
 		case HEADER_SEND_RESPONSE:
 			switch (r) {
 			case MIGRATION_SUCCEED:
-				migrationSucceed.init(Boolean.TRUE);
-				state = State.MIGRATION_DONE;
+				stateRef.set(State.MIGRATION_DONE);
 				break;
 			case MIGRATION_FAILED:
-				migrationSucceed.init(Boolean.FALSE);
-				state = State.MIGRATION_FAILED;
+				stateRef.set(State.MIGRATION_FAILED);
 				break;
 			default:
-				state = State.ERROR;
+				Console.error("error#2");
+				stateRef.set(State.ERROR);
 			}
 
 			close();
 
 			break;
 		default:
+		}
+	}
+
+	protected void close() {
+		super.close();
+
+		switch (stateRef.get()) {
+		case INIT:
+			break;
+		case AUTHORIZATION_REQUEST_SENT:
+		case DATA_SENT:
+			Exception e = new Exception();
+			e.printStackTrace();
+			Console.error("error#3");
+			stateRef.set(State.ERROR);
+			break;
 		}
 	}
 }

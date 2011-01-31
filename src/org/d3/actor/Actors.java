@@ -18,18 +18,23 @@
  */
 package org.d3.actor;
 
+import java.net.URI;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.d3.Actor;
+import org.d3.ActorNotFoundException;
 import org.d3.Console;
 import org.d3.RegistrationException;
 import org.d3.events.EventDispatchable;
 import org.d3.events.EventDispatcher;
 import org.d3.protocol.request.ObjectCoder;
+import org.d3.tools.CacheCreationException;
 
-public class Actors implements Iterable<LocalActor>, EventDispatchable<ActorsEvent> {
+public class Actors implements Iterable<LocalActor>,
+		EventDispatchable<ActorsEvent> {
 
 	private final ConcurrentHashMap<String, LocalActor> actors;
 	private String digest;
@@ -55,7 +60,7 @@ public class Actors implements Iterable<LocalActor>, EventDispatchable<ActorsEve
 
 		if (actors.putIfAbsent(fullpath, actor) != null)
 			throw new RegistrationException();
-		
+
 		updateDigest();
 		eventDispatcher.trigger(ActorsEvent.ACTOR_REGISTERED, actor);
 	}
@@ -72,10 +77,25 @@ public class Actors implements Iterable<LocalActor>, EventDispatchable<ActorsEve
 		return digest;
 	}
 
+	public Actor get(URI uri) throws ActorNotFoundException {
+		String agencyId = uri.getPath().substring(1,
+				uri.getPath().indexOf('/', 1));
+
+		if (Agency.getLocalAgencyId().equals(agencyId))
+			return get(uri.getPath().substring(
+					uri.getPath().indexOf('/', 1) + 1));
+
+		try {
+			return Agency.getLocalAgency().getRemoteActors().get(uri);
+		} catch (CacheCreationException e) {
+			throw new ActorNotFoundException(e);
+		}
+	}
+
 	public LocalActor get(String fullPath) {
 		return actors.get(fullPath);
 	}
-	
+
 	private void updateDigest() {
 		String date = Long.toString(System.currentTimeMillis());
 		digestAlgorithm.digest(date.getBytes());
@@ -89,7 +109,7 @@ public class Actors implements Iterable<LocalActor>, EventDispatchable<ActorsEve
 	public Iterator<LocalActor> iterator() {
 		return actors.values().iterator();
 	}
-	
+
 	public String[] exportActorsPath() {
 		String[] a = new String[1];
 		return actors.keySet().toArray(a);

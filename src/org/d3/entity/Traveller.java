@@ -18,6 +18,8 @@
  */
 package org.d3.entity;
 
+import java.util.Iterator;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.d3.Console;
@@ -26,52 +28,59 @@ import org.d3.actor.Entity;
 import org.d3.actor.StepActor;
 import org.d3.annotation.ActorPath;
 import org.d3.entity.migration.MigrationException;
-import org.d3.events.Bindable;
 import org.d3.remote.RemoteAgency;
-import org.d3.remote.RemoteEvent;
+import org.d3.remote.RemoteHost;
 
 @ActorPath("/entity/traveller")
-public class Traveller extends Entity implements Bindable, StepActor {
+public class Traveller extends Entity implements StepActor {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -2322402743561649216L;
-	
-	private RemoteAgency dest;
-	
-	public Traveller() {
-		super(Long.toHexString(System.nanoTime()));
-		dest = null;
+
+	transient Random r;
+
+	@Migratable
+	protected int hop = 0;
+
+	public Traveller(String id) {
+		super(id);
+		r = new Random();
 	}
-	
+
+	public Traveller() {
+		this(Long.toHexString(System.nanoTime()));
+	}
+
 	public long getStepDelay(TimeUnit unit) {
-		return unit.convert(4, TimeUnit.SECONDS);
+		return unit.convert(3, TimeUnit.SECONDS);
 	}
 
 	public void step() {
-		if( dest != null ) {
-			Console.warning("begin migration");
-			migrateTo(dest);
-		}
-	}
+		Console.info("I'm here ! I have make %d hope%s !!", hop, hop > 1 ? "s"
+				: "");
 
-	public void initEntity() {
-		Agency.getLocalAgency().getRemoteHosts().getEventDispatcher().bind(this);
-	}
+		if (r.nextBoolean()) {
+			Iterator<RemoteHost> hosts = Agency.getLocalAgency()
+					.getRemoteHosts().iterator();
 
-	public <K extends Enum<K>> void trigger(K event, Object ... data) {
-		if(event instanceof RemoteEvent) {
-			RemoteEvent revent = (RemoteEvent) event;
-			switch(revent) {
-			case REMOTE_AGENCY_REGISTERED:
-				dest = (RemoteAgency) data[0];
-				break;
+			if (hosts.hasNext()) {
+				RemoteHost host = hosts.next();
+				Iterator<RemoteAgency> agencies = host.iterator();
+
+				if (agencies.hasNext()) {
+					Console.info("but I will left soon ...");
+					migrateTo(agencies.next());
+				}
 			}
 		}
 	}
-	
+
 	public void migrationFailed(RemoteAgency dest, MigrationException ex) {
 		Console.error("failed to migrate");
-		Console.exception(ex);
+	}
+	
+	public void beforeMigration() {
+		hop++;
 	}
 }

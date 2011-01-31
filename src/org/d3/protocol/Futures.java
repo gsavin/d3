@@ -44,4 +44,8 @@ public class Futures {
 		if (futures.putIfAbsent(future.getId(), future) != null)
 			throw new RegistrationException();
 	}
+	
+	public Future get(String id) {
+		return futures.get(id);
+	}
 }

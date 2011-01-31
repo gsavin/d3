@@ -16,19 +16,16 @@
  * 
  * Copyright 2010 - 2011 Guilhelm Savin
  */
-package org.d3.entity.migration;
+package org.d3.entity;
 
-public class BadStateException extends Exception {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -8698294966240579028L;
-	
-	public BadStateException() {
-		super();
-	}
-	
-	public BadStateException(String msg) {
-		super(msg);
-	}
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface Migratable {
 }

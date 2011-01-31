@@ -21,6 +21,9 @@ package org.d3.actor;
 import java.util.concurrent.TimeUnit;
 
 import org.d3.Actor;
+import org.d3.ActorNotFoundException;
+import org.d3.entity.migration.CallData;
+import org.d3.remote.UnknownAgencyException;
 
 public class Call extends ScheduledTask {
 
@@ -59,6 +62,29 @@ public class Call extends ScheduledTask {
 
 		Agency.getLocalAgency().getActors().getEventDispatcher()
 				.trigger(ActorsEvent.CALL, source, target);
+	}
+
+	public Call(CallData data) throws CallException {
+		super(data.getDelay(), data.getTimeUnit());
+
+		this.name = data.getName();
+		this.args = data.getArgs();
+
+		try {
+			this.source = Agency.getLocalAgency().getActors()
+					.get(data.getSourceURI());
+
+			this.target = Agency.getLocalAgency().getActors()
+					.get(data.getTargetURI());
+		} catch (ActorNotFoundException e) {
+			throw new CallException(e);
+		}
+
+		try {
+			this.future = data.getFuture();
+		} catch (UnknownAgencyException e) {
+			throw new CallException(e);
+		}
 	}
 
 	public Actor getSource() {

@@ -47,7 +47,13 @@ public class Utils {
 
 	public static InetAddress getAddressForInterface(String ifname)
 			throws SocketException {
-		return getAddressForInterface(ifname, true);
+		boolean inet6 = false;
+
+		if (Agency.getArgs().has("system.net.inet6")
+				&& Agency.getArgs().getBoolean("system.net.inet6"))
+			inet6 = true;
+		
+		return getAddressForInterface(ifname, inet6);
 	}
 
 	public static InetAddress getAddressForInterface(String ifname,

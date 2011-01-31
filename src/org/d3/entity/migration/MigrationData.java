@@ -33,12 +33,14 @@ public class MigrationData implements Serializable {
 	protected String path;
 	protected String id;
 	protected LinkedList<CallData> calls;
-
-	public MigrationData(Entity e, LinkedList<CallData> calls) {
+	protected MigratableField[] fields;
+	
+	public MigrationData(Entity e, LinkedList<CallData> calls, MigratableField[] fields) {
 		this.className = e.getClass().getName();
 		this.path = e.getPath();
 		this.id = e.getId();
 		this.calls = calls;
+		this.fields = fields;
 	}
 	
 	public String getPath() {
@@ -47,5 +49,9 @@ public class MigrationData implements Serializable {
 	
 	public String getId() {
 		return id;
+	}
+	
+	public MigratableField[] getFieldsData() {
+		return fields;
 	}
 }

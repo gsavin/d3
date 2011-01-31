@@ -18,17 +18,21 @@
  */
 package org.d3.entity.migration;
 
-public class BadStateException extends Exception {
+public class ExportationException extends Exception {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -8698294966240579028L;
-	
-	public BadStateException() {
+	private static final long serialVersionUID = 5947513090246538828L;
+
+	public ExportationException() {
 		super();
 	}
 	
-	public BadStateException(String msg) {
+	public ExportationException(String msg) {
 		super(msg);
+	}
+	
+	public ExportationException(Throwable cause) {
+		super(cause);
 	}
 }

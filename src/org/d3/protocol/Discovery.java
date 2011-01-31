@@ -26,6 +26,7 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -180,8 +181,6 @@ public class Discovery extends Protocol implements StepActor {
 	
 	public Discovery(InetSocketAddress isa) throws IOException {
 		super("discovery", Integer.toString(isa.getPort()), isa);
-
-		Console.info("%s", isa);
 		
 		templates = new EnumMap<MessageType, Template>(MessageType.class);
 		templates.put(MessageType.AGENCY_AT, new Template(
@@ -299,13 +298,24 @@ public class Discovery extends Protocol implements StepActor {
 				}
 
 				if (!Agency.getLocalAgencyId().equals(env.get("id"))) {
-					HostAddress address = HostAddress.getByInetAddress(from);
-					RemoteHost host = null;
-
+					
 					String id = env.get("id");
-					// String address = env.get("address");
+					String straddress = env.get("address");
 					String protocols = env.get("protocols");
 					String digest = env.get("digest");
+
+					HostAddress address;
+					
+					try {
+						address = HostAddress.getByName(straddress);//.getByInetAddress(from);
+					} catch(UnknownHostException e) {
+						Console.error("failed to retrieve address : %s",straddress);
+						return;
+					}
+					
+					RemoteHost host = null;
+					
+					//Console.warning("from : %s", address);
 
 					try {
 						host = Agency.getLocalAgency().getRemoteHosts()

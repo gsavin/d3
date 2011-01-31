@@ -27,8 +27,12 @@ public class ActorNotFoundException extends Exception {
 	public ActorNotFoundException() {
 		super();
 	}
-	
+
 	public ActorNotFoundException(String msg) {
 		super(msg);
+	}
+
+	public ActorNotFoundException(Throwable cause) {
+		super(cause);
 	}
 }

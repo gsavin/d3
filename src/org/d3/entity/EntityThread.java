@@ -25,6 +25,9 @@ import org.d3.actor.Agency;
 import org.d3.actor.BodyThread;
 import org.d3.actor.Entity;
 import org.d3.entity.migration.CallData;
+import org.d3.entity.migration.ExportationException;
+import org.d3.entity.migration.IOMap;
+import org.d3.entity.migration.MigratableField;
 import org.d3.entity.migration.MigrationData;
 import org.d3.entity.migration.MigrationException;
 import org.d3.entity.migration.MigrationProtocol;
@@ -44,8 +47,6 @@ public class EntityThread extends BodyThread {
 	protected void specialActionMigrate(SpecialActionTask sat) {
 		checkIsOwner();
 
-		Console.warning("handle special action migration");
-		
 		EntityBodyQueue queue = (EntityBodyQueue) this.queue;
 
 		Entity e = (Entity) owner;
@@ -69,22 +70,33 @@ public class EntityThread extends BodyThread {
 			}
 
 			if (open) {
-
-				Console.info("migration negociation opened");
-				
 				queue.swap();
-				LinkedList<CallData> data = queue.exportSwapForMigration();
-				MigrationData migration = new MigrationData(e, data);
 
 				try {
+					e.beforeMigration();
+				} catch(Exception ex) {
+					Console.error("error while calling beforeMigration()");
+				}
+				
+				try {
+					LinkedList<CallData> data = queue.exportSwapForMigration();
+					MigratableField[] fieldsData;
+					
+					fieldsData = IOMap.get(e.getClass()).exportData(e);
+					
+					MigrationData migration = new MigrationData(e, data, fieldsData);
 					success = emp.migrate(migration);
 				} catch (MigrationException e1) {
 					success = false;
 					failed = e1;
+				} catch (ExportationException ee) {
+					success = false;
+					failed = new MigrationException(ee);
 				}
 
 				if (success) {
 					terminateBody(StopPolicy.SEND_REDIRECTION_AND_STOP);
+					Console.info("has migrated");
 				} else {
 					queue.restore();
 				}

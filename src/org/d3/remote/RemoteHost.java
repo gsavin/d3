@@ -18,13 +18,13 @@
  */
 package org.d3.remote;
 
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.d3.Console;
 import org.d3.HostAddress;
 import org.d3.actor.Agency;
 
-public class RemoteHost {
+public class RemoteHost implements Iterable<RemoteAgency> {
 	private final ConcurrentHashMap<String, RemoteAgency> agencies;
 	private final ConcurrentHashMap<Integer, RemoteAgency> ports;
 	private final HostAddress address;
@@ -35,6 +35,10 @@ public class RemoteHost {
 		this.ports = new ConcurrentHashMap<Integer, RemoteAgency>();
 	}
 
+	public Iterator<RemoteAgency> iterator() {
+		return agencies.values().iterator();
+	}
+	
 	public HostAddress getAddress() {
 		return address;
 	}
@@ -49,29 +53,23 @@ public class RemoteHost {
 		return ra;
 	}
 
-	public RemoteAgency registerAgency(String id) {
+	RemoteAgency registerAgency(String id) {
 		Agency.getLocalAgency().checkBodyThreadAccess();
 		RemoteAgency remote = agencies.get(id);
 
 		if (remote == null) {
 			remote = new RemoteAgency(this, id);
 			agencies.put(id, remote);
-			Console.info("register agency \"%s\" @ %s", id, address.getHost());
-			Agency.getLocalAgency().getRemoteHosts().getEventDispatcher()
-					.trigger(RemoteEvent.REMOTE_AGENCY_REGISTERED, remote);
 		}
 
 		return remote;
 	}
 
-	public void unregisterAgency(RemoteAgency remote) {
+	void unregisterAgency(RemoteAgency remote) {
 		Agency.getLocalAgency().checkBodyThreadAccess();
 
-		if (agencies.containsKey(remote.getId())) {
-			Agency.getLocalAgency().getRemoteHosts().getEventDispatcher()
-					.trigger(RemoteEvent.REMOTE_AGENCY_UNREGISTERED, remote);
+		if (agencies.containsKey(remote.getId()))
 			agencies.remove(remote.getId());
-		}
 	}
 
 	public void registerPort(int port, String scheme, RemoteAgency remoteAgency)

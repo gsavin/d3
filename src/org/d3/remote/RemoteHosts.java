@@ -19,6 +19,7 @@
 package org.d3.remote;
 
 import java.net.UnknownHostException;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.d3.Console;
@@ -27,13 +28,30 @@ import org.d3.actor.Agency;
 import org.d3.events.EventDispatchable;
 import org.d3.events.EventDispatcher;
 
-public class RemoteHosts implements EventDispatchable<RemoteEvent> {
+public class RemoteHosts implements Iterable<RemoteHost>,
+		EventDispatchable<RemoteEvent> {
 	private final ConcurrentHashMap<HostAddress, RemoteHost> hosts;
+	private final ConcurrentHashMap<String, RemoteAgency> agencies;
 	private final EventDispatcher<RemoteEvent> eventDispatcher;
 
 	public RemoteHosts() {
 		hosts = new ConcurrentHashMap<HostAddress, RemoteHost>();
+		agencies = new ConcurrentHashMap<String, RemoteAgency>();
 		eventDispatcher = new EventDispatcher<RemoteEvent>(RemoteEvent.class);
+	}
+
+	public Iterator<RemoteHost> iterator() {
+		return hosts.values().iterator();
+	}
+
+	public RemoteAgency getRemoteAgency(String id)
+			throws UnknownAgencyException {
+		RemoteAgency remote = agencies.get(id);
+
+		if (remote == null)
+			throw new UnknownAgencyException(id);
+
+		return remote;
 	}
 
 	public RemoteHost registerHost(HostAddress address) {
@@ -59,6 +77,26 @@ public class RemoteHosts implements EventDispatchable<RemoteEvent> {
 			eventDispatcher.trigger(RemoteEvent.REMOTE_HOST_UNREGISTERED, host);
 			hosts.remove(address);
 		}
+	}
+
+	public RemoteAgency registerAgency(RemoteHost host, String id) {
+		Agency.getLocalAgency().checkBodyThreadAccess();
+
+		RemoteAgency remote = host.registerAgency(id);
+
+		Console.info("register agency \"%s\" @ %s", id, host.getAddress()
+				.getHost());
+		eventDispatcher.trigger(RemoteEvent.REMOTE_AGENCY_REGISTERED, remote);
+
+		return remote;
+	}
+
+	public void unregisterAgency(RemoteAgency remote) {
+		Agency.getLocalAgency().checkBodyThreadAccess();
+
+		eventDispatcher.trigger(RemoteEvent.REMOTE_AGENCY_UNREGISTERED, remote);
+		agencies.remove(remote.getId());
+		remote.getRemoteHost().unregisterAgency(remote);
 	}
 
 	public RemoteHost get(String host) throws HostNotFoundException {

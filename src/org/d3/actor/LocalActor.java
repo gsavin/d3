@@ -19,8 +19,10 @@
 package org.d3.actor;
 
 import org.d3.Actor;
+import org.d3.Console;
 import org.d3.actor.body.BodyMap;
 import org.d3.agency.AgencyThread;
+import org.d3.annotation.Callable;
 import org.d3.entity.EntityThread;
 import org.d3.feature.FeatureThread;
 
@@ -73,6 +75,10 @@ public abstract class LocalActor extends Actor {
 
 	}
 
+	public final boolean isAlive() {
+		return bodyThread.isAlive();
+	}
+	
 	void migrate() {
 		if (!(this instanceof Entity))
 			throw new SecurityException();
@@ -150,5 +156,10 @@ public abstract class LocalActor extends Actor {
 			Future f = bodyThread.enqueue(name, args);
 			return f;
 		}
+	}
+
+	@Callable("ping")
+	public Boolean ping() {
+		return Boolean.TRUE;
 	}
 }

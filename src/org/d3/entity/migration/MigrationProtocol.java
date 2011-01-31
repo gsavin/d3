@@ -20,6 +20,7 @@ package org.d3.entity.migration;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -27,6 +28,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.d3.Console;
 import org.d3.actor.Protocol;
@@ -46,16 +49,21 @@ public class MigrationProtocol extends Protocol {
 	// private final HashMap<SocketChannel, Negociation> negociations;
 	private Selector selector;
 
-	ConcurrentHashMap<EntityThread, NegociationSender> pending;
+	ConcurrentHashMap<EntityThread, NegociationO> pending;
+	ServerSocketChannel server;
 
-	public MigrationProtocol() {
+	public MigrationProtocol() throws IOException {
 		this(new InetSocketAddress(DEFAULT_PORT));
 	}
 
-	public MigrationProtocol(InetSocketAddress address) {
+	public MigrationProtocol(InetSocketAddress address) throws IOException {
 		super(SCHEME, Integer.toString(address.getPort()), address);
 		// negociations = new HashMap<SocketChannel, Negociation>();
-		pending = new ConcurrentHashMap<EntityThread, NegociationSender>();
+		pending = new ConcurrentHashMap<EntityThread, NegociationO>();
+		toRegister = new ConcurrentLinkedQueue<NegociationO>();
+		server = ServerSocketChannel.open();
+		server.configureBlocking(false);
+		server.socket().bind(address);
 	}
 
 	public void listen() {
@@ -66,7 +74,40 @@ public class MigrationProtocol extends Protocol {
 			return;
 		}
 
+		try {
+			server.register(
+					selector,
+					server.validOps()
+							& (SelectionKey.OP_ACCEPT | SelectionKey.OP_READ | SelectionKey.OP_CONNECT));
+
+		} catch (ClosedChannelException e) {
+			// TODO
+		}
+
 		while (selector.isOpen()) {
+			while (toRegister.size() > 0) {
+				NegociationO negociation = toRegister.poll();
+
+				try {
+					negociation.key = negociation.channel.register(selector,
+							SelectionKey.OP_READ, negociation);
+
+					try {
+						negociation.requestAuthorization();
+					} catch (BadStateException e) {
+						Console.error("something is wrong with this negociation, closing it");
+						negociation.close();
+						throw new MigrationException(e);
+					}
+
+					pending.put(negociation.thread, negociation);
+				} catch (Exception e) {
+					Console.error("something wrong happens (%s)", e.getClass()
+							.getName());
+					negociation.close();
+				}
+			}
+
 			try {
 				selector.select();
 			} catch (IOException e) {
@@ -92,6 +133,8 @@ public class MigrationProtocol extends Protocol {
 		}
 	}
 
+	ConcurrentLinkedQueue<NegociationO> toRegister;
+
 	public boolean open(RemoteAgency agency) throws MigrationException {
 		EntityThread ethread = (EntityThread) Thread.currentThread();
 
@@ -102,27 +145,28 @@ public class MigrationProtocol extends Protocol {
 			RemotePort rp = agency.getCompatibleRemotePort(SCHEME);
 			InetSocketAddress address = new InetSocketAddress(agency
 					.getRemoteHost().getAddress().asInetAddress(), rp.getPort());
-			
+
 			SocketChannel client = SocketChannel.open();
+			client.connect(address);
 			client.configureBlocking(false);
-			
-			Console.error("#2");
-			
-			NegociationSender negociation = new NegociationSender(client,
-					ethread, address);
 
-			Console.error("#1");
-			
-			client.register(selector, SelectionKey.OP_CONNECT, negociation);
+			if (!client.finishConnect())
+				return false;
 
-			Console.error("#3");
-			
-			pending.put(ethread, negociation);
+			NegociationO negociation = new NegociationO(client, ethread,
+					address);
 
-			Console.info("migration registered");
-			
+			// if selector is blocked in a select() operation,
+			// then the register() method seems to block.
+			// Using wakeup() to interrupt the select operation.
+			// client.register(selector.wakeup(), SelectionKey.OP_READ,
+			// negociation);
+			toRegister.add(negociation);
+			selector.wakeup();
+
 			// This will block until authorization not received
-			return negociation.isAuthorized();
+			boolean authorization = negociation.isAuthorized();
+			return authorization;
 		} catch (Exception e) {
 			throw new MigrationException(e);
 		}
@@ -135,7 +179,7 @@ public class MigrationProtocol extends Protocol {
 		if (!pending.containsKey(ethread))
 			throw new MigrationException();
 
-		NegociationSender negociation = pending.get(ethread);
+		NegociationO negociation = pending.get(ethread);
 
 		try {
 			if (!negociation.isAuthorized())
@@ -158,9 +202,11 @@ public class MigrationProtocol extends Protocol {
 				SocketChannel sc = ch.accept();
 
 				if (sc != null) {
+					Negociation negociation = new NegociationI(sc);
+
 					sc.configureBlocking(false);
-					sc.register(sk.selector(), SelectionKey.OP_READ,
-							new NegociationReceiver(sc));
+					negociation.key = sc.register(sk.selector(),
+							SelectionKey.OP_READ, negociation);
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -173,23 +219,23 @@ public class MigrationProtocol extends Protocol {
 			Object attach = sk.attachment();
 
 			if (attach instanceof Negociation) {
-				NegociationSender negociation = (NegociationSender) attach;
+				NegociationO negociation = (NegociationO) attach;
 
-				Console.info("connecting...");
-				
-				sChannel.connect(negociation.getAddress());
+				// sChannel.connect(negociation.getAddress());
 
-				if (!sChannel.finishConnect())
+				if (!sChannel.finishConnect()) {
 					sk.cancel();
-
-				sk.interestOps(SelectionKey.OP_READ);
-
-				try {
-					negociation.requestAuthorization();
-				} catch (BadStateException e) {
-					Console.error("something is wrong with this negociation, closing it");
 					negociation.close();
-					pending.remove(negociation.thread);
+				} else {
+					sk.interestOps(SelectionKey.OP_READ);
+
+					try {
+						negociation.requestAuthorization();
+					} catch (BadStateException e) {
+						Console.error("something is wrong with this negociation, closing it");
+						negociation.close();
+						pending.remove(negociation.thread);
+					}
 				}
 			} else {
 				Console.error("not a negociation");
@@ -202,25 +248,35 @@ public class MigrationProtocol extends Protocol {
 
 			if (attach instanceof Negociation) {
 				Negociation negociation = (Negociation) attach;
-				negociation.read();
+
+				try {
+					negociation.read();
+				} catch (IOException e) {
+					negociation.close();
+
+					if (negociation instanceof NegociationO)
+						pending.remove(((NegociationO) negociation).thread);
+
+					Console.error("error while reading, closing negociation");
+					Console.exception(e);
+				}
 			} else {
 				Console.error("not a negociation");
 				sk.channel().close();
 			}
 		}
 
-		if (sk.isValid() && sk.isWritable()) {
-			Object attach = sk.attachment();
-
-			if (attach instanceof Negociation) {
-				Negociation negociation = (Negociation) attach;
-				negociation.write();
-
-				sk.interestOps(SelectionKey.OP_READ);
-			} else {
-				Console.error("not a negociation");
-				sk.channel().close();
-			}
-		}
+		// The following is commented because write operation is done in the
+		// entity thread.
+		/*
+		 * if (sk.isValid() && sk.isWritable()) { Object attach =
+		 * sk.attachment();
+		 * 
+		 * if (attach instanceof Negociation) { Negociation negociation =
+		 * (Negociation) attach; negociation.write();
+		 * 
+		 * sk.interestOps(SelectionKey.OP_READ); } else {
+		 * Console.error("not a negociation"); sk.channel().close(); } }
+		 */
 	}
 }

@@ -16,19 +16,45 @@
  * 
  * Copyright 2010 - 2011 Guilhelm Savin
  */
-package org.d3.entity.migration;
+package org.d3.tools;
 
-public class BadStateException extends Exception {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -8698294966240579028L;
-	
-	public BadStateException() {
-		super();
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.d3.Console;
+
+public class AtomicState<K extends Enum<K>> {
+	AtomicReference<K> reference;
+
+	public AtomicState(Class<? extends K> cls, K init) {
+		reference = new AtomicReference<K>(init);
 	}
-	
-	public BadStateException(String msg) {
-		super(msg);
+
+	public void set(K k) {
+		reference.set(k);
+		
+		synchronized (reference) {
+			reference.notifyAll();
+		}
+	}
+
+	public K get() {
+		return reference.get();
+	}
+
+	public K waitForState(K s) {
+		K k = reference.get();
+
+		while (k.ordinal() < s.ordinal()) {
+			synchronized (reference) {
+				try {
+					reference.wait(1000);
+				} catch (InterruptedException e) {
+				}
+			}
+			
+			k = reference.get();
+		}
+
+		return k;
 	}
 }

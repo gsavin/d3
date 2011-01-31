@@ -76,13 +76,17 @@ public class Agency extends LocalActor implements
 	private static String localAgencyId;
 	private static Args localArgs;
 	private static HostAddress localHost;
-
+	
 	public static String getArg(String key) {
 		return localArgs.get(key);
 	}
 
 	public static Args getActorArgs(Actor actor) {
 		return localArgs.getArgs(actor);
+	}
+
+	public static Args getArgs() {
+		return localArgs;
 	}
 
 	public static void enableAgency(Args args) {
@@ -94,28 +98,29 @@ public class Agency extends LocalActor implements
 
 			localAgencyId = String.format("%x%x", System.nanoTime(),
 					random.nextLong());
-			
+
 			localArgs = args;
 
 			try {
 				String ifname = localArgs.get("system.net.interface");
 				InetAddress address;
 				boolean inet6 = localArgs.getBoolean("system.net.inet6");
-				
-				if(ifname==null)
+
+				if (ifname == null)
 					address = InetAddress.getLocalHost();
-				else try {
-					address = Utils.getAddressForInterface(ifname, inet6);
-				} catch(Exception e) {
-					address = InetAddress.getLocalHost();
-				}
-				
+				else
+					try {
+						address = Utils.getAddressForInterface(ifname, inet6);
+					} catch (Exception e) {
+						address = InetAddress.getLocalHost();
+					}
+
 				localHost = new HostAddress(address);
 				Console.info("localhost is %s", localHost);
 			} catch (UnknownHostException e) {
 				throw new RegistrationException(e);
 			}
-			
+
 			localAgency = new Agency(localAgencyId);
 			localAgency.init();
 
@@ -186,25 +191,35 @@ public class Agency extends LocalActor implements
 		Protocols.init();
 		Features.init();
 
-		if(localArgs.getBoolean("system.entity.migration")) {
+		if (localArgs.getBoolean("system.entity.migration")) {
 			int port;
-			
-			if(localArgs.has("system.entity.migration.port"))
+
+			if (localArgs.has("system.entity.migration.port"))
 				port = localArgs.getInteger("system.entity.migration.port");
 			else
 				port = MigrationProtocol.DEFAULT_PORT;
+
+			String ifname;
+			
+			if(localArgs.has("system.net.interface"))
+				ifname = localArgs.get("system.net.interface");
+			else
+				ifname = null;
 			
 			try {
-				Protocols.enableProtocol(MigrationProtocol.class.getName(), null, port);
+				Protocols.enableProtocol(MigrationProtocol.class.getName(),
+						ifname, port);
 			} catch (BadProtocolException e) {
 				Console.error("unable to enable migration");
 				Console.exception(e);
 			}
 		}
-		
-		Traveller t = new Traveller();
-		t.init();
-		
+
+		if (localArgs.has("test.traveller")) {
+			Traveller t = new Traveller();
+			t.init();
+		}
+
 		Console.info("agency enable");
 	}
 
@@ -235,10 +250,6 @@ public class Agency extends LocalActor implements
 	public Protocol getDefaultProtocol() {
 		// TODO
 		return null;
-	}
-
-	public Args getArgs() {
-		return localArgs;
 	}
 
 	public IpTables getIpTables() {
@@ -304,7 +315,7 @@ public class Agency extends LocalActor implements
 		try {
 			remoteAgency = host.getRemoteAgency(id);
 		} catch (UnknownAgencyException e) {
-			remoteAgency = host.registerAgency(id);
+			remoteAgency = remoteHosts.registerAgency(host, id);
 		}
 
 		return remoteAgency;
@@ -313,12 +324,6 @@ public class Agency extends LocalActor implements
 	@Callable("getDigest")
 	public String getDigest() {
 		return actors.getDigest();
-	}
-
-	@Callable("ping")
-	public Boolean ping() {
-		Console.info("[[ ping ]]");
-		return Boolean.TRUE;
 	}
 
 	@Callable("actors_list")

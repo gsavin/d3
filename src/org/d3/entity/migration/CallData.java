@@ -21,7 +21,12 @@ package org.d3.entity.migration;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
+import org.d3.actor.Agency;
 import org.d3.actor.Call;
+import org.d3.actor.Future;
+import org.d3.protocol.RemoteFuture;
+import org.d3.remote.RemoteAgency;
+import org.d3.remote.UnknownAgencyException;
 
 public class CallData {
 
@@ -41,5 +46,50 @@ public class CallData {
 		delay = c.getDelay(TimeUnit.NANOSECONDS);
 		unit = TimeUnit.NANOSECONDS;
 		future = c.getFuture().getURI();
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public long getDelay() {
+		return delay;
+	}
+
+	public TimeUnit getTimeUnit() {
+		return unit;
+	}
+
+	public Object[] getArgs() {
+		return args;
+	}
+
+	public Future getFuture() throws UnknownAgencyException {
+		String agencyId, futureId;
+		String path = future.getPath();
+
+		agencyId = path.substring(1, path.indexOf('/', 1));
+		futureId = path.substring(path.indexOf('/', 1)+1);
+
+		if (Agency.getLocalAgencyId().equals(agencyId)) {
+			Future f = Agency.getLocalAgency().getProtocols().getFutures()
+					.get(futureId);
+
+			if (f != null)
+				return f;
+		}
+
+		RemoteAgency ra = Agency.getLocalAgency().getRemoteHosts()
+				.getRemoteAgency(agencyId);
+
+		return new RemoteFuture(ra, futureId);
+	}
+	
+	public URI getSourceURI() {
+		return source;
+	}
+	
+	public URI getTargetURI() {
+		return target;
 	}
 }

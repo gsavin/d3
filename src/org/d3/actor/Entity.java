@@ -21,6 +21,9 @@ package org.d3.actor;
 import java.io.Serializable;
 
 import org.d3.annotation.ActorPath;
+import org.d3.entity.migration.IOMap;
+import org.d3.entity.migration.ImportationException;
+import org.d3.entity.migration.MigrationData;
 import org.d3.entity.migration.MigrationException;
 import org.d3.remote.RemoteAgency;
 
@@ -30,17 +33,24 @@ public class Entity extends LocalActor implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = -2008980313521087227L;
-	
+
 	private transient RemoteAgency migrationDestination;
-	
+
 	protected Entity(String id) {
 		super(id);
 	}
 
 	public void initEntity() {
-		
+
 	}
-	
+
+	public void importEntity(MigrationData data) throws ImportationException {
+		if (isAlive())
+			throw new ImportationException("can not import entity which is alive");
+
+		IOMap.get(getClass()).importData(this, data.getFieldsData());
+	}
+
 	public final IdentifiableType getType() {
 		return IdentifiableType.ENTITY;
 	}
@@ -49,12 +59,16 @@ public class Entity extends LocalActor implements Serializable {
 		migrationDestination = remote;
 		migrate();
 	}
-	
+
 	public RemoteAgency getMigrationDestination() {
 		return migrationDestination;
 	}
-	
+
 	public void migrationFailed(RemoteAgency dest, MigrationException e) {
 		// Override by child to handle migration failed
+	}
+	
+	public void beforeMigration() {
+		
 	}
 }

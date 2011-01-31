@@ -20,7 +20,9 @@ package org.d3.entity.migration;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -49,6 +51,8 @@ abstract class Negociation {
 	protected static final int HEADER_SEND = 0x20;
 	protected static final int HEADER_SEND_RESPONSE = 0x2A;
 
+	protected static final int HEADER_SIZE = 3 * Integer.SIZE / 8;
+
 	public static enum Response {
 		MIGRATION_ACCEPTED, MIGRATION_REJECTED, MIGRATION_SUCCEED, MIGRATION_FAILED
 	}
@@ -61,11 +65,11 @@ abstract class Negociation {
 	protected SocketChannel channel;
 	protected ByteBuffer header;
 	protected Throwable cause;
-	protected ConcurrentLinkedQueue<Data> toWrite;
+	protected ConcurrentLinkedQueue<ByteBuffer> toWrite;
 	protected InetSocketAddress address;
+	protected SelectionKey key;
 
-	public Negociation(SocketChannel channel,
-			InetSocketAddress address) {
+	public Negociation(SocketChannel channel, InetSocketAddress address) {
 		this(channel);
 		this.address = address;
 	}
@@ -73,54 +77,68 @@ abstract class Negociation {
 	public Negociation(SocketChannel channel) {
 		this.channel = channel;
 		this.charset = Charset.forName("UTF-8");
-		this.header = ByteBuffer.allocate(3 * Integer.SIZE);
-		this.toWrite = new ConcurrentLinkedQueue<Data>();
+		this.header = ByteBuffer.allocate(HEADER_SIZE);
+		this.toWrite = new ConcurrentLinkedQueue<ByteBuffer>();
 		this.address = null;
 	}
 
 	public InetSocketAddress getAddress() {
 		return address;
 	}
-	/*
-	public boolean waitTheResult() {
-		if (future == null)
-			return false;
 
-		try {
-			return (Boolean) future.getValue();
-		} catch (CallException e) {
-			if (cause == null)
-				cause = e;
-			return false;
-		}
-	}
-	*/
+	/*
+	 * public boolean waitTheResult() { if (future == null) return false;
+	 * 
+	 * try { return (Boolean) future.getValue(); } catch (CallException e) { if
+	 * (cause == null) cause = e; return false; } }
+	 */
 	protected void write(int req, String message) {
-		ByteBuffer buffer = charset.encode(message);
-		toWrite.add(new Data(req, 0x00, buffer));
+		byte[] data = message.getBytes(charset);
+		ByteBuffer buffer = ByteBuffer.allocate(data.length + HEADER_SIZE);// charset.encode(message);
+
+		buffer.putInt(req);
+		buffer.putInt(0x00);
+		buffer.putInt(data.length);
+		buffer.put(data);
+		buffer.flip();
+		
+		try {
+			channel.write(buffer);
+		} catch(IOException e) {
+			close();
+		}
+		//toWrite.add(buffer);
+		//key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+		//key.selector().wakeup();
 	}
 
 	protected void write() throws IOException {
 		while (toWrite.size() > 0) {
-			Data d = toWrite.poll();
-
-			header.clear();
-			header.putInt(d.req);
-			header.putInt(d.flag);
-			header.putInt(d.size);
-			header.reset();
-
-			channel.write(header);
-			channel.write(d.data);
+			ByteBuffer d = toWrite.poll();
+			/*
+			 * header.clear(); header.putInt(d.req); header.putInt(d.flag);
+			 * header.putInt(d.size); header.flip();
+			 * 
+			 * channel.write(header);
+			 */
+			channel.write(d);
 		}
 	}
 
 	protected abstract void handle(int req, String[] data);
-	
+
 	protected void read() throws IOException {
-		header.clear();
-		channel.read(header);
-		header.reset();
+		int r;
+		try {
+			header.clear();
+			r = channel.read(header);
+			header.flip();
+		} catch (Exception e) {
+			throw new IOException(e);
+		}
+
+		if (r <= 0)
+			return;
 
 		int req = header.getInt();
 		// int flag =
@@ -128,11 +146,17 @@ abstract class Negociation {
 		int size = header.getInt();
 
 		ByteBuffer buffer = ByteBuffer.allocate(size);
-		channel.read(buffer);
-		buffer.reset();
+		r = channel.read(buffer);
+		buffer.flip();
 
-		String[] data = buffer.toString().split("\\s*;\\s*");
-		handle(req, data);
+		String message = charset.decode(buffer).toString();
+		String[] data = message.split("\\s*;\\s*");
+
+		try {
+			handle(req, data);
+		} catch (Exception e) {
+			Console.exception(e);
+		}
 	}
 
 	protected void close() {
