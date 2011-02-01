@@ -54,4 +54,8 @@ public class MigrationData implements Serializable {
 	public MigratableField[] getFieldsData() {
 		return fields;
 	}
+	
+	public LinkedList<CallData> getCalls() {
+		return calls;
+	}
 }

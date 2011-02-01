@@ -18,6 +18,8 @@
  */
 package org.d3.entity;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.LinkedList;
 
 import org.d3.Console;
@@ -31,6 +33,7 @@ import org.d3.entity.migration.MigratableField;
 import org.d3.entity.migration.MigrationData;
 import org.d3.entity.migration.MigrationException;
 import org.d3.entity.migration.MigrationProtocol;
+import org.d3.remote.RemoteActors;
 import org.d3.remote.RemoteAgency;
 
 public class EntityThread extends BodyThread {
@@ -78,6 +81,8 @@ public class EntityThread extends BodyThread {
 					Console.error("error while calling beforeMigration()");
 				}
 				
+				String fullpath = e.getFullPath();
+				
 				try {
 					LinkedList<CallData> data = queue.exportSwapForMigration();
 					MigratableField[] fieldsData;
@@ -95,7 +100,18 @@ public class EntityThread extends BodyThread {
 				}
 
 				if (success) {
-					terminateBody(StopPolicy.SEND_REDIRECTION_AND_STOP);
+					Redirection cause = null;
+					
+					try {
+						URI uri = RemoteActors.getRemoteActorURI(remote, fullpath);
+						cause = new Redirection(uri);
+					} catch(URISyntaxException ex) {
+						cause = new Redirection(null);
+					}
+					
+					queue.clearSwapped();
+					terminateBody(StopPolicy.SEND_REDIRECTION_AND_STOP, cause);
+					
 					Console.info("has migrated");
 				} else {
 					queue.restore();

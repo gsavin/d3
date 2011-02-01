@@ -22,13 +22,38 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import org.d3.actor.body.BodyQueue;
+import org.d3.tools.AtomicState;
 
+/**
+ * Body is a thread associated with each local actor which will handle received
+ * requests.
+ * 
+ * @author Guilhelm Savin
+ * @see org.d3.actor.ActorThread
+ */
 public class BodyThread extends ActorThread {
 
-	public static enum SpecialAction {
-		MIGRATE, STEP
+	/**
+	 * Special actions which can be handle by the body.
+	 */
+	protected static enum SpecialAction {
+		/**
+		 * Tell the body that it should migrate. This action is only available
+		 * for entity actors.
+		 */
+		MIGRATE,
+		/**
+		 * Tell the body to step. This action is only available for StepActor
+		 * actors.
+		 * 
+		 * @see org.d3.actor.StepActor
+		 */
+		STEP
 	}
 
+	/**
+	 * Defines the container for special action.
+	 */
 	protected static class SpecialActionTask extends ScheduledTask {
 
 		SpecialAction action;
@@ -39,6 +64,48 @@ public class BodyThread extends ActorThread {
 		}
 	}
 
+	/**
+	 * Defines state of the body.
+	 * 
+	 */
+	public static enum State {
+		/**
+		 * The body has been created but it has not been started yet.
+		 */
+		INIT,
+		/**
+		 * The body has been started, it has not begun to handle request.
+		 */
+		RUNNING,
+		/**
+		 * The body is running and it is waiting request.
+		 */
+		IDLE,
+		/**
+		 * The body is handling a request. Before becoming WORKING, body should
+		 * acquire a permit on the agency actor-thread semaphore. When handling
+		 * of the request is finished, permit is released. This is to avoid the
+		 * concurrency of too many threads.
+		 * 
+		 * @see org.d3.actor.Agency#getActorThreadSemaphore()
+		 * @see java.concurrent.Semaphore
+		 */
+		WORKING,
+		/**
+		 * The body is entering in its termination state. It will not accept
+		 * request anymore. According to its stop policy, remaining request will
+		 * be handled or redirect.
+		 */
+		TERMINATING,
+		/**
+		 * The body is terminated.
+		 */
+		TERMINATED
+	}
+
+	/**
+	 * Defines the termination policy about the handling of remaining requests.
+	 */
 	public static enum StopPolicy {
 		/**
 		 * Execute all call which delay has expired, then send a redirection
@@ -52,39 +119,96 @@ public class BodyThread extends ActorThread {
 		SEND_REDIRECTION_AND_STOP
 	}
 
+	/**
+	 * Received requests are stored in a queue, waiting to be handled. When body
+	 * is running, it polls request of its queue and handle it.
+	 */
 	protected final BodyQueue queue;
-	protected volatile boolean running;
+	/**
+	 * Flag indicating is the body should continue to run or not. When the body
+	 * is started, this flag is set to true, then when body has to be stopped,
+	 * flag turns to false and the body leaves its loop.
+	 */
+	private volatile boolean running;
+	/**
+	 * Defines the policy of the termination of the body.
+	 */
 	protected StopPolicy stopPolicy;
-
+	/**
+	 * Indicates the actual state of the body.
+	 */
+	protected final AtomicState<State> state;
+	/**
+	 * When the body is stopped, it is possible to define a cause of its
+	 * termination. According to its stop policy, this cause will be sent to
+	 * remaining requests.
+	 */
 	protected Throwable stopCause;
 
+	/**
+	 * Special constructor for extended class, allowing to define its own queue.
+	 * 
+	 * @param owner
+	 *            the owner of the body.
+	 * @param queue
+	 *            the queue in which remaining requests are stored.
+	 */
 	protected BodyThread(LocalActor owner, BodyQueue queue) {
 		super(owner, "request");
 		this.queue = queue;
 		this.running = false;
+		this.state = new AtomicState<State>(State.class, State.INIT);
 	}
 
+	/**
+	 * Create a new body for the local actor passed as parameter.
+	 * 
+	 * @param owner
+	 *            the local actor to which this body will be dedicated.
+	 */
 	public BodyThread(LocalActor owner) {
 		this(owner, new BodyQueue());
 	}
 
+	/**
+	 * The method which will be run when the body will be started.
+	 * 
+	 * First this method will check if it is the current thread, then it
+	 * registers the actor.
+	 * 
+	 * When the actor is registered, state of body becomes RUNNING and it
+	 * triggers the <code>onRun()</code> hook and enters in its running loop.
+	 * 
+	 * When the loop returned, the termination method is invoked and state of
+	 * the body become TERMINATED.
+	 */
 	public void run() {
 		checkIsOwner();
 
 		running = true;
 		owner.register();
-		
+
+		state.set(State.RUNNING);
+
 		onRun();
-		
-		runBody();
+
+		loop();
 		terminate();
+
+		state.set(State.TERMINATED);
 	}
 
+	/**
+	 * Hook called when the body start to run. It can be overriden by extended
+	 * classes to perform special action on run.
+	 */
 	protected void onRun() {
-		
 	}
-	
-	protected final void runBody() {
+
+	/**
+	 * The body loop in which requests will be handled.
+	 */
+	private final void loop() {
 		checkIsOwner();
 
 		Object current;
@@ -102,6 +226,8 @@ public class BodyThread extends ActorThread {
 				.getActorThreadSemaphore();
 
 		while (running) {
+			state.set(State.IDLE);
+
 			try {
 				current = queue.take();
 			} catch (InterruptedException e) {
@@ -113,6 +239,8 @@ public class BodyThread extends ActorThread {
 
 			try {
 				actorThreadSemaphore.acquireUninterruptibly();
+
+				state.set(State.WORKING);
 
 				if (current instanceof Call) {
 					Call c = (Call) current;
@@ -133,6 +261,8 @@ public class BodyThread extends ActorThread {
 				actorThreadSemaphore.release();
 			}
 		}
+
+		state.set(State.TERMINATING);
 
 		switch (stopPolicy) {
 		case FINISH_EXECUTE_REQUEST_AND_STOP: {
@@ -166,10 +296,24 @@ public class BodyThread extends ActorThread {
 		}
 	}
 
+	/**
+	 * Handling of the special action MIGRATE. In a default body, this throws a
+	 * ActorInternalException.
+	 * 
+	 * @param sat
+	 *            the task associated with the special action.
+	 */
 	protected void specialActionMigrate(SpecialActionTask sat) {
 		throw new ActorInternalException();
 	}
 
+	/**
+	 * Handling of the special action STEP. If the owner of the thread is not a
+	 * StepActor, the method just returns.
+	 * 
+	 * @param sat
+	 *            the task associated with the special action.
+	 */
 	protected void specialActionStep(SpecialActionTask sat) {
 		if (owner instanceof StepActor) {
 			StepActor sa = (StepActor) owner;
@@ -181,6 +325,15 @@ public class BodyThread extends ActorThread {
 		}
 	}
 
+	/**
+	 * Creates and enqueues a new call.
+	 * 
+	 * @param name
+	 *            name of the requested callable.
+	 * @param args
+	 *            arguments passed to the callable method.
+	 * @return a future
+	 */
 	public final Future enqueue(String name, Object[] args) {
 		Call c = new Call(owner, name, args);
 		enqueue(c);
@@ -188,31 +341,82 @@ public class BodyThread extends ActorThread {
 		return c.getFuture();
 	}
 
+	/**
+	 * Enqueue a call in the body queue.
+	 * 
+	 * @param c
+	 *            the call to enqueue.
+	 */
 	public final void enqueue(Call c) {
-		if (running) {
-			queue.add(c);
-		} else {
+		switch (state.get()) {
+		case TERMINATING:
+		case TERMINATED:
 			c.getFuture().init(stopCause);
+			break;
+		default:
+			queue.add(c);
+			break;
 		}
 	}
 
+	/**
+	 * Get the actual body state. The access is thread safe, but the returned
+	 * state object just describe the state of the body at the invocation of the
+	 * method and this state could be modified by another thread.
+	 * 
+	 * @return the state of the body at the invocation of the method.
+	 */
+	public State getBodyState() {
+		return state.get();
+	}
+
+	/**
+	 * Allows to wait until the body becomes ready.
+	 * 
+	 * @throws InterruptedException
+	 *             if the thread is interrupted while is waiting to the RUNNING
+	 *             state.
+	 */
+	public void waitUntilBodyReady() throws InterruptedException {
+		switch (state.get()) {
+		case INIT:
+			state.waitForState(State.RUNNING);
+			break;
+		}
+	}
+
+	/*
+	 * PRIVATE. Enqueue a migration request.
+	 */
 	void migrate() {
 		checkIsOwner();
-		
+
 		SpecialActionTask sat = new SpecialActionTask(0, TimeUnit.SECONDS,
 				SpecialAction.MIGRATE);
 		queue.add(sat);
 	}
 
+	/**
+	 * Terminate the body. The actor owning the body is unregistered.
+	 */
 	protected void terminate() {
 		super.terminate();
 		owner.unregister();
 	}
 
-	protected void terminateBody(StopPolicy stop) {
+	/**
+	 * Request a termination of the body.
+	 * 
+	 * @param stop
+	 *            the policy which should be used.
+	 * @param cause
+	 *            the cause of the termination
+	 */
+	protected void terminateBody(StopPolicy stop, Throwable cause) {
 		checkIsOwner();
 		stopPolicy = stop;
 		running = false;
+		stopCause = cause;
 		interrupt();
 	}
 }

@@ -19,6 +19,7 @@
 package org.d3.remote;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.d3.actor.Agency;
 import org.d3.actor.RemoteActor;
@@ -26,6 +27,19 @@ import org.d3.tools.Cache;
 import org.d3.tools.CacheCreationException;
 
 public class RemoteActors extends Cache<URI, RemoteActor> {
+
+	public static URI getRemoteActorURI(RemoteAgency remote, String fullpath)
+			throws URISyntaxException {
+		String host = remote.getRemoteHost().getAddress().getHost();
+		String agencyId = remote.getId();
+
+		if (!fullpath.startsWith("/"))
+			fullpath = "/" + fullpath;
+
+		String uri = String.format("//%s/%s%s", host, agencyId, fullpath);
+
+		return new URI(uri);
+	}
 
 	public RemoteActors(int capacity) {
 		super(capacity);

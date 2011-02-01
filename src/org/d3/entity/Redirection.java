@@ -16,40 +16,23 @@
  * 
  * Copyright 2010 - 2011 Guilhelm Savin
  */
-package org.d3.tools;
+package org.d3.entity;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.net.URI;
 
-public class AtomicState<K extends Enum<K>> {
-	AtomicReference<K> reference;
+public class Redirection extends Throwable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -501035639327879652L;
 
-	public AtomicState(Class<? extends K> cls, K init) {
-		reference = new AtomicReference<K>(init);
+	protected URI newLocation;
+	
+	public Redirection(URI newLocation) {
+		this.newLocation = newLocation;
 	}
-
-	public void set(K k) {
-		reference.set(k);
-		
-		synchronized (reference) {
-			reference.notifyAll();
-		}
-	}
-
-	public K get() {
-		return reference.get();
-	}
-
-	public K waitForState(K s) throws InterruptedException {
-		K k = reference.get();
-
-		while (k.ordinal() < s.ordinal()) {
-			synchronized (reference) {
-					reference.wait(1000);
-			}
-			
-			k = reference.get();
-		}
-
-		return k;
+	
+	public URI getNewLocation() {
+		return newLocation;
 	}
 }

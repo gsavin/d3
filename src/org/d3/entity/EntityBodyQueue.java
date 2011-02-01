@@ -57,6 +57,10 @@ class EntityBodyQueue extends BodyQueue {
 		return data;
 	}
 	
+	void clearSwapped() {
+		swap.clear();
+	}
+	
 	void restore() {
 		swap();
 		theQueue.addAll(swap);

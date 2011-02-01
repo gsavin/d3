@@ -48,7 +48,11 @@ class NegociationO extends Negociation {
 	}
 
 	public boolean isAuthorized() throws BadStateException {
-		stateRef.waitForState(State.GOT_AUTHORIZATION);
+		try {
+			stateRef.waitForState(State.GOT_AUTHORIZATION);
+		} catch (InterruptedException e) {
+			// TODO Handle this exception
+		}
 
 		switch (stateRef.get()) {
 		case DATA_SENT:
@@ -64,7 +68,11 @@ class NegociationO extends Negociation {
 	}
 
 	public boolean isMigrationDoneSuccessfully() throws BadStateException {
-		stateRef.waitForState(State.MIGRATION_DONE);
+		try {
+			stateRef.waitForState(State.MIGRATION_DONE);
+		} catch (InterruptedException e) {
+			// TODO Handle this exception
+		}
 
 		switch (stateRef.get()) {
 		case MIGRATION_DONE:
@@ -76,7 +84,7 @@ class NegociationO extends Negociation {
 			throw new BadStateException();
 		}
 	}
-	
+
 	protected void requestAuthorization() throws BadStateException {
 		switch (stateRef.get()) {
 		case INIT:

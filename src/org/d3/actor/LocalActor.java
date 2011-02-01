@@ -19,7 +19,6 @@
 package org.d3.actor;
 
 import org.d3.Actor;
-import org.d3.Console;
 import org.d3.actor.body.BodyMap;
 import org.d3.agency.AgencyThread;
 import org.d3.annotation.Callable;
@@ -69,6 +68,12 @@ public abstract class LocalActor extends Actor {
 	public void init() {
 		if (!bodyThread.isAlive())
 			bodyThread.start();
+		
+		try {
+			bodyThread.waitUntilBodyReady();
+		} catch(InterruptedException e) {
+			// TODO Handling this exception
+		}
 	}
 
 	public void terminate() {
@@ -142,8 +147,6 @@ public abstract class LocalActor extends Actor {
 	 */
 	public Object call(String name, Object... args) {
 		if (bodyThread.isOwner()) {
-			bodyThread.checkIsOwner();
-
 			if (!bodyMap.has(name))
 				return new CallableNotFoundException(name);
 

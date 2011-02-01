@@ -19,8 +19,10 @@
 package org.d3.actor;
 
 import java.io.Serializable;
+import java.util.LinkedList;
 
 import org.d3.annotation.ActorPath;
+import org.d3.entity.migration.CallData;
 import org.d3.entity.migration.IOMap;
 import org.d3.entity.migration.ImportationException;
 import org.d3.entity.migration.MigrationData;
@@ -46,9 +48,20 @@ public class Entity extends LocalActor implements Serializable {
 
 	public void importEntity(MigrationData data) throws ImportationException {
 		if (isAlive())
-			throw new ImportationException("can not import entity which is alive");
+			throw new ImportationException(
+					"can not import entity which is alive");
 
 		IOMap.get(getClass()).importData(this, data.getFieldsData());
+		LinkedList<CallData> calls = data.getCalls();
+
+		for (int i = 0; i < calls.size(); i++) {
+			try {
+				Call c = new Call(calls.get(i));
+				call(c);
+			} catch(CallException ce) {
+				
+			}
+		}
 	}
 
 	public final IdentifiableType getType() {
@@ -67,8 +80,8 @@ public class Entity extends LocalActor implements Serializable {
 	public void migrationFailed(RemoteAgency dest, MigrationException e) {
 		// Override by child to handle migration failed
 	}
-	
+
 	public void beforeMigration() {
-		
+
 	}
 }
