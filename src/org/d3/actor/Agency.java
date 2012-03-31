@@ -35,6 +35,7 @@ import org.d3.annotation.ActorDescription;
 import org.d3.annotation.ActorPath;
 import org.d3.annotation.Callable;
 import org.d3.entity.Traveller;
+import org.d3.entity.TravellerChecker;
 import org.d3.entity.migration.MigrationProtocol;
 import org.d3.events.ActorEventDispatcher;
 import org.d3.events.EventDispatchable;
@@ -218,6 +219,8 @@ public class Agency extends LocalActor implements
 		if (localArgs.has("test.traveller")) {
 			Traveller t = new Traveller();
 			t.init();
+			TravellerChecker tc = new TravellerChecker(t.getId() + "_checker");
+			tc.init(t.getReference());
 		}
 
 		Console.info("agency enable");

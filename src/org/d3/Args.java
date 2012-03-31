@@ -19,6 +19,8 @@
 package org.d3;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -76,17 +78,17 @@ public class Args {
 		String s = get(key);
 		return Boolean.valueOf(s);
 	}
-	
+
 	public Integer getInteger(String key) {
 		String s = get(key);
 		return Integer.valueOf(s);
 	}
-	
+
 	public Time getTime(String key) {
 		String s = get(key);
 		return Time.valueOf(s);
 	}
-	
+
 	public boolean has(String key) {
 		if (key.indexOf('.') != -1) {
 			String sub = key.substring(0, key.indexOf('.'));
@@ -122,6 +124,33 @@ public class Args {
 		return parseArgs(a, args);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	public String toString() {
+		return toString(null);
+	}
+
+	public String toString(String prefix) {
+		StringBuilder buffer = new StringBuilder();
+
+		for (String key : innerMap.keySet()) {
+			if (prefix != null)
+				buffer.append(prefix).append(".");
+
+			buffer.append(key).append(" = ").append(innerMap.get(key));
+			buffer.append("\n");
+		}
+
+		for (String key : children.keySet())
+			buffer.append(children.get(key).toString(
+					prefix == null ? key : prefix + "." + key));
+
+		return buffer.toString();
+	}
+
 	public static Args parseArgs(Args args, String... argToParse) {
 		if (args == null)
 			args = new Args();
@@ -148,12 +177,25 @@ public class Args {
 	}
 
 	public static Args processFile(Args args, String url) {
+		BufferedReader in;
 		URL u = ClassLoader.getSystemResource(url);
 
 		if (u != null) {
 			try {
-				BufferedReader in = new BufferedReader(new InputStreamReader(
-						u.openStream()));
+				in = new BufferedReader(new InputStreamReader(u.openStream()));
+			} catch (IOException e1) {
+				in = null;
+			}
+		} else {
+			try {
+				in = new BufferedReader(new FileReader(url));
+			} catch (FileNotFoundException e) {
+				in = null;
+			}
+		}
+
+		if (in != null) {
+			try {
 				String line;
 				Pattern p = Pattern
 						.compile("^\\s*(\\w[\\w\\d-_]*(?:[.]\\w[\\w\\d-_]*)*)\\s*=\\s*(.*)\\s*$");

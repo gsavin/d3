@@ -19,10 +19,6 @@
 package org.d3.test;
 
 import java.lang.reflect.Method;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.URI;
-import java.util.Enumeration;
 
 import javassist.ClassPool;
 import javassist.CtClass;

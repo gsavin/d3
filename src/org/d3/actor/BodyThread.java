@@ -247,7 +247,7 @@ public class BodyThread extends ActorThread {
 					executeCall(c);
 				} else if (current instanceof SpecialActionTask) {
 					SpecialActionTask sat = (SpecialActionTask) current;
-
+					
 					switch (sat.action) {
 					case MIGRATE:
 						specialActionMigrate(sat);
@@ -341,6 +341,11 @@ public class BodyThread extends ActorThread {
 		return c.getFuture();
 	}
 
+	public final void enqueue(String name, Future f, Object[] args) {
+		Call c = new Call(owner, name, f, args);
+		enqueue(c);
+	}
+
 	/**
 	 * Enqueue a call in the body queue.
 	 * 
@@ -385,6 +390,16 @@ public class BodyThread extends ActorThread {
 		}
 	}
 
+	/**
+	 * Get the cause of the body termination.
+	 * 
+	 * @return a throwable describing the termination cause or null if no cause
+	 *         exists.
+	 */
+	public Throwable getStopCause() {
+		return stopCause;
+	}
+
 	/*
 	 * PRIVATE. Enqueue a migration request.
 	 */
@@ -417,6 +432,8 @@ public class BodyThread extends ActorThread {
 		stopPolicy = stop;
 		running = false;
 		stopCause = cause;
-		interrupt();
+
+		if (state.get() == State.IDLE)
+			interrupt();
 	}
 }

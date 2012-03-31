@@ -18,6 +18,7 @@
  */
 package org.d3.entity.migration;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
@@ -28,8 +29,12 @@ import org.d3.protocol.RemoteFuture;
 import org.d3.remote.RemoteAgency;
 import org.d3.remote.UnknownAgencyException;
 
-public class CallData {
-
+public class CallData implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -5041719737979304807L;
+	
 	URI source;
 	URI target;
 	String name;

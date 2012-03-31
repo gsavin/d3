@@ -68,5 +68,13 @@ public abstract class Protocol extends LocalActor {
 		return scheme;
 	}
 	
+	public final void startAssuming(RemoteActor ra) {
+		protocolThread.assumeRole(ra);
+	}
+	
+	public final void stopAssuming() {
+		protocolThread.stopAssuming();
+	}
+	
 	public abstract void listen();
 }

@@ -83,7 +83,8 @@ public class RemoteHosts implements Iterable<RemoteHost>,
 		Agency.getLocalAgency().checkBodyThreadAccess();
 
 		RemoteAgency remote = host.registerAgency(id);
-
+		agencies.put(id, remote);
+		
 		Console.info("register agency \"%s\" @ %s", id, host.getAddress()
 				.getHost());
 		eventDispatcher.trigger(RemoteEvent.REMOTE_AGENCY_REGISTERED, remote);

@@ -32,6 +32,7 @@ import org.d3.events.EventDispatchable;
 import org.d3.events.EventDispatcher;
 import org.d3.protocol.request.ObjectCoder;
 import org.d3.tools.CacheCreationException;
+import org.d3.tools.DefaultCache;
 
 public class Actors implements Iterable<LocalActor>,
 		EventDispatchable<ActorsEvent> {
@@ -40,11 +41,13 @@ public class Actors implements Iterable<LocalActor>,
 	private String digest;
 	private MessageDigest digestAlgorithm;
 	private final EventDispatcher<ActorsEvent> eventDispatcher;
+	private final DefaultCache<String, Throwable> unregisteredTrace;
 
 	public Actors() {
 		actors = new ConcurrentHashMap<String, LocalActor>();
 		digest = "";
 		eventDispatcher = new EventDispatcher<ActorsEvent>(ActorsEvent.class);
+		unregisteredTrace = new DefaultCache<String, Throwable>(10000);
 
 		try {
 			digestAlgorithm = MessageDigest.getInstance("SHA");
@@ -66,6 +69,11 @@ public class Actors implements Iterable<LocalActor>,
 	}
 
 	public void unregister(LocalActor actor) {
+		Throwable cause = actor.getTerminationCause();
+
+		if (cause != null)
+			unregisteredTrace.put(actor.getFullPath(), cause);
+
 		actors.remove(actor.getFullPath());
 		updateDigest();
 		eventDispatcher.trigger(ActorsEvent.ACTOR_UNREGISTERED, actor);
@@ -77,14 +85,17 @@ public class Actors implements Iterable<LocalActor>,
 		return digest;
 	}
 
-	public Actor get(URI uri) throws ActorNotFoundException {
+	public Actor get(URI uri) throws ActorNotFoundException,
+			UnregisteredActorException {
 		String agencyId = uri.getPath().substring(1,
 				uri.getPath().indexOf('/', 1));
 
-		if (Agency.getLocalAgencyId().equals(agencyId))
-			return get(uri.getPath().substring(
-					uri.getPath().indexOf('/', 1) + 1));
-
+		if (Agency.getLocalAgencyId().equals(agencyId)) {
+			String fullpath = uri.getPath().substring(
+					uri.getPath().indexOf('/', 1));
+			return get(fullpath);
+		}
+		
 		try {
 			return Agency.getLocalAgency().getRemoteActors().get(uri);
 		} catch (CacheCreationException e) {
@@ -92,8 +103,20 @@ public class Actors implements Iterable<LocalActor>,
 		}
 	}
 
-	public LocalActor get(String fullPath) {
-		return actors.get(fullPath);
+	public LocalActor get(String fullPath) throws ActorNotFoundException,
+			UnregisteredActorException {
+		LocalActor la = actors.get(fullPath);
+
+		if (la == null) {
+			Throwable cause = unregisteredTrace.get(fullPath);
+
+			if (cause != null)
+				throw new UnregisteredActorException(cause);
+
+			throw new ActorNotFoundException();
+		}
+
+		return la;
 	}
 
 	private void updateDigest() {

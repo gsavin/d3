@@ -73,6 +73,7 @@ public abstract class LocalActor extends Actor {
 			bodyThread.waitUntilBodyReady();
 		} catch(InterruptedException e) {
 			// TODO Handling this exception
+			e.printStackTrace();
 		}
 	}
 
@@ -115,6 +116,10 @@ public abstract class LocalActor extends Actor {
 		bodyThread.checkIsOwner();
 	}
 
+	public Throwable getTerminationCause() {
+		return bodyThread.getStopCause();
+	}
+	
 	public final void checkActorThreadAccess() {
 		if (Thread.currentThread() instanceof ActorThread) {
 			if (((ActorThread) Thread.currentThread()).getOwner() != this)
@@ -123,13 +128,33 @@ public abstract class LocalActor extends Actor {
 			throw new SecurityException();
 	}
 
+	private Object directCall(String name, Object ... args ) {
+		if (!bodyMap.has(name))
+			return new CallableNotFoundException(name);
+
+		try {
+			return bodyMap.invoke(this, name, args);
+		} catch (Exception e) {
+			return new CallException(e);
+		}
+	}
+	
 	/**
 	 * Enqueue a call in the body queue.
 	 * 
 	 * @param c
 	 */
-	public void call(Call c) {
+	protected void call(Call c) {
 		bodyThread.enqueue(c);
+	}
+	
+	public void call(String name, Future future, Object ... args) {
+		if (bodyThread.isOwner()) {
+			Object o = directCall(name, args);
+			future.init(o);
+		} else {
+			bodyThread.enqueue(name, future, args);
+		}
 	}
 
 	/**
@@ -147,14 +172,7 @@ public abstract class LocalActor extends Actor {
 	 */
 	public Object call(String name, Object... args) {
 		if (bodyThread.isOwner()) {
-			if (!bodyMap.has(name))
-				return new CallableNotFoundException(name);
-
-			try {
-				return bodyMap.invoke(this, name, args);
-			} catch (Exception e) {
-				return new CallException(e);
-			}
+			return directCall(name, args);
 		} else {
 			Future f = bodyThread.enqueue(name, args);
 			return f;

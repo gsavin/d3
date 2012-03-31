@@ -66,7 +66,7 @@ public class Call extends ScheduledTask {
 
 	public Call(CallData data) throws CallException {
 		super(data.getDelay(), data.getTimeUnit());
-		
+
 		this.name = data.getName();
 		this.args = data.getArgs();
 
@@ -78,6 +78,11 @@ public class Call extends ScheduledTask {
 					.get(data.getTargetURI());
 		} catch (ActorNotFoundException e) {
 			throw new CallException(e);
+		} catch (UnregisteredActorException e) {
+			if (e.getCause() != null)
+				throw new CallException(e.getCause());
+			else
+				throw new CallException(e);
 		}
 
 		try {

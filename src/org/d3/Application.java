@@ -18,14 +18,9 @@
  */
 package org.d3;
 
-import org.d3.actor.Agency;
 import org.d3.actor.LocalActor;
-import org.d3.agency.AgencyListener;
-import org.d3.protocol.Request;
-import org.d3.remote.RemoteAgency;
 
-public abstract class Application extends LocalActor implements
-		AgencyListener {
+public abstract class Application extends LocalActor {
 
 	protected Application(String name) {
 		super(name);
@@ -33,43 +28,6 @@ public abstract class Application extends LocalActor implements
 
 	public final IdentifiableType getType() {
 		return IdentifiableType.APPLICATION;
-	}
-
-	public void handleRequest(Actor source,
-			Actor target, Request r) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void agencyExit(Agency agency) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void identifiableObjectRegistered(Actor idObject) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void identifiableObjectUnregistered(Actor idObject) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void newAgencyRegistered(RemoteAgency rad) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void remoteAgencyDescriptionUpdated(RemoteAgency rad) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void requestReceived(Actor source,
-			Actor target, String name) {
-		// TODO Auto-generated method stub
-
 	}
 
 	public abstract void init();

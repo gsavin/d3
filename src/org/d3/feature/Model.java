@@ -39,7 +39,8 @@ import org.graphstream.algorithm.DynamicAlgorithm;
 import org.graphstream.graph.Edge;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
-import org.graphstream.graph.implementations.ConcurrentGraph;
+import org.graphstream.graph.implementations.AdjacencyListGraph;
+import org.graphstream.graph.implementations.Graphs;
 import org.graphstream.stream.thread.ThreadProxyPipe;
 import org.graphstream.ui.layout.Layout;
 import org.graphstream.ui.layout.Layouts;
@@ -81,7 +82,7 @@ public class Model extends Feature implements StepActor, Bindable {
 	public void initFeature() {
 		Args args = Agency.getActorArgs(this);
 
-		model = new ConcurrentGraph(getId(), false, true);
+		model = Graphs.synchronizedGraph(new AdjacencyListGraph(getId(), false, true));
 		model.addAttribute("ui.stylesheet", defaultStyleSheet);
 		model.addAttribute("ui.quality");
 		model.addAttribute("ui.antialias");

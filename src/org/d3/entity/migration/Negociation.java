@@ -20,7 +20,6 @@ package org.d3.entity.migration;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -31,20 +30,14 @@ import org.d3.Console;
 
 abstract class Negociation {
 
-	private static class Data {
-		int req;
-		int flag;
-		int size;
-
-		ByteBuffer data;
-
-		Data(int req, int flag, ByteBuffer data) {
-			this.req = req;
-			this.flag = flag;
-			this.size = data.limit();
-			this.data = data;
-		}
-	}
+	/*
+	 * private static class Data { int req; int flag; int size;
+	 * 
+	 * ByteBuffer data;
+	 * 
+	 * Data(int req, int flag, ByteBuffer data) { this.req = req; this.flag =
+	 * flag; this.size = data.limit(); this.data = data; } }
+	 */
 
 	protected static final int HEADER_REQUEST = 0x10;
 	protected static final int HEADER_REQUEST_RESPONSE = 0x1A;
@@ -101,15 +94,15 @@ abstract class Negociation {
 		buffer.putInt(data.length);
 		buffer.put(data);
 		buffer.flip();
-		
+
 		try {
 			channel.write(buffer);
-		} catch(IOException e) {
+		} catch (IOException e) {
 			close();
 		}
-		//toWrite.add(buffer);
-		//key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
-		//key.selector().wakeup();
+		// toWrite.add(buffer);
+		// key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+		// key.selector().wakeup();
 	}
 
 	protected void write() throws IOException {

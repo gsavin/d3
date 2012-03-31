@@ -21,6 +21,7 @@ package org.d3.protocol;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.d3.actor.Future;
+import org.d3.Console;
 import org.d3.RegistrationException;
 
 public class Futures {
@@ -37,12 +38,18 @@ public class Futures {
 		if (future != null) {
 			future.init(value);
 			futures.remove(id);
+		} else {
+			Console.error("future not found (%s)", id);
 		}
 	}
 
 	public void register(Future future) throws RegistrationException {
 		if (futures.putIfAbsent(future.getId(), future) != null)
 			throw new RegistrationException();
+	}
+	
+	public void unregister(Future future) {
+		futures.remove(future.getId());
 	}
 	
 	public Future get(String id) {

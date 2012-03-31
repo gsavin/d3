@@ -20,6 +20,7 @@ package org.d3;
 
 import java.net.URI;
 
+import org.d3.actor.Future;
 import org.d3.annotation.ActorPath;
 
 /**
@@ -319,4 +320,6 @@ public abstract class Actor {
 	 * @see org.d3.actor.LocalActor, org.d3.actor.RemoteActor
 	 */
 	public abstract Object call(String name, Object... args);
+	
+	public abstract void call(String name, Future future, Object ... args);
 }

@@ -21,7 +21,9 @@ package org.d3.actor;
 import java.io.Serializable;
 import java.util.LinkedList;
 
+import org.d3.Console;
 import org.d3.annotation.ActorPath;
+import org.d3.entity.EReference;
 import org.d3.entity.migration.CallData;
 import org.d3.entity.migration.IOMap;
 import org.d3.entity.migration.ImportationException;
@@ -54,12 +56,14 @@ public class Entity extends LocalActor implements Serializable {
 		IOMap.get(getClass()).importData(this, data.getFieldsData());
 		LinkedList<CallData> calls = data.getCalls();
 
+		Console.info("import %d calls", calls.size());
+		
 		for (int i = 0; i < calls.size(); i++) {
 			try {
 				Call c = new Call(calls.get(i));
 				call(c);
 			} catch(CallException ce) {
-				
+				Console.exception(ce);
 			}
 		}
 	}
@@ -83,5 +87,9 @@ public class Entity extends LocalActor implements Serializable {
 
 	public void beforeMigration() {
 
+	}
+	
+	public EReference getReference() {
+		return EReference.get(this);
 	}
 }

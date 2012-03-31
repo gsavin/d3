@@ -44,7 +44,7 @@ public class TestNetworkInterfaces {
 			System.out.printf(" InetAddress :%n");
 			while(addresses.hasMoreElements()) {
 				InetAddress address = addresses.nextElement();
-				System.out.printf(" - %s%n", address);
+				System.out.printf(" - %s, local=%s, link local=%s, loopback=%s, site local=%s%n", address, address.isAnyLocalAddress(), address.isLinkLocalAddress(), address.isLoopbackAddress(), address.isSiteLocalAddress());
 			}
 			
 			List<InterfaceAddress> ifaddress = netif.getInterfaceAddresses();
@@ -55,6 +55,8 @@ public class TestNetworkInterfaces {
 			
 			System.out.printf("%n");
 		}
-	}
 
+		InetAddress address = InetAddress.getByName("199.168.199.254");
+		System.out.printf("[remote] %s, local=%s, link local=%s, loopback=%s, site local=%s%n", address, address.isAnyLocalAddress(), address.isLinkLocalAddress(), address.isLoopbackAddress(), address.isSiteLocalAddress());
+	}
 }

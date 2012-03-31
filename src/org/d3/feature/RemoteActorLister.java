@@ -34,46 +34,53 @@ import org.d3.remote.RemoteEvent;
 public class RemoteActorLister extends Feature implements Bindable, StepActor {
 
 	private ConcurrentLinkedQueue<RemoteAgency> agencies;
-	
+
 	public RemoteActorLister() {
 		super("remote_actor_lister");
 		agencies = new ConcurrentLinkedQueue<RemoteAgency>();
 	}
-	
+
 	public long getStepDelay(TimeUnit unit) {
 		return unit.convert(10, TimeUnit.SECONDS);
 	}
 
 	public void step() {
-		for(RemoteAgency remote: agencies) {
+		for (RemoteAgency remote : agencies) {
 			Future f = (Future) remote.asRemoteActor().call("actors_list");
-			f.waitForValue();
-			
+
 			try {
-				String[] list = f.get();
-				
-				if( list != null ) {
-					StringBuilder builder = new StringBuilder();
-					builder.append("actors on ").append(remote.getId());
-					for(int i=0; i<list.length; i++)
-						builder.append("\n- ").append(list[i]);
-					Console.info(builder.toString());
+				f.waitForValue();
+			} catch (InterruptedException e) {
+			}
+
+			if (!Thread.interrupted()) {
+				try {
+					String[] list = f.get();
+
+					if (list != null) {
+						StringBuilder builder = new StringBuilder();
+						builder.append("actors on ").append(remote.getId());
+						for (int i = 0; i < list.length; i++)
+							builder.append("\n- ").append(list[i]);
+						Console.info(builder.toString());
+					}
+
+				} catch (CallException e) {
+					Console.exception(e);
 				}
-				
-			} catch(CallException e) {
-				Console.exception(e);
 			}
 		}
 	}
 
 	public void initFeature() {
-		Agency.getLocalAgency().getRemoteHosts().getEventDispatcher().bind(this);
+		Agency.getLocalAgency().getRemoteHosts().getEventDispatcher()
+				.bind(this);
 	}
 
-	public <K extends Enum<K>> void trigger(K event, Object ... data) {
-		if(event instanceof RemoteEvent) {
+	public <K extends Enum<K>> void trigger(K event, Object... data) {
+		if (event instanceof RemoteEvent) {
 			RemoteEvent revent = (RemoteEvent) event;
-			switch(revent) {
+			switch (revent) {
 			case REMOTE_AGENCY_REGISTERED:
 				agencies.add((RemoteAgency) data[0]);
 				break;

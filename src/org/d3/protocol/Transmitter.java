@@ -19,7 +19,6 @@
 package org.d3.protocol;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -36,12 +35,14 @@ import java.util.Iterator;
 
 import org.d3.ActorNotFoundException;
 import org.d3.Console;
+import org.d3.HostAddress;
 import org.d3.actor.Agency;
 import org.d3.actor.Call;
-import org.d3.actor.Future;
+import org.d3.actor.CallException;
 import org.d3.actor.LocalActor;
 import org.d3.actor.Protocol;
 import org.d3.actor.RemoteActor;
+import org.d3.actor.UnregisteredActorException;
 import org.d3.remote.HostNotFoundException;
 import org.d3.remote.RemotePort;
 import org.d3.remote.UnknownAgencyException;
@@ -147,8 +148,8 @@ public abstract class Transmitter extends Protocol {
 	 */
 	public void transmit(RemotePort port, Call c) {
 		if (c.getTarget().isRemote()) {
-			Future f = c.getFuture();
-			Agency.getLocalAgency().getProtocols().getFutures().register(f);
+			// Future f = c.getFuture();
+			// Agency.getLocalAgency().getProtocols().getFutures().register(f);
 			write(new Request(c, this, port));
 		} else {
 			// TODO
@@ -157,6 +158,7 @@ public abstract class Transmitter extends Protocol {
 	}
 
 	public void transmitFuture(RemotePort remote, String futureId, Object value) {
+		Console.info("transmitter transmit future");
 		FutureRequest fr = new FutureRequest(futureId, value, remote);
 		write(fr);
 	}
@@ -164,16 +166,17 @@ public abstract class Transmitter extends Protocol {
 	protected void dispatch(Request r) throws HostNotFoundException,
 			UnknownAgencyException {
 		URI target = r.getTargetURI();
-		InetAddress address;
+		HostAddress address;
 
 		try {
-			address = InetAddress.getByName(target.getHost());
+			address = HostAddress.getByName(target.getHost());
+			// address = InetAddress.getByName(target.getHost());
 		} catch (UnknownHostException e) {
 			Console.exception(e);
 			return;
 		}
 
-		if (address.isLinkLocalAddress()) {
+		if (address.isLocal()) {
 			RemoteActor source;
 
 			try {
@@ -183,24 +186,34 @@ public abstract class Transmitter extends Protocol {
 				source = null;
 			}
 
+			startAssuming(source);
+
 			String path = target.getPath();
 			String agencyId = path.substring(1, path.indexOf('/', 1));
 
 			if (Agency.getLocalAgencyId().equals(agencyId)) {
 				String fullPath = path.substring(path.indexOf('/', 1));
-				LocalActor targetActor = Agency.getLocalAgency().getActors()
-						.get(fullPath);
 
 				RemoteFuture future = new RemoteFuture(
 						source.getRemoteAgency(), r.getFutureId());
 
-				if (targetActor != null) {
-					Call c = new Call(targetActor, r.getCall(), future,
-							r.getDecodedArgs());
-					targetActor.call(c);
-				} else {
+				try {
+					LocalActor targetActor = Agency.getLocalAgency()
+							.getActors().get(fullPath);
+
+					if (targetActor != null) {
+						targetActor.call(r.getCall(), future,
+								r.getDecodedArgs());
+					} else {
+						Console.error(path);
+						future.init(new CallException(
+								new ActorNotFoundException()));
+					}
+				} catch (ActorNotFoundException e) {
 					Console.error(path);
-					future.init(new ActorNotFoundException());
+					future.init(new CallException(e));
+				} catch (UnregisteredActorException e) {
+					future.init(new CallException(e));
 				}
 			} else
 				Console.error("not local agency : %s", agencyId);
@@ -208,9 +221,13 @@ public abstract class Transmitter extends Protocol {
 		} else
 			Console.error("not local address : %s", address);
 		// writeRequest(r);
+
+		stopAssuming();
 	}
 
 	protected void dispatch(FutureRequest fr) {
+		Console.info("receive future");
+
 		Agency.getLocalAgency().getProtocols().getFutures()
 				.initFuture(fr.getFutureId(), fr.getDecodedValue());
 	}

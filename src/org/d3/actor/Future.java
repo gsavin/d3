@@ -21,6 +21,8 @@ package org.d3.actor;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.SecureRandom;
+import java.util.LinkedList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -40,31 +42,31 @@ public class Future {
 	private final String id;
 	private Object value;
 	private final AtomicBoolean available;
+	private LinkedList<CountDownLatch> latchs;
 
 	public Future() {
 		this(newFutureId());
+		Agency.getLocalAgency().getProtocols().getFutures().register(this);
 	}
 
 	protected Future(String id) {
 		this.id = id;
 		this.value = null;
 		this.available = new AtomicBoolean(false);
+		this.latchs = null;
 	}
 
-	public Object getValue() throws CallException {
+	@SuppressWarnings("unchecked")
+	public <T> T getValue() throws CallException, InterruptedException {
 		synchronized (available) {
-			try {
-				if (!available.get())
-					available.wait();
-			} catch (Exception e) {
-				throw new CallException(e);
-			}
+			if (!available.get())
+				available.wait();
 		}
 
 		if (value instanceof CallException)
 			throw (CallException) value;
 
-		return value;
+		return (T) value;
 	}
 
 	public String getId() {
@@ -85,16 +87,25 @@ public class Future {
 			this.value = value;
 		}
 
+		Agency.getLocalAgency().getProtocols().getFutures().unregister(this);
+
 		synchronized (available) {
 			available.set(true);
 			available.notifyAll();
+
+			if (latchs != null) {
+				while (latchs.size() > 0)
+					latchs.pop().countDown();
+				
+				latchs = null;
+			}
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	public <T> T get() throws CallException {
 		if (available.get()) {
-			Object obj = getValue();
+			Object obj = value;
 
 			if (obj instanceof CallException)
 				throw (CallException) obj;
@@ -109,28 +120,20 @@ public class Future {
 		return available.get();
 	}
 
-	public void waitForValue() {
+	public void waitForValue() throws InterruptedException {
 		while (!available.get()) {
-			try {
-				synchronized (available) {
-					available.wait(200);
-				}
-			} catch (InterruptedException e) {
-
+			synchronized (available) {
+				available.wait(1000);
 			}
 		}
 	}
 
-	public void waitForValue(long timeout) {
+	public void waitForValue(long timeout) throws InterruptedException {
 		if (available.get())
 			return;
 
-		try {
-			synchronized (available) {
-				available.wait(timeout);
-			}
-		} catch (InterruptedException e) {
-
+		synchronized (available) {
+			available.wait(timeout);
 		}
 	}
 
@@ -140,6 +143,19 @@ public class Future {
 					.getHost(), Agency.getLocalAgencyId(), getId()));
 		} catch (URISyntaxException e) {
 			return null;
+		}
+	}
+
+	public void putLatch(CountDownLatch latch) {
+		synchronized (available) {
+			if (available.get()) {
+				latch.countDown();
+			} else {
+				if (latchs == null)
+					latchs = new LinkedList<CountDownLatch>();
+
+				latchs.add(latch);
+			}
 		}
 	}
 }

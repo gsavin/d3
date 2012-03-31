@@ -27,6 +27,7 @@ import org.d3.actor.Agency;
 import org.d3.actor.Entity;
 import org.d3.actor.StepActor;
 import org.d3.annotation.ActorPath;
+import org.d3.annotation.Callable;
 import org.d3.entity.migration.MigrationException;
 import org.d3.remote.RemoteAgency;
 import org.d3.remote.RemoteHost;
@@ -82,5 +83,10 @@ public class Traveller extends Entity implements StepActor {
 	
 	public void beforeMigration() {
 		hop++;
+	}
+	
+	@Callable("get_hopes")
+	public Integer getHopes() {
+		return hop;
 	}
 }

@@ -27,6 +27,17 @@ import org.d3.remote.NoRemotePortAvailableException;
 import org.d3.remote.RemoteAgency;
 import org.d3.remote.RemotePort;
 
+/**
+ * Future used by remote actor.
+ * 
+ * When a remote actor R hosted on A2 is called from A1, a future F1 is created
+ * on A1 and a remote future F2 is created on A2. When R has performed the call,
+ * F2 is initialized and by doing this, the value of the future is transmitted
+ * to F1.
+ * 
+ * @author Guilhelm Savin
+ * 
+ */
 public class RemoteFuture extends Future {
 
 	private RemoteAgency remote;
@@ -38,6 +49,8 @@ public class RemoteFuture extends Future {
 
 	public void init(Object value) {
 		super.init(value);
+
+		Console.info("transmit future value");
 
 		try {
 			RemotePort rp = remote.getRandomRemotePortTransmittable();

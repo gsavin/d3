@@ -120,13 +120,21 @@ public class BodyMap {
 	private static class RoutineLoader extends ClassLoader {
 		protected ClassPool classPool;
 		protected Template template;
+		protected HashMap<String, Class<?>> classes;
 
 		RoutineLoader() {
 			classPool = ClassPool.getDefault();
 			template = new Template(ROUTINE_TEMPLATE);
+			classes = new HashMap<String, Class<?>>();
 		}
 
-		CallRoutine getOrCreate(String name, Method m) {
+		protected Class<?> findClass(String name) throws ClassNotFoundException {
+			if (classes.containsKey(name))
+				return classes.get(name);
+			throw new ClassNotFoundException();
+		}
+
+		synchronized CallRoutine getOrCreate(String name, Method m) {
 			String routineName = "Routine_" + m.getDeclaringClass().getName()
 					+ "_" + name;
 			routineName = routineName.replaceAll("[^\\w\\d_]", "_");
@@ -146,9 +154,13 @@ public class BodyMap {
 				StringBuilder args = new StringBuilder();
 
 				if (params != null) {
-					for (int i = 0; i < params.length; i++)
-						args.append(String.format("%s(%s) args[%d]",
-								i > 0 ? ", " : "", params[i].getName(), i));
+					for (int i = 0; i < params.length; i++) {
+						String sep = i > 0 ? ", " : "";
+						String type = params[i].getName();
+
+						args.append(String.format("%s(%s) args[%d]", sep, type,
+								i));
+					}
 				}
 
 				env.put("args", args.toString());
@@ -162,13 +174,19 @@ public class BodyMap {
 
 				byte[] data = cc.toBytecode();
 				Class<?> cls = defineClass(routineName, data, 0, data.length);
+				classes.put(routineName, cls);
 
 				Console.info("create routine \"%s\"", routineName);
 
-				return (CallRoutine) cls.newInstance();
+				try {
+					return (CallRoutine) cls.newInstance();
+				} catch (VerifyError e) {
+					throw new Exception(e);
+				}
 			} catch (Exception e) {
 				Console.exception(e);
-				Console.warning("failed to compil routine, create a reflect routine");
+				Console
+						.warning("failed to compil routine, create a reflect routine");
 				return new ReflectRoutine(m);
 			}
 		}

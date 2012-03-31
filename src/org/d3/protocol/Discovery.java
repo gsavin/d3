@@ -174,14 +174,14 @@ public class Discovery extends Protocol implements StepActor {
 	public Discovery(NetworkInterface networkInterface) throws IOException {
 		this(Utils.createSocketAddress(networkInterface, discoveryPort, true));
 	}
-	
+
 	public Discovery(int port) throws IOException {
 		this(new InetSocketAddress(port));
 	}
-	
+
 	public Discovery(InetSocketAddress isa) throws IOException {
 		super("discovery", Integer.toString(isa.getPort()), isa);
-		
+
 		templates = new EnumMap<MessageType, Template>(MessageType.class);
 		templates.put(MessageType.AGENCY_AT, new Template(
 				DISCOVERY_MESSAGE_TEMPLATE));
@@ -298,24 +298,25 @@ public class Discovery extends Protocol implements StepActor {
 				}
 
 				if (!Agency.getLocalAgencyId().equals(env.get("id"))) {
-					
+
 					String id = env.get("id");
 					String straddress = env.get("address");
 					String protocols = env.get("protocols");
 					String digest = env.get("digest");
 
 					HostAddress address;
-					
+
 					try {
-						address = HostAddress.getByName(straddress);//.getByInetAddress(from);
-					} catch(UnknownHostException e) {
-						Console.error("failed to retrieve address : %s",straddress);
+						address = HostAddress.getByName(straddress);// .getByInetAddress(from);
+					} catch (UnknownHostException e) {
+						Console.error("failed to retrieve address : %s",
+								straddress);
 						return;
 					}
-					
+
 					RemoteHost host = null;
-					
-					//Console.warning("from : %s", address);
+
+					// Console.warning("from : %s", address);
 
 					try {
 						host = Agency.getLocalAgency().getRemoteHosts()
@@ -323,7 +324,13 @@ public class Discovery extends Protocol implements StepActor {
 					} catch (HostNotFoundException e) {
 						Future f = (Future) Agency.getLocalAgency().call(
 								"registerNewHost", address);
-						f.waitForValue();
+
+						try {
+							f.waitForValue();
+						} catch (InterruptedException ie) {
+							if (!f.isAvailable())
+								return;
+						}
 
 						try {
 							host = f.get();
@@ -350,13 +357,21 @@ public class Discovery extends Protocol implements StepActor {
 
 						Future f = (Future) Agency.getLocalAgency().call(
 								"registerNewAgency", host, id);
-						f.waitForValue();
 
 						try {
-							remote = f.get();
-						} catch (CallException e1) {
-							Console.exception(e1);
-							return;
+							f.waitForValue();
+						} catch (InterruptedException ie) {
+							if (!f.isAvailable())
+								return;
+						}
+
+						if (!Thread.interrupted()) {
+							try {
+								remote = f.get();
+							} catch (CallException e1) {
+								Console.exception(e1);
+								return;
+							}
 						}
 					}
 

@@ -79,6 +79,11 @@ public class HostAddress {
 		return false;
 	}
 
+	public boolean isLocal() {
+		return address.isAnyLocalAddress() || address.isLoopbackAddress()
+				|| address.isSiteLocalAddress() || address.isLinkLocalAddress();
+	}
+
 	private static class AddressCache extends Cache<String, InetAddress> {
 		AddressCache(int capacity) {
 			super(capacity);

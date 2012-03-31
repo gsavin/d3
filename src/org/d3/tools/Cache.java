@@ -39,22 +39,37 @@ public abstract class Cache<K, V> {
 	public V get(K key) throws CacheCreationException {
 		V value = null;
 
+		CacheCreationException cce = null;
+
 		try {
 			lock();
 
 			int index = availables.indexOf(key);
 
-			if (index < 0)
+			if (index < 0) {
 				index = create(key);
+
+				if (index < 0)
+					return null;
+			}
 
 			moveToTop(index);
 
 			value = data.get(key);
+		} catch (CacheCreationException e) {
+			cce = e;
 		} finally {
 			unlock();
 		}
 
+		if (cce != null)
+			throw cce;
+
 		return value;
+	}
+
+	public boolean has(K key) {
+		return availables.contains(key);
 	}
 
 	private void moveToTop(int index) {
@@ -64,18 +79,31 @@ public abstract class Cache<K, V> {
 		}
 	}
 
-	protected abstract V createObject(K key) throws CacheCreationException;
-	
-	private int create(K key) throws CacheCreationException {
-		V value = createObject(key);
-		
+	public int put(K key, V value) {
+		int index;
+		lock();
+
 		while (availables.size() >= capacity)
 			pop();
 
 		availables.add(key);
 		data.put(key, value);
 
-		return availables.size() - 1;
+		index = availables.size() - 1;
+
+		unlock();
+		return index;
+	}
+
+	protected abstract V createObject(K key) throws CacheCreationException;
+
+	private int create(K key) throws CacheCreationException {
+		V value = createObject(key);
+		
+		if (value == null)
+			return -1;
+
+		return put(key, value);
 	}
 
 	private void pop() {

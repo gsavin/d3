@@ -20,7 +20,27 @@ package org.d3.actor;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This define actors executing step. When body of such actors is started, a
+ * special 'step' action is put on the queue and is called after delay given by
+ * {@link #getStepDelay(TimeUnit)} has been reached. When the step is executed,
+ * a new special 'step' action is enqueued.
+ * 
+ * @author Guilhelm Savin
+ * 
+ */
 public interface StepActor {
+	/**
+	 * Delay until next step. Delay not has to be the same between all the step
+	 * since executor get the delay at each step.
+	 * 
+	 * @param unit
+	 * @return
+	 */
 	long getStepDelay(TimeUnit unit);
+
+	/**
+	 * Code to execute at each step.
+	 */
 	void step();
 }

@@ -29,22 +29,23 @@ import org.d3.actor.Agency.Argument;
 public class Features {
 	public static void init() {
 		Agency.getLocalAgency().checkBodyThreadAccess();
-		
-		String protocolsToLoad = Agency.getArg(Argument.FEATURES.key);
 
-		if (protocolsToLoad != null) {
-			Pattern protocol = Pattern
-					.compile("(@?[a-zA-Z0-9_]+(?:[.][a-zA-Z0-9_]+)*)\\(\\)");
-			Matcher protocols = protocol.matcher(protocolsToLoad);
+		String featuresToLoad = Agency.getArg(Argument.FEATURES.key);
 
-			while (protocols.find()) {
-				String cls = protocols.group(1);
+		if (featuresToLoad != null) {
+			Pattern feature = Pattern
+					.compile("(@?[a-zA-Z0-9_]+(?:[.][a-zA-Z0-9_]+)*)\\(([^\\)]+)?\\)");
+			Matcher features = feature.matcher(featuresToLoad);
+
+			while (features.find()) {
+				String cls = features.group(1);
+				String fid = features.group(2);
 
 				cls = cls.replace("@", Features.class.getPackage().getName()
 						+ ".");
 
 				try {
-					enableFeature(cls);
+					enableFeature(cls, fid);
 				} catch (BadFeatureException e) {
 					Console.exception(e);
 				}
@@ -52,25 +53,36 @@ public class Features {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	public static void enableFeature(String classname)
 			throws BadFeatureException {
+		enableFeature(classname, null);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static void enableFeature(String classname, String featureId)
+			throws BadFeatureException {
 		Class<? extends Feature> cls;
-		
+
 		try {
 			cls = (Class<? extends Feature>) Class.forName(classname);
-			
-			Feature f = cls.newInstance();
+
+			Feature f;
+
+			if (featureId == null)
+				f = cls.newInstance();
+			else
+				f = cls.getConstructor(String.class).newInstance(featureId);
+
 			f.init();
 		} catch (Exception e) {
 			throw new BadFeatureException(e);
 		}
 	}
-	
+
 	public Features() {
-		
+
 	}
-	
+
 	public void register(Feature f) {
 		f.checkBodyThreadAccess();
 	}

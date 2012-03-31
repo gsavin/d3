@@ -46,17 +46,25 @@ public class RemoteActor extends Actor {
 		// XXX
 	}
 
-	public Object call(String name, Object... args) {
-		Call call = new Call(this, name, args);
-		
+	private void doCall(Call call) {
 		try {
 			RemotePort rp = remoteAgency.getRandomRemotePortTransmittable();
 			Transmitter t = (Transmitter) rp.getCompatibleProtocol();
 			
 			t.transmit(rp, call);
 		} catch (NoRemotePortAvailableException e) {
-			return e;
+			call.getFuture().init(new CallException(e));
 		}
+	}
+	
+	public void call(String name, Future future, Object ... args) {
+		Call call = new Call(this, name, future, args);
+		doCall(call);
+	}
+	
+	public Object call(String name, Object... args) {
+		Call call = new Call(this, name, args);
+		doCall(call);
 		
 		return call.getFuture();
 	}

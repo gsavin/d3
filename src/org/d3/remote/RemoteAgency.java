@@ -25,12 +25,14 @@ import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 
+import org.d3.ActorNotFoundException;
 import org.d3.Console;
 import org.d3.HostAddress;
 import org.d3.RegistrationException;
 import org.d3.actor.Agency;
 import org.d3.actor.RemoteActor;
 import org.d3.protocol.Protocols;
+import org.d3.tools.CacheCreationException;
 
 public class RemoteAgency {
 	protected final ConcurrentHashMap<Integer, RemotePort> ports;
@@ -74,6 +76,35 @@ public class RemoteAgency {
 		return remoteHost;
 	}
 
+	/**
+	 * Get a remote actor hosted by this remote agency.
+	 * 
+	 * @param path
+	 *            path to the actor (with no agencyId).
+	 * @return a remote actor if existed
+	 */
+	public RemoteActor getRemoteActor(String path)
+			throws ActorNotFoundException {
+		String uriStr = String.format("//%s/%s/%s", remoteHost.getAddress()
+				.getHost(), id, path);
+
+		URI uri;
+
+		try {
+			uri = new URI(uriStr);
+		} catch (URISyntaxException e) {
+			throw new ActorNotFoundException(e);
+		}
+
+		try {
+			return Agency.getLocalAgency().getRemoteActors().get(uri);
+		} catch (CacheCreationException e) {
+			Console.exception(e);
+		}
+		
+		throw new ActorNotFoundException();
+	}
+
 	public String getId() {
 		return id;
 	}
@@ -91,7 +122,7 @@ public class RemoteAgency {
 
 		LinkedList<String> schemes = new LinkedList<String>();
 		LinkedList<Integer> ports = new LinkedList<Integer>();
-
+		
 		while (m.find()) {
 			String scheme = m.group(Protocols.PROTOCOL_EXPORT_PATTERN_SCHEME);
 			int port = Integer.parseInt(m

@@ -40,7 +40,7 @@ public class ApplicationLauncher
 				(Class<? extends Application>)Class.forName(appname);
 			
 			Application app = cls.newInstance();
-			Agency.getLocalAgency().launch(app);
+			Agency.getLocalAgency().register(app);
 		}
 		catch( Exception e )
 		{
