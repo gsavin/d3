@@ -39,9 +39,39 @@ public class Console {
 	public static final int LOG_LEVEL_INFO_2 = 3;
 	public static final int LOG_LEVEL_INFO_3 = 4;
 
+	public static enum LogLevel {
+		ERROR, WARNING, INFO
+	}
+
 	protected static PrintStream out = System.out;
 	protected static int logLevel = 2;
 	protected static boolean enableColor = true;
+	protected static boolean printExceptionStack = true;
+
+	public static void init(Args args) {
+		if (args.has("level")) {
+			if (args.get("level").matches("^\\d+$"))
+				logLevel = args.getInteger("level");
+			else {
+				LogLevel lv = LogLevel.valueOf(args.get("level").toUpperCase());
+				logLevel = lv.ordinal();
+			}
+		}
+
+		if (args.has("coloring"))
+			enableColor = args.getBoolean("coloring");
+
+		if (args.has("exception.print_stack"))
+			printExceptionStack = args.getBoolean("exception.print_stack");
+	}
+
+	public static void setLogLevel(int level) {
+		logLevel = level;
+	}
+
+	public static void setColoring(boolean on) {
+		enableColor = on;
+	}
 
 	public static synchronized void log(int level, String message,
 			Object... args) {
@@ -62,7 +92,7 @@ public class Console {
 	}
 
 	public static void info(String message, Object... args) {
-		log(LOG_LEVEL_WARNING, "%s%s%s%s%n", enableColor ? VERT : "",
+		log(LOG_LEVEL_INFO_1, "%s%s%s%s%n", enableColor ? VERT : "",
 				getHeader(), String.format(message, args), enableColor ? RESET
 						: "");
 	}
@@ -73,23 +103,16 @@ public class Console {
 		else
 			error("%s: %s", e.getClass().getName(), e.getMessage());
 
-		e.printStackTrace();
+		if (printExceptionStack)
+			e.printStackTrace();
 	}
 
 	protected static String getHeader() {
 		Actor actor = ActorThread.getCurrentActor();
+
 		if (actor != null)
 			return String.format("[%s] ", actor.getFullPath());
 		else
 			return "";
-		// Throwable t = new Throwable();
-		// StackTraceElement ste = t.getStackTrace() [1];
-		// String cls;
-		//
-		// if( ste.getClassName().indexOf('.') > 0 )
-		// cls =
-		// ste.getClassName().substring(ste.getClassName().lastIndexOf('.')+1);
-		// else
-		// cls = ste.getClassName();
 	}
 }

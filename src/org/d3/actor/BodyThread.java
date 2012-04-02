@@ -21,6 +21,7 @@ package org.d3.actor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import org.d3.Console;
 import org.d3.actor.body.BodyQueue;
 import org.d3.tools.AtomicState;
 
@@ -215,9 +216,9 @@ public class BodyThread extends ActorThread {
 
 		if (owner instanceof StepActor) {
 			StepActor sa = (StepActor) owner;
-			SpecialActionTask sat = new SpecialActionTask(
-					sa.getStepDelay(TimeUnit.NANOSECONDS),
-					TimeUnit.NANOSECONDS, SpecialAction.STEP);
+			SpecialActionTask sat = new SpecialActionTask(sa
+					.getStepDelay(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS,
+					SpecialAction.STEP);
 
 			queue.add(sat);
 		}
@@ -247,7 +248,7 @@ public class BodyThread extends ActorThread {
 					executeCall(c);
 				} else if (current instanceof SpecialActionTask) {
 					SpecialActionTask sat = (SpecialActionTask) current;
-					
+
 					switch (sat.action) {
 					case MIGRATE:
 						specialActionMigrate(sat);
@@ -291,6 +292,10 @@ public class BodyThread extends ActorThread {
 		try {
 			Object r = owner.call(c.getName(), c.getArgs());
 			c.getFuture().init(r);
+
+			if (r instanceof CallException)
+				Console.warning("execution of '%s' failed : %s", c.getName(),
+						((Exception) r).getMessage());
 		} catch (Exception e) {
 			c.getFuture().init(new CallException(e));
 		}

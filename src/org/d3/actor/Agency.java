@@ -77,7 +77,7 @@ public class Agency extends LocalActor implements
 	private static String localAgencyId;
 	private static Args localArgs;
 	private static HostAddress localHost;
-	
+
 	public static String getArg(String key) {
 		return localArgs.get(key);
 	}
@@ -92,13 +92,15 @@ public class Agency extends LocalActor implements
 
 	public static void enableAgency(Args args) {
 		if (localAgency == null) {
+			Console.init(args.getArgs("console"));
+
 			if (!(System.getSecurityManager() instanceof D3SecurityManager))
 				System.setSecurityManager(new D3SecurityManager());
 
 			SecureRandom random = new SecureRandom();
 
-			localAgencyId = String.format("%x%x", System.nanoTime(),
-					random.nextLong());
+			localAgencyId = String.format("%x%x", System.nanoTime(), random
+					.nextLong());
 
 			localArgs = args;
 
@@ -201,12 +203,12 @@ public class Agency extends LocalActor implements
 				port = MigrationProtocol.DEFAULT_PORT;
 
 			String ifname;
-			
-			if(localArgs.has("system.net.interface"))
+
+			if (localArgs.has("system.net.interface"))
 				ifname = localArgs.get("system.net.interface");
 			else
 				ifname = null;
-			
+
 			try {
 				Protocols.enableProtocol(MigrationProtocol.class.getName(),
 						ifname, port);

@@ -30,6 +30,8 @@ import javassist.CtMethod;
 import org.d3.Console;
 import org.d3.actor.LocalActor;
 import org.d3.annotation.Callable;
+import org.d3.annotation.Direct;
+import org.d3.annotation.Local;
 import org.d3.template.Template;
 
 public class BodyMap {
@@ -65,10 +67,15 @@ public class BodyMap {
 
 	private static RoutineLoader loader = new RoutineLoader();
 
-	protected HashMap<String, CallRoutine> callables;
+	protected final HashMap<String, CallRoutine> callables;
+
+	protected final HashMap<String, Boolean> direct;
+	protected final HashMap<String, Boolean> local;
 
 	public BodyMap(Class<? extends LocalActor> clazz) {
 		callables = new HashMap<String, CallRoutine>();
+		direct = new HashMap<String, Boolean>();
+		local = new HashMap<String, Boolean>();
 
 		Class<?> cls = clazz;
 		long m1, m2;
@@ -87,6 +94,9 @@ public class BodyMap {
 						} else {
 							create(name, m);
 						}
+
+						direct.put(name, m.getAnnotation(Direct.class) != null);
+						local.put(name, m.getAnnotation(Local.class) != null);
 					}
 				}
 			}
@@ -108,6 +118,14 @@ public class BodyMap {
 		return callables.containsKey(name);
 	}
 
+	public boolean isDirect(String name) {
+		return direct.get(name);
+	}
+
+	public boolean isLocal(String name) {
+		return local.get(name);
+	}
+
 	public Object invoke(LocalActor obj, String name, Object... args)
 			throws IllegalArgumentException, IllegalAccessException,
 			InvocationTargetException {
@@ -117,14 +135,18 @@ public class BodyMap {
 	private static final String ROUTINE_TEMPLATE = "public Object call(Object target, Object [] args) {"
 			+ " return (({%class%}) target).{%name%}({%args%}); }";
 
+	private static final String ROUTINE_VOID_TEMPLATE = "public Object call(Object target, Object [] args) {"
+			+ " (({%class%}) target).{%name%}({%args%}); return Boolean.TRUE; }";
+
 	private static class RoutineLoader extends ClassLoader {
 		protected ClassPool classPool;
-		protected Template template;
+		protected Template template, templateVoid;
 		protected HashMap<String, Class<?>> classes;
 
 		RoutineLoader() {
 			classPool = ClassPool.getDefault();
 			template = new Template(ROUTINE_TEMPLATE);
+			templateVoid = new Template(ROUTINE_VOID_TEMPLATE);
 			classes = new HashMap<String, Class<?>>();
 		}
 
@@ -165,7 +187,12 @@ public class BodyMap {
 
 				env.put("args", args.toString());
 
-				String code = template.toString(env);
+				String code;
+
+				if (m.getReturnType().equals(Void.TYPE))
+					code = templateVoid.toString(env);
+				else
+					code = template.toString(env);
 
 				CtClass cc = classPool.makeClass(routineName);
 				cc.addInterface(classPool.get(CallRoutine.class.getName()));

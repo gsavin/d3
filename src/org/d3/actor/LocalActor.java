@@ -68,10 +68,10 @@ public abstract class LocalActor extends Actor {
 	public void init() {
 		if (!bodyThread.isAlive())
 			bodyThread.start();
-		
+
 		try {
 			bodyThread.waitUntilBodyReady();
-		} catch(InterruptedException e) {
+		} catch (InterruptedException e) {
 			// TODO Handling this exception
 			e.printStackTrace();
 		}
@@ -84,11 +84,11 @@ public abstract class LocalActor extends Actor {
 	public final boolean isAlive() {
 		return bodyThread.isAlive();
 	}
-	
+
 	void migrate() {
 		if (!(this instanceof Entity))
 			throw new SecurityException();
-		
+
 		bodyThread.migrate();
 	}
 
@@ -119,7 +119,7 @@ public abstract class LocalActor extends Actor {
 	public Throwable getTerminationCause() {
 		return bodyThread.getStopCause();
 	}
-	
+
 	public final void checkActorThreadAccess() {
 		if (Thread.currentThread() instanceof ActorThread) {
 			if (((ActorThread) Thread.currentThread()).getOwner() != this)
@@ -128,7 +128,7 @@ public abstract class LocalActor extends Actor {
 			throw new SecurityException();
 	}
 
-	private Object directCall(String name, Object ... args ) {
+	private Object directCall(String name, Object... args) {
 		if (!bodyMap.has(name))
 			return new CallableNotFoundException(name);
 
@@ -138,7 +138,7 @@ public abstract class LocalActor extends Actor {
 			return new CallException(e);
 		}
 	}
-	
+
 	/**
 	 * Enqueue a call in the body queue.
 	 * 
@@ -147,13 +147,17 @@ public abstract class LocalActor extends Actor {
 	protected void call(Call c) {
 		bodyThread.enqueue(c);
 	}
-	
-	public void call(String name, Future future, Object ... args) {
-		if (bodyThread.isOwner()) {
-			Object o = directCall(name, args);
-			future.init(o);
-		} else {
-			bodyThread.enqueue(name, future, args);
+
+	public void call(String name, Future future, Object... args) {
+		if (bodyMap.isLocal(name) && ActorThread.getCurrentActor().isRemote())
+			future.init(new CallException(new LocalCallableException()));
+		else {
+			if (bodyThread.isOwner() || bodyMap.isDirect(name)) {
+				Object o = directCall(name, args);
+				future.init(o);
+			} else {
+				bodyThread.enqueue(name, future, args);
+			}
 		}
 	}
 
@@ -171,11 +175,15 @@ public abstract class LocalActor extends Actor {
 	 * @return result of the invocation if in body thread, a future else.
 	 */
 	public Object call(String name, Object... args) {
-		if (bodyThread.isOwner()) {
-			return directCall(name, args);
-		} else {
-			Future f = bodyThread.enqueue(name, args);
-			return f;
+		if (bodyMap.isLocal(name) && ActorThread.getCurrentActor().isRemote())
+			return new CallException(new LocalCallableException());
+		else {
+			if (bodyThread.isOwner()) {
+				return directCall(name, args);
+			} else {
+				Future f = bodyThread.enqueue(name, args);
+				return f;
+			}
 		}
 	}
 

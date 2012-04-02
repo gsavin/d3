@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 
+import org.d3.actor.CallException;
 import org.d3.actor.Future;
 
 public class FutureGroup implements Iterable<Future> {
@@ -69,6 +70,11 @@ public class FutureGroup implements Iterable<Future> {
 		} else {
 			latch.await();
 		}
+	}
+	
+	public void check() throws CallException, InterruptedException {
+		for (int i = 0; i < futures.size(); i++)
+			futures.get(i).getValue();
 	}
 	
 	public Iterator<Future> iterator() {
