@@ -33,7 +33,7 @@ public class BindTest extends Feature implements Bindable {
 
 	public <K extends Enum<K>> void trigger(K event, Object... data) {
 		if (AgencyEvents.class.isAssignableFrom(event.getClass())) {
-			AgencyEvents aEvent = (AgencyEvents) event;
+			AgencyEvents aEvent = AgencyEvents.class.cast(event);
 			Console.info("agency event: %s, %s", aEvent, data[0]);
 		}
 	}

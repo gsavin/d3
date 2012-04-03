@@ -79,7 +79,7 @@ public class RemoteActorLister extends Feature implements Bindable, StepActor {
 
 	public <K extends Enum<K>> void trigger(K event, Object... data) {
 		if (RemoteEvent.class.isAssignableFrom(event.getClass())) {
-			RemoteEvent revent = (RemoteEvent) event;
+			RemoteEvent revent = RemoteEvent.class.cast(event);
 			switch (revent) {
 			case REMOTE_AGENCY_REGISTERED:
 				agencies.add((RemoteAgency) data[0]);

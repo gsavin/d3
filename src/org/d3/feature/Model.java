@@ -225,7 +225,7 @@ public class Model extends Feature implements StepActor, Bindable {
 
 	public <K extends Enum<K>> void trigger(K event, Object... data) {
 		if (ActorsEvent.class.isAssignableFrom(event.getClass())) {
-			ActorsEvent aEvent = (ActorsEvent) event;
+			ActorsEvent aEvent = ActorsEvent.class.cast(event);
 
 			switch (aEvent) {
 			case ACTOR_REGISTERED: {
