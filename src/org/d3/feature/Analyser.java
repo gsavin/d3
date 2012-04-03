@@ -43,7 +43,7 @@ public class Analyser extends Feature implements Bindable {
 	}
 
 	public <K extends Enum<K>> void trigger(K event, Object... data) {
-		if(event instanceof ActorsEvent) {
+		if(ActorsEvent.class.isAssignableFrom(event.getClass())) {
 			ActorsEvent aEvent = (ActorsEvent) event;
 			
 			switch(aEvent) {

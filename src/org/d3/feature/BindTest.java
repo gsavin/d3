@@ -30,9 +30,9 @@ public class BindTest extends Feature implements Bindable {
 	public BindTest() {
 		super("test");
 	}
-	
-	public <K extends Enum<K>> void trigger(K event, Object ... data) {
-		if(event instanceof AgencyEvents) {
+
+	public <K extends Enum<K>> void trigger(K event, Object... data) {
+		if (AgencyEvents.class.isAssignableFrom(event.getClass())) {
 			AgencyEvents aEvent = (AgencyEvents) event;
 			Console.info("agency event: %s, %s", aEvent, data[0]);
 		}
@@ -41,7 +41,7 @@ public class BindTest extends Feature implements Bindable {
 	public void initFeature() {
 		try {
 			Agency.getLocalAgency().getEventDispatcher().bind();
-		} catch(NonBindableActorException e) {
+		} catch (NonBindableActorException e) {
 		}
 	}
 }

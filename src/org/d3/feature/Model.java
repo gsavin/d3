@@ -82,7 +82,8 @@ public class Model extends Feature implements StepActor, Bindable {
 	public void initFeature() {
 		Args args = Agency.getActorArgs(this);
 
-		model = Graphs.synchronizedGraph(new AdjacencyListGraph(getId(), false, true));
+		model = Graphs.synchronizedGraph(new AdjacencyListGraph(getId(), false,
+				true));
 		model.addAttribute("ui.stylesheet", defaultStyleSheet);
 		model.addAttribute("ui.quality");
 		model.addAttribute("ui.antialias");
@@ -120,8 +121,8 @@ public class Model extends Feature implements StepActor, Bindable {
 		} catch (NonBindableActorException e) {
 			Console.exception(e);
 		}
-		
-		for(LocalActor actor: Agency.getLocalAgency().getActors())
+
+		for (LocalActor actor : Agency.getLocalAgency().getActors())
 			createNode(actor);
 	}
 
@@ -134,13 +135,12 @@ public class Model extends Feature implements StepActor, Bindable {
 
 				viewer = new Viewer(pipe);
 				viewer.setCloseFramePolicy(CloseFramePolicy.CLOSE_VIEWER);
-				
+
 				DefaultView view = new ResizableView(viewer,
 						Viewer.DEFAULT_VIEW_ID, Viewer.newGraphRenderer());
 
 				viewer.addView(view);
 				view.openInAFrame(true);
-				
 
 				if (autolayout) {
 					Layout layout = Layouts.newLayoutAlgorithm();
@@ -185,9 +185,8 @@ public class Model extends Feature implements StepActor, Bindable {
 		edge = sourceNode.getEdgeToward(targetNode.getId());
 
 		if (edge == null) {
-			edge = model.addEdge(
-					String.format("%s--%s", sourceNode.getId(),
-							targetNode.getId()), sourceNode.getId(),
+			edge = model.addEdge(String.format("%s--%s", sourceNode.getId(),
+					targetNode.getId()), sourceNode.getId(),
 					targetNode.getId(), true);
 			edge.addAttribute("weight", 1);
 		} else {
@@ -225,7 +224,7 @@ public class Model extends Feature implements StepActor, Bindable {
 	}
 
 	public <K extends Enum<K>> void trigger(K event, Object... data) {
-		if (event instanceof ActorsEvent) {
+		if (ActorsEvent.class.isAssignableFrom(event.getClass())) {
 			ActorsEvent aEvent = (ActorsEvent) event;
 
 			switch (aEvent) {
