@@ -19,6 +19,7 @@
 package org.d3;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -60,6 +61,11 @@ public class Args {
 		}
 	}
 
+	public String get(String key, String def) {
+		String s = get(key);
+		return s == null ? def : s;
+	}
+
 	public String get(String key) {
 		if (key.indexOf('.') != -1) {
 			String sub = key.substring(0, key.indexOf('.'));
@@ -74,18 +80,40 @@ public class Args {
 		}
 	}
 
+	public Boolean getBoolean(String key, boolean def) {
+		Boolean b = getBoolean(key);
+		return b == null ? def : b;
+	}
+
 	public Boolean getBoolean(String key) {
 		String s = get(key);
+
+		if (s == null)
+			return null;
+
 		return Boolean.valueOf(s);
+	}
+
+	public Integer getInteger(String key, int def) {
+		Integer i = getInteger(key);
+		return i == null ? def : i;
 	}
 
 	public Integer getInteger(String key) {
 		String s = get(key);
+
+		if (s == null)
+			return null;
+
 		return Integer.valueOf(s);
 	}
 
 	public Time getTime(String key) {
 		String s = get(key);
+
+		if (s == null)
+			return null;
+
 		return Time.valueOf(s);
 	}
 
@@ -179,6 +207,7 @@ public class Args {
 	public static Args processFile(Args args, String url) {
 		BufferedReader in;
 		URL u = ClassLoader.getSystemResource(url);
+		boolean file = false;
 
 		if (u != null) {
 			try {
@@ -189,6 +218,7 @@ public class Args {
 		} else {
 			try {
 				in = new BufferedReader(new FileReader(url));
+				file = true;
 			} catch (FileNotFoundException e) {
 				in = null;
 			}
@@ -202,7 +232,23 @@ public class Args {
 				while (in.ready()) {
 					line = in.readLine().trim();
 
-					if (!line.startsWith("#") && line.length() > 0) {
+					if (line.startsWith("@input")) {
+						String input = line.substring("@input".length() + 1)
+								.trim();
+						File fInput = new File(input);
+
+						if (!fInput.isAbsolute() && file) {
+							File sourceFile = new File(url);
+							String input2 = sourceFile.getParent()
+									+ File.separator + input;
+
+							Console.warning("'%s' resolves as '%s'", input,
+									input2);
+							input = input2;
+						}
+
+						args = processFile(args, input);
+					} else if (!line.startsWith("#") && line.length() > 0) {
 						Matcher m = p.matcher(line);
 
 						if (m.matches()) {
@@ -218,6 +264,8 @@ public class Args {
 									.printf("[args] invalid line: %s%n", line);
 					}
 				}
+
+				in.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

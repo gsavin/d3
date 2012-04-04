@@ -62,6 +62,13 @@ import org.d3.tools.Utils;
 @ActorPath("/")
 public class Agency extends LocalActor implements
 		EventDispatchable<AgencyEvents> {
+
+	public static final String CALLABLE_REGISTER_NEW_HOST = "register.host";
+	public static final String CALLABLE_REGISTER_NEW_AGENCY = "register.agency";
+	public static final String CALLABLE_UNREGISTER_AGENCY = "unregister.agency";
+	public static final String CALLABLE_GET_DIGEST = "agency.digest";
+	public static final String CALLABLE_ACTORS_LIST = "actors.list";
+
 	public static enum Argument {
 		PROTOCOLS("protocols"), FEATURES("features"), DEFAULT_CHARSET(
 				"system.cs.default");
@@ -105,9 +112,9 @@ public class Agency extends LocalActor implements
 			localArgs = args;
 
 			try {
-				String ifname = localArgs.get("system.net.interface");
+				String ifname = localArgs.get("system.net.interface", "etho");
 				InetAddress address;
-				boolean inet6 = localArgs.getBoolean("system.net.inet6");
+				boolean inet6 = localArgs.getBoolean("system.net.inet6", true);
 
 				if (ifname == null)
 					address = InetAddress.getLocalHost();
@@ -194,7 +201,7 @@ public class Agency extends LocalActor implements
 		Protocols.init();
 		Features.init();
 
-		if (localArgs.getBoolean("system.entity.migration")) {
+		if (localArgs.getBoolean("system.entity.migration", false)) {
 			int port;
 
 			if (localArgs.has("system.entity.migration.port"))
@@ -300,7 +307,7 @@ public class Agency extends LocalActor implements
 		return eventDispatcher;
 	}
 
-	@Callable("registerNewHost")
+	@Callable(CALLABLE_REGISTER_NEW_HOST)
 	public RemoteHost registerNewHost(HostAddress host) {
 		RemoteHost remoteHost;
 
@@ -313,7 +320,7 @@ public class Agency extends LocalActor implements
 		return remoteHost;
 	}
 
-	@Callable("registerNewAgency")
+	@Callable(CALLABLE_REGISTER_NEW_AGENCY)
 	public RemoteAgency registerNewAgency(RemoteHost host, String id) {
 		RemoteAgency remoteAgency;
 
@@ -326,12 +333,17 @@ public class Agency extends LocalActor implements
 		return remoteAgency;
 	}
 
-	@Callable("getDigest")
+	@Callable(CALLABLE_UNREGISTER_AGENCY)
+	public void unregisterAgency(RemoteAgency remoteAgency) {
+		remoteHosts.unregisterAgency(remoteAgency);
+	}
+
+	@Callable(CALLABLE_GET_DIGEST)
 	public String getDigest() {
 		return actors.getDigest();
 	}
 
-	@Callable("actors_list")
+	@Callable(CALLABLE_ACTORS_LIST)
 	public String[] getActorsList() {
 		return actors.exportActorsPath();
 	}

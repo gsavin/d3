@@ -37,8 +37,8 @@ public class Utils {
 	public static RemotePort getRandomRemotePortFromRemoteAgency(
 			InetAddress address, String agencyId) throws HostNotFoundException,
 			UnknownAgencyException, NoRemotePortAvailableException {
-		RemoteHost rh = Agency.getLocalAgency().getRemoteHosts()
-				.get(HostAddress.getByInetAddress(address));
+		RemoteHost rh = Agency.getLocalAgency().getRemoteHosts().get(
+				HostAddress.getByInetAddress(address));
 		RemoteAgency ra = rh.getRemoteAgency(agencyId);
 		RemotePort rp = ra.getRandomRemotePort();
 
@@ -52,7 +52,7 @@ public class Utils {
 		if (Agency.getArgs().has("system.net.inet6")
 				&& Agency.getArgs().getBoolean("system.net.inet6"))
 			inet6 = true;
-		
+
 		return getAddressForInterface(ifname, inet6);
 	}
 
@@ -86,8 +86,7 @@ public class Utils {
 			InetAddress tmp = enu.nextElement();
 			int l = tmp.getAddress().length;
 
-			if (local == null && !tmp.isLoopbackAddress()
-					&& ((inet6 && l == 16) || (!inet6 && l == 4)))
+			if (local == null && ((inet6 && l == 16) || (!inet6 && l == 4)))
 				local = tmp;
 		}
 

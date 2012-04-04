@@ -39,7 +39,6 @@ import java.util.regex.Pattern;
 import org.d3.Args;
 import org.d3.Console;
 import org.d3.HostAddress;
-import org.d3.actor.ActorInternalException;
 import org.d3.actor.Agency;
 import org.d3.actor.CallException;
 import org.d3.actor.Future;
@@ -193,11 +192,11 @@ public class Discovery extends Protocol implements StepActor {
 		spread = true;
 
 		Args args = Agency.getActorArgs(this);
-		InetAddress address = Utils.getAddressForInterface(
-				args.get("interface"), args.getBoolean("inet6"));
+		InetAddress address = Utils.getAddressForInterface(args
+				.get("interface"), args.getBoolean("inet6"));
 
-		if (address.isLoopbackAddress())
-			throw new ActorInternalException();
+		// if (address.isLoopbackAddress())
+		// throw new ActorInternalException();
 
 		localAddress = address.getHostAddress();
 		createDiscoveryPacket();
@@ -319,11 +318,11 @@ public class Discovery extends Protocol implements StepActor {
 					// Console.warning("from : %s", address);
 
 					try {
-						host = Agency.getLocalAgency().getRemoteHosts()
-								.get(address);
+						host = Agency.getLocalAgency().getRemoteHosts().get(
+								address);
 					} catch (HostNotFoundException e) {
 						Future f = (Future) Agency.getLocalAgency().call(
-								"registerNewHost", address);
+								Agency.CALLABLE_REGISTER_NEW_HOST, address);
 
 						try {
 							f.waitForValue();
@@ -356,7 +355,7 @@ public class Discovery extends Protocol implements StepActor {
 						}
 
 						Future f = (Future) Agency.getLocalAgency().call(
-								"registerNewAgency", host, id);
+								Agency.CALLABLE_REGISTER_NEW_AGENCY, host, id);
 
 						try {
 							f.waitForValue();

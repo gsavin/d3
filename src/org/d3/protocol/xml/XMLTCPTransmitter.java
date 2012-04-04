@@ -41,7 +41,7 @@ public class XMLTCPTransmitter extends XMLTransmitter {
 		channel.configureBlocking(false);
 		channel.socket().bind( socketAddress );
 	}
-
+	
 	protected void write(ByteBuffer data, String host, int port) {
 		InetSocketAddress socket = new InetSocketAddress(host, port);
 		

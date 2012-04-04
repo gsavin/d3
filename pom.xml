@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 	<!--
-		This file is part of GraphStream <http://graphstream-project.org>.
-		GraphStream is a library whose purpose is to handle static or dynamic
-		graph, create them from scratch, file or any source and display them.
+		This file is part of d3 <http://d3-project.org>.
 		This program is free software distributed under the terms of two
 		licenses, the CeCILL-C license that fits European law, and the GNU
 		Lesser General Public License. You can use, modify and/ or
@@ -31,7 +29,7 @@
 	<name>d3</name>
 	<description>
 	</description>
-	<url>http://graphstream-project.org</url>
+	<url>http://d3-project.org</url>
 
 	<scm>
 		<connection>scm:git:git://github.com/gsavin/d3.git</connection>
