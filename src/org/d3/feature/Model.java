@@ -119,7 +119,7 @@ public class Model extends Feature implements StepActor, Bindable {
 		try {
 			Agency.getLocalAgency().getActors().getEventDispatcher().bind();
 		} catch (NonBindableActorException e) {
-			Console.exception(e);
+			Agency.getFaultManager().handle(e, null);
 		}
 
 		for (LocalActor actor : Agency.getLocalAgency().getActors())

@@ -334,7 +334,7 @@ public class Discovery extends Protocol implements StepActor {
 						try {
 							host = f.get();
 						} catch (CallException e1) {
-							Console.exception(e1);
+							Agency.getFaultManager().handle(e1, null);
 							return;
 						}
 					}
@@ -351,7 +351,7 @@ public class Discovery extends Protocol implements StepActor {
 						try {
 							sendDiscoveryPacket();
 						} catch (IOException ioe) {
-							Console.exception(ioe);
+							Agency.getFaultManager().handle(ioe, null);
 						}
 
 						Future f = (Future) Agency.getLocalAgency().call(
@@ -368,16 +368,14 @@ public class Discovery extends Protocol implements StepActor {
 							try {
 								remote = f.get();
 							} catch (CallException e1) {
-								Console.exception(e1);
+								Agency.getFaultManager().handle(e1, null);
 								return;
 							}
 						}
 					}
 
-					if (!remote.getDigest().equals(digest)) {
-						remote.updateDigest(digest);
-						remote.updateProtocols(protocols);
-					}
+					if (!remote.getDigest().equals(digest))
+						remote.update(digest, protocols);
 				}
 			}
 		} else
@@ -394,7 +392,7 @@ public class Discovery extends Protocol implements StepActor {
 		try {
 			sendDiscoveryPacket();
 		} catch (IOException e) {
-			Console.exception(e);
+			Agency.getFaultManager().handle(e, null);
 		}
 	}
 }

@@ -97,7 +97,7 @@ public class Console {
 						: "");
 	}
 
-	public static void exception(Exception e) {
+	public static void exception(Throwable e) {
 		if (e instanceof RuntimeException)
 			warning("%s: %s", e.getClass().getName(), e.getMessage());
 		else

@@ -25,7 +25,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 
-import org.d3.Console;
 import org.d3.annotation.ActorPath;
 import org.d3.protocol.InetProtocol;
 
@@ -34,28 +33,26 @@ import org.d3.protocol.InetProtocol;
 public class XMLTCPTransmitter extends XMLTransmitter {
 	private ServerSocketChannel channel;
 
-	public XMLTCPTransmitter(InetSocketAddress socketAddress) throws IOException {
+	public XMLTCPTransmitter(InetSocketAddress socketAddress)
+			throws IOException {
 		super(Integer.toString(socketAddress.getPort()), socketAddress);
-		
+
 		channel = ServerSocketChannel.open();
 		channel.configureBlocking(false);
-		channel.socket().bind( socketAddress );
+		channel.socket().bind(socketAddress);
 	}
-	
-	protected void write(ByteBuffer data, String host, int port) {
+
+	protected void write(ByteBuffer data, String host, int port)
+			throws IOException {
 		InetSocketAddress socket = new InetSocketAddress(host, port);
-		
-		try {
-			SocketChannel out = SocketChannel.open();
-			out.connect(socket);
-			out.finishConnect();
-			out.write(data);
-			out.close();
-		} catch(IOException e) {
-			Console.exception(e);
-		}
+		SocketChannel out = SocketChannel.open();
+
+		out.connect(socket);
+		out.finishConnect();
+		out.write(data);
+		out.close();
 	}
-	
+
 	public final SelectableChannel getChannel() {
 		return channel;
 	}

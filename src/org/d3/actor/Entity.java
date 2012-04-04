@@ -63,7 +63,7 @@ public class Entity extends LocalActor implements Serializable {
 				Call c = new Call(calls.get(i));
 				call(c);
 			} catch(CallException ce) {
-				Console.exception(ce);
+				Agency.getFaultManager().handle(ce, null);
 			}
 		}
 	}

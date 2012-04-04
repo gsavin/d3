@@ -28,6 +28,7 @@ import javassist.CtClass;
 import javassist.CtMethod;
 
 import org.d3.Console;
+import org.d3.actor.Agency;
 import org.d3.actor.LocalActor;
 import org.d3.annotation.Callable;
 import org.d3.annotation.Direct;
@@ -211,7 +212,7 @@ public class BodyMap {
 					throw new Exception(e);
 				}
 			} catch (Exception e) {
-				Console.exception(e);
+				Agency.getFaultManager().handle(e, null);
 				Console
 						.warning("failed to compil routine, create a reflect routine");
 				return new ReflectRoutine(m);

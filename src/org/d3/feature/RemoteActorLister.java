@@ -66,7 +66,7 @@ public class RemoteActorLister extends Feature implements Bindable, StepActor {
 					}
 
 				} catch (CallException e) {
-					Console.exception(e);
+					Agency.getFaultManager().handle(e, null);
 				}
 			}
 		}

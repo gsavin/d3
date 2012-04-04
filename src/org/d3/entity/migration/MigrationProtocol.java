@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.d3.Console;
+import org.d3.actor.Agency;
 import org.d3.actor.Protocol;
 import org.d3.annotation.ActorPath;
 import org.d3.entity.EntityThread;
@@ -69,7 +70,7 @@ public class MigrationProtocol extends Protocol {
 		try {
 			selector = Selector.open();
 		} catch (IOException e) {
-			Console.exception(e);
+			Agency.getFaultManager().handle(e, null);
 			return;
 		}
 
@@ -126,7 +127,7 @@ public class MigrationProtocol extends Protocol {
 					processSelectionKey(sk);
 				} catch (IOException e) {
 					// TODO
-					Console.exception(e);
+					Agency.getFaultManager().handle(e, null);
 				}
 			}
 		}
@@ -257,7 +258,7 @@ public class MigrationProtocol extends Protocol {
 						pending.remove(((NegociationO) negociation).thread);
 
 					Console.error("error while reading, closing negociation");
-					Console.exception(e);
+					Agency.getFaultManager().handle(e, null);
 				}
 			} else {
 				Console.error("not a negociation");

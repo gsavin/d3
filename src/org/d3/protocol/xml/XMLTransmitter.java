@@ -27,10 +27,11 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 
-import org.d3.Console;
+import org.d3.actor.Agency;
 import org.d3.actor.Protocol;
 import org.d3.protocol.FutureRequest;
 import org.d3.protocol.Request;
+import org.d3.protocol.TransmissionException;
 import org.d3.protocol.Transmitter;
 import org.d3.protocol.xml.parser.XMLRequestHandler;
 import org.d3.protocol.xml.parser.XMLStreamParser;
@@ -91,7 +92,7 @@ public abstract class XMLTransmitter extends Transmitter {
 		return charset.encode(xmlFutureTemplate.toString(env));
 	}
 
-	protected abstract void write(ByteBuffer data, String host, int port);
+	protected abstract void write(ByteBuffer data, String host, int port) throws IOException ;
 
 	public void close(Channel ch) {
 		if (parsers.containsKey(ch))
@@ -117,7 +118,7 @@ public abstract class XMLTransmitter extends Transmitter {
 			Charset cs = Charset.defaultCharset();
 			stream.parse(cs.decode(readBuffer));
 		} catch (IOException e) {
-			Console.exception(e);
+			Agency.getFaultManager().handle(e, null);
 		}
 
 		try {
@@ -129,21 +130,31 @@ public abstract class XMLTransmitter extends Transmitter {
 				dispatch(handler.popFutureRequest());
 			}
 		} catch (Exception e) {
-			Console.exception(e);
+			Agency.getFaultManager().handle(e, null);
 		}
 
 		return r;
 	}
 	
-	public void write(Request request) {
+	public void write(Request request) throws TransmissionException {
 		ByteBuffer data = convert(request);
 		URI target = request.getTargetURI();
-		write(data, target.getHost(), target.getPort());
+		
+		try {
+			write(data, target.getHost(), target.getPort());
+		} catch (IOException e) {
+			throw new TransmissionException(e);
+		}
 	}
 	
-	public void write(FutureRequest request) {
+	public void write(FutureRequest request) throws TransmissionException {
 		ByteBuffer data = convert(request);
 		URI target = request.getTarget();
-		write(data, target.getHost(), target.getPort());
+		
+		try {
+			write(data, target.getHost(), target.getPort());
+		} catch (IOException e) {
+			throw new TransmissionException(e);
+		}
 	}
 }

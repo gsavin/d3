@@ -119,7 +119,7 @@ public class Sibler extends Feature implements StepActor {
 				out.flush();
 				out.close();
 			} catch (IOException e) {
-				Console.exception(e);
+				Agency.getFaultManager().handle(e, null);
 			}
 
 			digest = agency.getDigest();
@@ -129,7 +129,7 @@ public class Sibler extends Feature implements StepActor {
 		HashSet<String> remaining = new HashSet<String>(knownAgencies);
 
 		for (int i = 0; i < agencies.length; i++) {
-			if (!agencies[i].equals(agency.getId())) {
+			if (!agencies[i].getName().equals(agency.getId())) {
 				String id, digest, protocols;
 
 				id = agencies[i].getName();
@@ -169,14 +169,14 @@ public class Sibler extends Feature implements StepActor {
 						f.waitForValue();
 					} catch (InterruptedException ie) {
 						if (!f.isAvailable())
-							return;
+							continue;
 					}
 
 					try {
 						host = f.get();
 					} catch (CallException e1) {
-						Console.exception(e1);
-						return;
+						Agency.getFaultManager().handle(e1, null);
+						continue;
 					}
 				}
 
@@ -195,15 +195,15 @@ public class Sibler extends Feature implements StepActor {
 						f.waitForValue();
 					} catch (InterruptedException ie) {
 						if (!f.isAvailable())
-							return;
+							continue;
 					}
 
 					if (!Thread.interrupted()) {
 						try {
 							remote = f.get();
 						} catch (CallException e1) {
-							Console.exception(e1);
-							return;
+							Agency.getFaultManager().handle(e1, null);
+							continue;
 						}
 					}
 				}
@@ -211,8 +211,8 @@ public class Sibler extends Feature implements StepActor {
 				knownAgencies.add(id);
 
 				if (!remote.getDigest().equals(digest)) {
-					remote.updateDigest(digest);
-					remote.updateProtocols(protocols);
+					Console.info("agency digest updated '%s'", id);
+					remote.update(digest, protocols);
 				}
 			}
 		}

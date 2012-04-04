@@ -99,14 +99,24 @@ public class RemoteAgency {
 		try {
 			return Agency.getLocalAgency().getRemoteActors().get(uri);
 		} catch (CacheCreationException e) {
-			Console.exception(e);
+			Agency.getFaultManager().handle(e, null);
 		}
-		
+
 		throw new ActorNotFoundException();
 	}
 
 	public String getId() {
 		return id;
+	}
+
+	public synchronized void update(String digest, String protocols) {
+		this.lastPresenceDate = System.currentTimeMillis();
+
+		updateDigest(digest);
+		updateProtocols(protocols);
+
+		Agency.getLocalAgency().getRemoteHosts().getEventDispatcher().trigger(
+				RemoteEvent.REMOTE_AGENCY_UPDATED, this);
 	}
 
 	public void udpatePresence(long date) {
@@ -122,7 +132,7 @@ public class RemoteAgency {
 
 		LinkedList<String> schemes = new LinkedList<String>();
 		LinkedList<Integer> ports = new LinkedList<Integer>();
-		
+
 		while (m.find()) {
 			String scheme = m.group(Protocols.PROTOCOL_EXPORT_PATTERN_SCHEME);
 			int port = Integer.parseInt(m
@@ -148,7 +158,7 @@ public class RemoteAgency {
 				try {
 					registerPort(ports.get(i), schemes.get(i));
 				} catch (RemotePortException rpe) {
-					Console.exception(rpe);
+					Agency.getFaultManager().handle(rpe, null);
 				}
 			}
 		}
@@ -227,7 +237,7 @@ public class RemoteAgency {
 		try {
 			return Agency.getLocalAgency().getRemoteActors().get(uri);
 		} catch (Exception e) {
-			Console.exception(e);
+			Agency.getFaultManager().handle(e, null);
 			return null;
 		}
 	}

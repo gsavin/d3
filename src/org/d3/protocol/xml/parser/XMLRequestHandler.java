@@ -23,7 +23,7 @@ import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.Stack;
 
-import org.d3.Console;
+import org.d3.actor.Agency;
 import org.d3.protocol.FutureRequest;
 import org.d3.protocol.Request;
 import org.d3.protocol.request.ObjectCoder.CodingMethod;
@@ -54,14 +54,14 @@ public class XMLRequestHandler implements Handler {
 					try {
 						source = new URI(value.trim());
 					} catch (URISyntaxException e) {
-						Console.exception(e);
+						Agency.getFaultManager().handle(e, null);
 					}
 					break;
 				case TARGET:
 					try {
 						target = new URI(value.trim());
 					} catch (URISyntaxException e) {
-						Console.exception(e);
+						Agency.getFaultManager().handle(e, null);
 					}
 					break;
 				case FUTURE:
@@ -106,7 +106,7 @@ public class XMLRequestHandler implements Handler {
 		CodingMethod coding;
 		String value;
 		URI target;
-		
+
 		void add(Component parent, Component c, String value) {
 			switch (parent) {
 			case FUTURE:
@@ -121,7 +121,7 @@ public class XMLRequestHandler implements Handler {
 					try {
 						target = new URI(value.trim());
 					} catch (URISyntaxException e) {
-						Console.exception(e);
+						Agency.getFaultManager().handle(e, null);
 					}
 					break;
 				case _TEXT_:
@@ -212,7 +212,7 @@ public class XMLRequestHandler implements Handler {
 				requestType = RequestType.FUTURE;
 				break;
 			default:
-				
+
 			}
 		}
 

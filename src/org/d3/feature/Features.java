@@ -21,7 +21,6 @@ package org.d3.feature;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.d3.Console;
 import org.d3.actor.Agency;
 import org.d3.actor.Feature;
 import org.d3.actor.Agency.Argument;
@@ -47,7 +46,7 @@ public class Features {
 				try {
 					enableFeature(cls, fid);
 				} catch (BadFeatureException e) {
-					Console.exception(e);
+					Agency.getFaultManager().handle(e, null);
 				}
 			}
 		}

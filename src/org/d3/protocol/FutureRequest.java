@@ -22,8 +22,8 @@ import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import org.d3.Console;
 import org.d3.HostAddress;
+import org.d3.actor.Agency;
 import org.d3.protocol.request.ObjectCoder;
 import org.d3.protocol.request.ObjectCoder.CodingMethod;
 import org.d3.remote.RemotePort;
@@ -53,7 +53,7 @@ public class FutureRequest implements Serializable {
 			this.target = new URI(String.format("%s://%s:%d",
 					remotePort.getScheme(), host, remotePort.getPort()));
 		} catch (URISyntaxException e) {
-			Console.exception(e);
+			Agency.getFaultManager().handle(e, null);
 		}
 	}
 

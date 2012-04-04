@@ -1,5 +1,5 @@
 /*
- * This file is part of d3.
+ * This file is part of d3 <http://d3-project.org>.
  * 
  * d3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,29 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with d3.  If not, see <http://www.gnu.org/licenses/>.
  * 
- * Copyright 2010 Guilhelm Savin
+ * Copyright 2010 - 2011 Guilhelm Savin
  */
-package org.d3.remote;
+package org.d3;
 
-public enum RemoteEvent {
-	/**
-	 * Data : {@link org.d3.remote.RemoteHost}
-	 */
-	REMOTE_HOST_REGISTERED,
-	/**
-	 * Data : {@link org.d3.remote.RemoteHost}
-	 */
-	REMOTE_HOST_UNREGISTERED,
-	/**
-	 * Data : {@link org.d3.remote.RemoteAgency}
-	 */
-	REMOTE_AGENCY_REGISTERED,
-	/**
-	 * Data : {@link org.d3.remote.RemoteAgency}
-	 */
-	REMOTE_AGENCY_UPDATED,
-	/**
-	 * Data : {@link org.d3.remote.RemoteAgency}
-	 */
-	REMOTE_AGENCY_UNREGISTERED
+public interface FaultManager {
+	public static enum FaultPolicy {
+		EXIT, IGNORE, PRINT_AND_SKIP, TRY_REPAIR
+	}
+	
+	void setFaultPolicy(FaultPolicy policy);
+	void handle(Throwable fault, Object context);
 }

@@ -146,7 +146,7 @@ public abstract class Transmitter extends Protocol {
 	 * @param target
 	 * @param r
 	 */
-	public void transmit(RemotePort port, Call c) {
+	public void transmit(RemotePort port, Call c) throws TransmissionException {
 		if (c.getTarget().isRemote()) {
 			// Future f = c.getFuture();
 			// Agency.getLocalAgency().getProtocols().getFutures().register(f);
@@ -157,7 +157,7 @@ public abstract class Transmitter extends Protocol {
 		}
 	}
 
-	public void transmitFuture(RemotePort remote, String futureId, Object value) {
+	public void transmitFuture(RemotePort remote, String futureId, Object value) throws TransmissionException {
 		Console.info("transmitter transmit future");
 		FutureRequest fr = new FutureRequest(futureId, value, remote);
 		write(fr);
@@ -172,7 +172,7 @@ public abstract class Transmitter extends Protocol {
 			address = HostAddress.getByName(target.getHost());
 			// address = InetAddress.getByName(target.getHost());
 		} catch (UnknownHostException e) {
-			Console.exception(e);
+			Agency.getFaultManager().handle(e, null);
 			return;
 		}
 
@@ -238,7 +238,7 @@ public abstract class Transmitter extends Protocol {
 
 	public abstract void close(Channel ch);
 
-	public abstract void write(Request r);
+	public abstract void write(Request r) throws TransmissionException;
 
-	public abstract void write(FutureRequest fr);
+	public abstract void write(FutureRequest fr) throws TransmissionException;
 }

@@ -66,7 +66,7 @@ public class Protocols implements EventDispatchable<ProtocolsEvent> {
 				try {
 					Protocols.enableProtocol(cls, ifname, port);
 				} catch (BadProtocolException e) {
-					Console.exception(e);
+					Agency.getFaultManager().handle(e, null);
 				}
 			}
 		}

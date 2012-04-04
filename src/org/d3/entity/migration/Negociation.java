@@ -26,7 +26,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.d3.Console;
+import org.d3.actor.Agency;
 
 abstract class Negociation {
 
@@ -148,7 +148,7 @@ abstract class Negociation {
 		try {
 			handle(req, data);
 		} catch (Exception e) {
-			Console.exception(e);
+			Agency.getFaultManager().handle(e, null);
 		}
 	}
 
@@ -156,7 +156,7 @@ abstract class Negociation {
 		try {
 			channel.close();
 		} catch (Exception e) {
-			Console.exception(e);
+			Agency.getFaultManager().handle(e, null);
 		}
 	}
 }

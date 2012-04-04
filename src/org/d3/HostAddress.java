@@ -73,6 +73,10 @@ public class HostAddress {
 		return getHost();
 	}
 
+	public int hashCode() {
+		return address.hashCode();
+	}
+
 	public boolean equals(Object obj) {
 		if (obj instanceof HostAddress)
 			return address.equals(((HostAddress) obj).address);

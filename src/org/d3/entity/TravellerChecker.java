@@ -21,6 +21,7 @@ package org.d3.entity;
 import java.util.concurrent.TimeUnit;
 
 import org.d3.Console;
+import org.d3.actor.Agency;
 import org.d3.actor.Entity;
 import org.d3.actor.Future;
 import org.d3.actor.StepActor;
@@ -57,7 +58,7 @@ public class TravellerChecker extends Entity implements StepActor {
 			
 			Console.info("reference has done %d hopes", h);
 		} catch (Exception e) {
-			Console.exception(e);
+			Agency.getFaultManager().handle(e, null);
 		}
 	}
 

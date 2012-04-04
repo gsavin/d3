@@ -26,8 +26,10 @@ import java.util.concurrent.Semaphore;
 import org.d3.Actor;
 import org.d3.Args;
 import org.d3.Console;
+import org.d3.FaultManager;
 import org.d3.HostAddress;
 import org.d3.RegistrationException;
+import org.d3.FaultManager.FaultPolicy;
 import org.d3.agency.AgencyEvents;
 import org.d3.agency.AgencyExitThread;
 import org.d3.agency.IpTables;
@@ -40,6 +42,7 @@ import org.d3.entity.migration.MigrationProtocol;
 import org.d3.events.ActorEventDispatcher;
 import org.d3.events.EventDispatchable;
 import org.d3.events.EventDispatcher;
+import org.d3.fault.DefaultFaultManager;
 import org.d3.feature.Features;
 import org.d3.protocol.BadProtocolException;
 import org.d3.protocol.Protocols;
@@ -84,6 +87,7 @@ public class Agency extends LocalActor implements
 	private static String localAgencyId;
 	private static Args localArgs;
 	private static HostAddress localHost;
+	private static FaultManager faultManager;
 
 	public static String getArg(String key) {
 		return localArgs.get(key);
@@ -97,9 +101,47 @@ public class Agency extends LocalActor implements
 		return localArgs;
 	}
 
+	public static FaultManager getFaultManager() {
+		return faultManager;
+	}
+
+	private static void initFaultManager(Args args) {
+		Throwable initException = null;
+
+		if (args.has("class")) {
+			try {
+				Class<?> cls = Class.forName(args.get("class"));
+				Object obj = cls.newInstance();
+
+				if (obj instanceof FaultManager)
+					faultManager = (FaultManager) obj;
+				else
+					throw new ClassCastException("not a fault manager");
+			} catch (Exception e) {
+				faultManager = new DefaultFaultManager();
+				initException = e;
+			}
+		} else
+			faultManager = new DefaultFaultManager();
+
+		if (args.has("policy")) {
+			try {
+				FaultPolicy policy = FaultPolicy.valueOf(args.get("policy")
+						.toUpperCase());
+				faultManager.setFaultPolicy(policy);
+			} catch (IllegalArgumentException e) {
+				Console.exception(e);
+			}
+		}
+
+		if (initException != null)
+			faultManager.handle(initException, null);
+	}
+
 	public static void enableAgency(Args args) {
 		if (localAgency == null) {
 			Console.init(args.getArgs("console"));
+			initFaultManager(args.getArgs("system.fault"));
 
 			if (!(System.getSecurityManager() instanceof D3SecurityManager))
 				System.setSecurityManager(new D3SecurityManager());
@@ -125,7 +167,7 @@ public class Agency extends LocalActor implements
 						address = InetAddress.getLocalHost();
 					}
 
-				localHost = new HostAddress(address);
+				localHost = HostAddress.getByInetAddress(address);
 				Console.info("localhost is %s", localHost);
 			} catch (UnknownHostException e) {
 				throw new RegistrationException(e);
@@ -133,8 +175,6 @@ public class Agency extends LocalActor implements
 
 			localAgency = new Agency(localAgencyId);
 			localAgency.init();
-
-			System.out.printf("[agency] create agency%n");
 		}
 	}
 
@@ -154,6 +194,10 @@ public class Agency extends LocalActor implements
 
 	public static HostAddress getLocalHost() {
 		return localHost;
+	}
+
+	public static void shutdown() {
+		// TODO
 	}
 
 	private IpTables ipTables;
@@ -221,7 +265,7 @@ public class Agency extends LocalActor implements
 						ifname, port);
 			} catch (BadProtocolException e) {
 				Console.error("unable to enable migration");
-				Console.exception(e);
+				Agency.getFaultManager().handle(e, null);
 			}
 		}
 

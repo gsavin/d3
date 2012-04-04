@@ -22,6 +22,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.d3.Console;
+import org.d3.actor.Agency;
 import org.d3.actor.Future;
 import org.d3.remote.NoRemotePortAvailableException;
 import org.d3.remote.RemoteAgency;
@@ -58,7 +59,10 @@ public class RemoteFuture extends Future {
 
 			t.transmitFuture(rp, getId(), value);
 		} catch (NoRemotePortAvailableException e) {
-			Console.exception(e);
+			Agency.getFaultManager().handle(e, null);
+		} catch (TransmissionException e) {
+			Console.error("unable to transmit future value");
+			Agency.getFaultManager().handle(e, null);
 		}
 	}
 
