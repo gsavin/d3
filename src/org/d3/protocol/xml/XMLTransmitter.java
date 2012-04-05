@@ -27,6 +27,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 
+import org.d3.Console;
 import org.d3.actor.Agency;
 import org.d3.actor.Protocol;
 import org.d3.protocol.FutureRequest;
@@ -52,8 +53,6 @@ public abstract class XMLTransmitter extends Transmitter {
 	private Template xmlRequestTemplate;
 	private Template xmlFutureTemplate;
 	private Charset charset;
-	// private XMLRequestParser handler;
-	// private SAXParser parser;
 	private HashMap<Channel, XMLStreamParser> parsers;
 	private ByteBuffer readBuffer;
 
@@ -75,7 +74,7 @@ public abstract class XMLTransmitter extends Transmitter {
 		env.put("target", r.getTargetURI().toString());
 		env.put("call", r.getCall());
 		env.put("coding_method", r.getCodingMethod().name());
-		env.put("args", r.getArgs());
+		env.put("args", new String(r.getArgs()));
 		env.put("future", r.getFutureId());
 
 		return charset.encode(xmlRequestTemplate.toString(env));
@@ -86,19 +85,31 @@ public abstract class XMLTransmitter extends Transmitter {
 
 		env.put("id", fr.getFutureId());
 		env.put("coding", fr.getCodingMethod().name());
-		env.put("value", fr.getValue());
+		env.put("value", new String(fr.getValue()));
 		env.put("target", fr.getTarget().toString());
 
 		return charset.encode(xmlFutureTemplate.toString(env));
 	}
 
-	protected abstract void write(ByteBuffer data, String host, int port) throws IOException ;
+	protected abstract void write(ByteBuffer data, String host, int port)
+			throws IOException;
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.d3.protocol.Transmitter#close(java.nio.channels.Channel)
+	 */
 	public void close(Channel ch) {
 		if (parsers.containsKey(ch))
 			parsers.remove(ch);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.d3.protocol.Transmitter#read(java.nio.channels.ReadableByteChannel)
+	 */
 	public int read(ReadableByteChannel ch) {
 		checkProtocolThreadAccess();
 
@@ -118,7 +129,27 @@ public abstract class XMLTransmitter extends Transmitter {
 			Charset cs = Charset.defaultCharset();
 			stream.parse(cs.decode(readBuffer));
 		} catch (IOException e) {
-			Agency.getFaultManager().handle(e, null);
+			Console.error("error while reading");
+			Console.error("close the channel %s", ch.toString());
+
+			close(ch);
+
+			try {
+				ch.close();
+			} catch (IOException e1) {
+				Agency.getFaultManager().handle(e, this);
+			}
+		} catch (XMLParseException e) {
+			Console.error("parse error while reading : %s", e.getMessage());
+			Console.error("close the channel %s", ch.toString());
+
+			close(ch);
+
+			try {
+				ch.close();
+			} catch (IOException e1) {
+				Agency.getFaultManager().handle(e, this);
+			}
 		}
 
 		try {
@@ -135,22 +166,32 @@ public abstract class XMLTransmitter extends Transmitter {
 
 		return r;
 	}
-	
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.d3.protocol.Transmitter#write(org.d3.protocol.Request)
+	 */
 	public void write(Request request) throws TransmissionException {
 		ByteBuffer data = convert(request);
 		URI target = request.getTargetURI();
-		
+
 		try {
 			write(data, target.getHost(), target.getPort());
 		} catch (IOException e) {
 			throw new TransmissionException(e);
 		}
 	}
-	
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.d3.protocol.Transmitter#write(org.d3.protocol.FutureRequest)
+	 */
 	public void write(FutureRequest request) throws TransmissionException {
 		ByteBuffer data = convert(request);
 		URI target = request.getTarget();
-		
+
 		try {
 			write(data, target.getHost(), target.getPort());
 		} catch (IOException e) {

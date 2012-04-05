@@ -51,8 +51,6 @@ public class RemoteFuture extends Future {
 	public void init(Object value) {
 		super.init(value);
 
-		Console.info("transmit future value");
-
 		try {
 			RemotePort rp = remote.getRandomRemotePortTransmittable();
 			Transmitter t = (Transmitter) rp.getCompatibleProtocol();

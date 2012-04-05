@@ -94,8 +94,8 @@ class NegociationO extends Negociation {
 		}
 
 		String message = String.format("%s;%s;%s;%s",
-				Agency.getLocalAgencyId(), entity.getClass().getName(),
-				entity.getPath(), entity.getId());
+				Agency.getLocalAgencyId(), entity.getClass().getName(), entity
+						.getPath(), entity.getId());
 
 		write(HEADER_REQUEST, message);
 
@@ -111,7 +111,7 @@ class NegociationO extends Negociation {
 		}
 
 		CodingMethod coding = CodingMethod.HEXABYTES;
-		String encodedData = ObjectCoder.encode(coding, data);
+		String encodedData = new String(ObjectCoder.encode(coding, data));
 		String message = String.format("%s;%s", coding, encodedData);
 
 		write(HEADER_SEND, message);

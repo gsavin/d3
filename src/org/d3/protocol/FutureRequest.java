@@ -29,18 +29,14 @@ import org.d3.protocol.request.ObjectCoder.CodingMethod;
 import org.d3.remote.RemotePort;
 
 public class FutureRequest implements Serializable {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -3651816320747757365L;
-	
+
 	private String id;
 	private CodingMethod coding;
-	private String value;
+	private byte[] value;
 	private URI target;
 
-	public FutureRequest(String id, Object value,
-			RemotePort remotePort) {
+	public FutureRequest(String id, Object value, RemotePort remotePort) {
 		this.id = id;
 		this.coding = CodingMethod.HEXABYTES;
 		this.value = ObjectCoder.encode(coding, (Serializable) value);
@@ -50,14 +46,14 @@ public class FutureRequest implements Serializable {
 					.getAddress();
 			String host = address.getHost();
 
-			this.target = new URI(String.format("%s://%s:%d",
-					remotePort.getScheme(), host, remotePort.getPort()));
+			this.target = new URI(String.format("%s://%s:%d", remotePort
+					.getScheme(), host, remotePort.getPort()));
 		} catch (URISyntaxException e) {
 			Agency.getFaultManager().handle(e, null);
 		}
 	}
 
-	public FutureRequest(String id, CodingMethod coding, String value,
+	public FutureRequest(String id, CodingMethod coding, byte[] value,
 			URI target) {
 		this.id = id;
 		this.value = value;
@@ -68,7 +64,7 @@ public class FutureRequest implements Serializable {
 	public URI getTarget() {
 		return target;
 	}
-	
+
 	public String getFutureId() {
 		return id;
 	}
@@ -77,7 +73,7 @@ public class FutureRequest implements Serializable {
 		return coding;
 	}
 
-	public String getValue() {
+	public byte[] getValue() {
 		return value;
 	}
 

@@ -25,6 +25,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 
+import org.d3.Console;
 import org.d3.annotation.ActorPath;
 import org.d3.protocol.InetProtocol;
 
@@ -40,6 +41,8 @@ public class XMLTCPTransmitter extends XMLTransmitter {
 		channel = ServerSocketChannel.open();
 		channel.configureBlocking(false);
 		channel.socket().bind(socketAddress);
+
+		Console.info("channel is open ? %s", channel.isOpen());
 	}
 
 	protected void write(ByteBuffer data, String host, int port)

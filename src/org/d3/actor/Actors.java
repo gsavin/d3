@@ -113,7 +113,7 @@ public class Actors implements Iterable<LocalActor>,
 			if (cause != null)
 				throw new UnregisteredActorException(cause);
 
-			throw new ActorNotFoundException();
+			throw new ActorNotFoundException(fullPath);
 		}
 
 		return la;

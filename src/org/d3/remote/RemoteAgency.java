@@ -85,7 +85,10 @@ public class RemoteAgency {
 	 */
 	public RemoteActor getRemoteActor(String path)
 			throws ActorNotFoundException {
-		String uriStr = String.format("//%s/%s/%s", remoteHost.getAddress()
+		if (path.charAt(0) != '/')
+			path = "/" + path;
+
+		String uriStr = String.format("//%s/%s%s", remoteHost.getAddress()
 				.getHost(), id, path);
 
 		URI uri;

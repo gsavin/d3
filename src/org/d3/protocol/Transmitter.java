@@ -64,28 +64,28 @@ public abstract class Transmitter extends Protocol {
 		try {
 			selector = Selector.open();
 		} catch (IOException e) {
-			// TODO
+			Agency.getFaultManager().handle(e, this);
 		}
 
 		try {
-			channel.register(
-					selector,
-					channel.validOps()
-							& (SelectionKey.OP_ACCEPT | SelectionKey.OP_READ | SelectionKey.OP_CONNECT));
+			channel
+					.register(
+							selector,
+							channel.validOps()
+									& (SelectionKey.OP_ACCEPT
+											| SelectionKey.OP_READ | SelectionKey.OP_CONNECT));
 
 		} catch (ClosedChannelException e) {
-			// TODO
+			Agency.getFaultManager().handle(e, this);
 		}
 
 		while (selector.isOpen()) {
 			try {
 				selector.select();
 			} catch (IOException e) {
-				// TODO
-				e.printStackTrace();
+				Agency.getFaultManager().handle(e, this);
 			} catch (ClosedSelectorException e) {
-				// TODO
-				e.printStackTrace();
+				Agency.getFaultManager().handle(e, this);
 			}
 
 			Iterator<SelectionKey> it = selector.selectedKeys().iterator();
@@ -97,7 +97,7 @@ public abstract class Transmitter extends Protocol {
 					processSelectionKey(sk);
 				} catch (IOException e) {
 					// TODO
-					e.printStackTrace();
+					Agency.getFaultManager().handle(e, this);
 				}
 			}
 		}
@@ -157,8 +157,8 @@ public abstract class Transmitter extends Protocol {
 		}
 	}
 
-	public void transmitFuture(RemotePort remote, String futureId, Object value) throws TransmissionException {
-		Console.info("transmitter transmit future");
+	public void transmitFuture(RemotePort remote, String futureId, Object value)
+			throws TransmissionException {
 		FutureRequest fr = new FutureRequest(futureId, value, remote);
 		write(fr);
 	}
@@ -180,10 +180,11 @@ public abstract class Transmitter extends Protocol {
 			RemoteActor source;
 
 			try {
-				source = Agency.getLocalAgency().getRemoteActors()
-						.get(r.getSourceURI());
+				source = Agency.getLocalAgency().getRemoteActors().get(
+						r.getSourceURI());
 			} catch (CacheCreationException e) {
 				source = null;
+				Agency.getFaultManager().handle(e, this);
 			}
 
 			startAssuming(source);
@@ -202,15 +203,15 @@ public abstract class Transmitter extends Protocol {
 							.getActors().get(fullPath);
 
 					if (targetActor != null) {
-						targetActor.call(r.getCall(), future,
-								r.getDecodedArgs());
+						targetActor.call(r.getCall(), future, r
+								.getDecodedArgs());
 					} else {
 						Console.error(path);
 						future.init(new CallException(
 								new ActorNotFoundException()));
 					}
 				} catch (ActorNotFoundException e) {
-					Console.error(path);
+					Console.error("actor not found '%s'", fullPath);
 					future.init(new CallException(e));
 				} catch (UnregisteredActorException e) {
 					future.init(new CallException(e));
@@ -226,10 +227,8 @@ public abstract class Transmitter extends Protocol {
 	}
 
 	protected void dispatch(FutureRequest fr) {
-		Console.info("receive future");
-
-		Agency.getLocalAgency().getProtocols().getFutures()
-				.initFuture(fr.getFutureId(), fr.getDecodedValue());
+		Agency.getLocalAgency().getProtocols().getFutures().initFuture(
+				fr.getFutureId(), fr.getDecodedValue());
 	}
 
 	public abstract SelectableChannel getChannel();

@@ -24,9 +24,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
+import org.d3.Console;
+
 public class ObjectCoder {
 	public static enum CodingMethod {
-		HEXABYTES, BASE_64
+		HEXABYTES, BASE_64, RAW
 	}
 
 	private static byte[] encodeObject(Serializable obj) {
@@ -82,35 +84,62 @@ public class ObjectCoder {
 		return null;
 	}
 
-	public static Object decode(String hexa) {
+	public static Object decodeStringHexaToBytes(byte[] hexa) {
 		if (hexa == null)
 			return null;
 
-		byte[] data = hexa2byte(hexa);
+		byte[] data = hexa2byte(new String(hexa));
 		return decodeObject(data);
 	}
 
-	public static String encode(Serializable obj) {
+	public static byte[] encodeBytesToStringHexa(Serializable obj) {
 		if (obj == null)
 			return null;
 
 		byte[] data = encodeObject(obj);
-		return byte2hexa(data);
+		return byte2hexa(data).getBytes();
 	}
 
-	public static String encode(CodingMethod method, Serializable data) {
+	/**
+	 * Encode an object into an array of bytes according to a coding method.
+	 * 
+	 * @param method
+	 *            method used to convert from object to bytes
+	 * @param data
+	 *            object to encode
+	 * @return byte data representing the object as a byte array.
+	 */
+	public static byte[] encode(CodingMethod method, Serializable data) {
 		switch (method) {
 		case HEXABYTES:
-			return encode(data);
+			return encodeBytesToStringHexa(data);
+		case RAW:
+			return encodeObject(data);
+		default:
+			Console.error("unsupported coding method %s", method);
 		}
 
 		return null;
 	}
 
-	public static Object decode(CodingMethod method, String data) {
+	/**
+	 * Convert an array of bytes into an object according to a given coding
+	 * method.
+	 * 
+	 * @param method
+	 *            method used to convert from bytes to object
+	 * @param data
+	 *            data of the object to decode
+	 * @return the object
+	 */
+	public static Object decode(CodingMethod method, byte[] data) {
 		switch (method) {
 		case HEXABYTES:
-			return decode(data);
+			return decodeStringHexaToBytes(data);
+		case RAW:
+			return decodeObject(data);
+		default:
+			Console.error("unsupported coding method %s", method);
 		}
 
 		return data;

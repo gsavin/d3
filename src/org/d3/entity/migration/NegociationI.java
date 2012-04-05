@@ -53,7 +53,7 @@ public class NegociationI extends Negociation {
 		case HEADER_SEND:
 			CodingMethod coding = CodingMethod.valueOf(data[0]);
 			MigrationData entity = (MigrationData) ObjectCoder.decode(coding,
-					data[1]);
+					data[1].getBytes());
 
 			// TODO Reification
 			Console.warning("receive entity migration data");
@@ -85,7 +85,7 @@ public class NegociationI extends Negociation {
 						.forName(this.className);
 				Constructor<? extends Entity> c = entityClass
 						.getConstructor(String.class);
-				
+
 				Entity e = c.newInstance(data.id);
 				e.importEntity(data);
 				e.init();

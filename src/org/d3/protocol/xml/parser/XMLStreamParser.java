@@ -23,6 +23,8 @@ import java.io.Reader;
 import java.nio.CharBuffer;
 import java.util.Stack;
 
+import org.d3.protocol.xml.XMLParseException;
+
 public class XMLStreamParser {
 
 	public static enum State {
@@ -46,7 +48,7 @@ public class XMLStreamParser {
 
 	public XMLStreamParser(Handler handler) {
 		this.handler = handler;
-		
+
 		stack = 0;
 		state = State.S01;
 		element_name_builder = new StringBuilder();
@@ -60,20 +62,20 @@ public class XMLStreamParser {
 	public Handler getHandler() {
 		return handler;
 	}
-	
-	public void parse(Reader in) throws IOException {
+
+	public void parse(Reader in) throws IOException, XMLParseException {
 		int c;
 
 		while (in.ready() && (c = in.read()) > 0)
 			nextChar(c);
 	}
-	
-	public void parse(CharBuffer buffer) {
-		while(buffer.hasRemaining())
+
+	public void parse(CharBuffer buffer) throws XMLParseException {
+		while (buffer.hasRemaining())
 			nextChar(buffer.get());
 	}
 
-	protected void nextChar(int c) {
+	protected void nextChar(int c) throws XMLParseException {
 		switch (state) {
 		case S01:
 			s01(c);
@@ -118,7 +120,7 @@ public class XMLStreamParser {
 		return s;
 	}
 
-	protected void s01(int c) {
+	protected void s01(int c) throws XMLParseException {
 		switch (c) {
 		case '<':
 			state = State.S02;
@@ -128,12 +130,11 @@ public class XMLStreamParser {
 		case '\r':
 			break;
 		default:
-			error();
-			break;
+			throw new XMLParseException("invalid character '%c'", c);
 		}
 	}
 
-	protected void s02(int c) {
+	protected void s02(int c) throws XMLParseException {
 		switch (c) {
 		case '>':
 			elementStart();
@@ -147,13 +148,13 @@ public class XMLStreamParser {
 			break;
 		default:
 			if (ID.indexOf(c) < 0)
-				error();
+				throw new XMLParseException("invalid character '%c'", c);
 			element_name_builder.appendCodePoint(c);
 			break;
 		}
 	}
 
-	protected void s03(int c) {
+	protected void s03(int c) throws XMLParseException {
 		switch (c) {
 		case ' ':
 			break;
@@ -163,14 +164,14 @@ public class XMLStreamParser {
 			break;
 		default:
 			if (ID.indexOf(c) < 0)
-				error();
+				throw new XMLParseException("invalid character '%c'", c);
 			attribute_name_builder.appendCodePoint(c);
 			state = State.S06;
 			break;
 		}
 	}
 
-	protected void s04(int c) {
+	protected void s04(int c) throws XMLParseException {
 		switch (c) {
 		case '<':
 			elementText();
@@ -182,7 +183,7 @@ public class XMLStreamParser {
 		}
 	}
 
-	protected void s05(int c) {
+	protected void s05(int c) throws XMLParseException {
 		switch (c) {
 		case '>':
 			elementStartAndEnd();
@@ -194,36 +195,34 @@ public class XMLStreamParser {
 			}
 			break;
 		default:
-			error();
-			break;
+			throw new XMLParseException("invalid character '%c'", c);
 		}
 	}
 
-	protected void s06(int c) {
+	protected void s06(int c) throws XMLParseException {
 		switch (c) {
 		case '=':
 			state = State.S07;
 			break;
 		default:
 			if (ID.indexOf(c) < 0)
-				error();
+				throw new XMLParseException("invalid character '%c'", c);
 			attribute_name_builder.appendCodePoint(c);
 			break;
 		}
 	}
 
-	protected void s07(int c) {
+	protected void s07(int c) throws XMLParseException {
 		switch (c) {
 		case '"':
 			state = State.S08;
 			break;
 		default:
-			error();
-			break;
+			throw new XMLParseException("invalid character '%c'", c);
 		}
 	}
 
-	protected void s08(int c) {
+	protected void s08(int c) throws XMLParseException {
 		switch (c) {
 		case '"':
 			newAttribute();
@@ -235,7 +234,7 @@ public class XMLStreamParser {
 		}
 	}
 
-	protected void s09(int c) {
+	protected void s09(int c) throws XMLParseException {
 		switch (c) {
 		case ' ':
 			state = State.S03;
@@ -248,19 +247,18 @@ public class XMLStreamParser {
 			state = State.S05;
 			break;
 		default:
-			error();
-			break;
+			throw new XMLParseException("invalid character '%c'", c);
 		}
 	}
 
-	protected void s10(int c) {
+	protected void s10(int c) throws XMLParseException {
 		switch (c) {
 		case '/':
 			state = State.S11;
 			break;
 		default:
 			if (ID.indexOf(c) < 0)
-				error();
+				throw new XMLParseException("invalid character '%c'", c);
 			stack++;
 			state = State.S02;
 			element_name_builder.appendCodePoint(c);
@@ -268,7 +266,7 @@ public class XMLStreamParser {
 		}
 	}
 
-	protected void s11(int c) {
+	protected void s11(int c) throws XMLParseException {
 		switch (c) {
 		case '>':
 			elementEnd();
@@ -281,7 +279,7 @@ public class XMLStreamParser {
 			break;
 		default:
 			if (ID.indexOf(c) < 0)
-				error();
+				throw new XMLParseException("invalid character '%c'", c);
 			element_name_builder.appendCodePoint(c);
 			break;
 		}
@@ -296,16 +294,17 @@ public class XMLStreamParser {
 
 	protected void elementStartAndEnd() {
 		String name = getAndClear(element_name_builder);
-		
+
 		handler.elementStart(name, attributes.cloneAndClear());
 		handler.elementEnd(name);
 	}
 
-	protected void elementEnd() {
+	protected void elementEnd() throws XMLParseException {
 		String name = getAndClear(element_name_builder);
 
 		if (!name.equals(names.peek()))
-			error();
+			throw new XMLParseException("expect end of '%s', got '%s'", names
+					.peek(), name);
 
 		names.pop();
 		handler.elementEnd(name);
@@ -321,11 +320,5 @@ public class XMLStreamParser {
 		String value = getAndClear(attribute_value_builder);
 
 		attributes.add(key, value);
-	}
-
-	protected void error() {
-		Exception e = new Exception();
-		e.printStackTrace();
-		System.exit(1);
 	}
 }

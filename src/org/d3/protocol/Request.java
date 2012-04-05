@@ -30,9 +30,6 @@ import org.d3.protocol.request.ObjectCoder.CodingMethod;
 import org.d3.remote.RemotePort;
 
 public class Request implements Serializable {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -836303930336000404L;
 
 	private static URI format(URI uri, Transmitter transmitter) {
@@ -46,9 +43,8 @@ public class Request implements Serializable {
 		}
 
 		try {
-			return new URI(String.format("%s://%s:%d%s",
-					transmitter.getScheme(), host, transmitter.getPort(),
-					uri.getPath()));
+			return new URI(String.format("%s://%s:%d%s", transmitter
+					.getScheme(), host, transmitter.getPort(), uri.getPath()));
 		} catch (URISyntaxException e) {
 			return uri;
 		}
@@ -68,7 +64,7 @@ public class Request implements Serializable {
 	protected final URI target;
 	protected final String futureId;
 	protected final CodingMethod codingMethod;
-	protected final String args;
+	protected final byte[] args;
 	protected final String call;
 
 	public Request(Call call, Transmitter transmitter, RemotePort remotePort) {
@@ -84,7 +80,7 @@ public class Request implements Serializable {
 	}
 
 	public Request(URI source, URI target, String call, CodingMethod cm,
-			String args, String futureId) {
+			byte[] args, String futureId) {
 		this.source = source;
 		this.target = target;
 		this.call = call;
@@ -109,7 +105,7 @@ public class Request implements Serializable {
 		return codingMethod;
 	}
 
-	public String getArgs() {
+	public byte[] getArgs() {
 		return args;
 	}
 

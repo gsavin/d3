@@ -91,7 +91,8 @@ public class XMLRequestHandler implements Handler {
 		}
 
 		Request get() {
-			return new Request(source, target, name, cm, args, futureId);
+			return new Request(source, target, name, cm, args == null ? null
+					: args.getBytes(), futureId);
 		}
 
 		void clear() {
@@ -138,7 +139,8 @@ public class XMLRequestHandler implements Handler {
 		}
 
 		FutureRequest get() {
-			return new FutureRequest(futureId, coding, value, target);
+			return new FutureRequest(futureId, coding, value == null ? null
+					: value.getBytes(), target);
 		}
 
 		void clear() {

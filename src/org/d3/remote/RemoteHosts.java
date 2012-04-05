@@ -102,8 +102,6 @@ public class RemoteHosts implements Iterable<RemoteHost>,
 
 	public RemoteHost get(String host) throws HostNotFoundException {
 		HostAddress address;
-
-		Console.info("try to get host '%s'", host);
 		
 		try {
 			address = HostAddress.getByName(host);

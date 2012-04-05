@@ -27,11 +27,11 @@ public class XMLParseException extends Exception {
 	public XMLParseException() {
 		super();
 	}
-	
-	public XMLParseException(String msg) {
-		super(msg);
+
+	public XMLParseException(String msg, Object... args) {
+		super(String.format(msg, args));
 	}
-	
+
 	public XMLParseException(Throwable t) {
 		super(t);
 	}
