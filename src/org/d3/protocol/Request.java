@@ -60,13 +60,42 @@ public class Request implements Serializable {
 		}
 	}
 
+	/**
+	 * URI of the actor who emits the request.
+	 */
 	protected final URI source;
+	/**
+	 * URI of the actor who should receive the request.
+	 */
 	protected final URI target;
-	protected final String futureId;
-	protected final CodingMethod codingMethod;
-	protected final byte[] args;
+	/**
+	 * Name of the callable.
+	 */
 	protected final String call;
+	/**
+	 * Method used to encode arguments of the call.
+	 */
+	protected final CodingMethod codingMethod;
+	/**
+	 * Arguments of the call.
+	 */
+	protected final byte[] args;
+	/**
+	 * If a value should be returned, this is the id of the remote future.
+	 */
+	protected final String futureId;
 
+	/**
+	 * Constructor used by transmitter to create a new request. The request is
+	 * built using data of the {@link org.d3.actor.Call} object.
+	 * 
+	 * @param call
+	 *            {@link org.d3.actor.Call} object used to build the request
+	 * @param transmitter
+	 *            transmitter used to transmit the request
+	 * @param remotePort
+	 *            port of the remote transmitter that will receive the request
+	 */
 	public Request(Call call, Transmitter transmitter, RemotePort remotePort) {
 		URI s = call.getSource().getURI();
 		URI t = call.getTarget().getURI();
@@ -74,11 +103,28 @@ public class Request implements Serializable {
 		this.source = format(s, transmitter);
 		this.target = format(t, remotePort);
 		this.call = call.getName();
-		this.codingMethod = CodingMethod.HEXABYTES;
+		this.codingMethod = transmitter.getPreferredCodingMethod();
 		this.args = ObjectCoder.encode(codingMethod, call.getArgs());
 		this.futureId = call.getFuture().getId();
 	}
 
+	/**
+	 * Constructor used by transmitter to build remote request it receives.
+	 * 
+	 * @param source
+	 *            uri of the actor emitting the request
+	 * @param target
+	 *            uri of the actor that should receive the request
+	 * @param call
+	 *            name of the requested callable
+	 * @param cm
+	 *            method used to encode arguments of the call
+	 * @param args
+	 *            arguments of call
+	 * @param futureId
+	 *            id of the future used to return a value or null if there is no
+	 *            future
+	 */
 	public Request(URI source, URI target, String call, CodingMethod cm,
 			byte[] args, String futureId) {
 		this.source = source;

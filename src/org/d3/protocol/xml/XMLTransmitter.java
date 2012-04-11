@@ -34,6 +34,7 @@ import org.d3.protocol.FutureRequest;
 import org.d3.protocol.Request;
 import org.d3.protocol.TransmissionException;
 import org.d3.protocol.Transmitter;
+import org.d3.protocol.request.ObjectCoder.CodingMethod;
 import org.d3.protocol.xml.parser.XMLRequestHandler;
 import org.d3.protocol.xml.parser.XMLStreamParser;
 import org.d3.template.Template;
@@ -93,6 +94,11 @@ public abstract class XMLTransmitter extends Transmitter {
 
 	protected abstract void write(ByteBuffer data, String host, int port)
 			throws IOException;
+
+	@Override
+	public CodingMethod getPreferredCodingMethod() {
+		return CodingMethod.HEXABYTES;
+	}
 
 	/*
 	 * (non-Javadoc)

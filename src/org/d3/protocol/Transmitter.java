@@ -34,6 +34,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 
 import org.d3.ActorNotFoundException;
+import org.d3.Args;
 import org.d3.Console;
 import org.d3.HostAddress;
 import org.d3.actor.Agency;
@@ -43,6 +44,7 @@ import org.d3.actor.LocalActor;
 import org.d3.actor.Protocol;
 import org.d3.actor.RemoteActor;
 import org.d3.actor.UnregisteredActorException;
+import org.d3.protocol.request.ObjectCoder.CodingMethod;
 import org.d3.remote.HostNotFoundException;
 import org.d3.remote.RemotePort;
 import org.d3.remote.UnknownAgencyException;
@@ -50,9 +52,29 @@ import org.d3.tools.CacheCreationException;
 
 public abstract class Transmitter extends Protocol {
 
+	/**
+	 * Default is 1MB.
+	 */
+	protected int maxBytesPerRequest;
+
 	protected Transmitter(String scheme, String id,
 			InetSocketAddress socketAddress) {
 		super(scheme, id, socketAddress);
+	}
+
+	public void init() {
+		Args args;
+
+		super.init();
+		args = Agency.getActorArgs(this);
+
+		if (args.has("maxBytesPerRequest"))
+			maxBytesPerRequest = args.getInteger("maxBytesPerRequest");
+		else if (Agency.getArgs().has("transmitter.maxBytesPerRequest"))
+			maxBytesPerRequest = Agency.getArgs().getInteger(
+					"maxBytesPerRequest");
+		else
+			maxBytesPerRequest = 1024 * 1024;
 	}
 
 	public void listen() {
@@ -131,13 +153,31 @@ public abstract class Transmitter extends Protocol {
 		if (sk.isValid() && sk.isReadable()) {
 			ReadableByteChannel ch = (ReadableByteChannel) sk.channel();
 
-			int r = read(ch);
+			int r = -1;
+
+			try {
+				r = read(ch);
+			} catch (TransmissionException e) {
+				Agency.getFaultManager().handle(e, this);
+			}
 
 			if (r < 0) {
 				close(ch);
 				ch.close();
 			}
 		}
+	}
+
+	/**
+	 * Get the preferred coding method used to encode arguments of calls. This
+	 * method should be overridden by sub classes to define their own preferred
+	 * method. Default method is
+	 * {@link org.d3.protocol.request.ObjectCoder.CodingMethod#RAW}.
+	 * 
+	 * @return preferred coding method
+	 */
+	public CodingMethod getPreferredCodingMethod() {
+		return CodingMethod.RAW;
 	}
 
 	/**
@@ -159,7 +199,7 @@ public abstract class Transmitter extends Protocol {
 
 	public void transmitFuture(RemotePort remote, String futureId, Object value)
 			throws TransmissionException {
-		FutureRequest fr = new FutureRequest(futureId, value, remote);
+		FutureRequest fr = new FutureRequest(futureId, value, this, remote);
 		write(fr);
 	}
 
@@ -233,7 +273,8 @@ public abstract class Transmitter extends Protocol {
 
 	public abstract SelectableChannel getChannel();
 
-	public abstract int read(ReadableByteChannel ch);
+	public abstract int read(ReadableByteChannel ch)
+			throws TransmissionException;
 
 	public abstract void close(Channel ch);
 

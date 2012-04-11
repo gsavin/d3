@@ -36,9 +36,10 @@ public class FutureRequest implements Serializable {
 	private byte[] value;
 	private URI target;
 
-	public FutureRequest(String id, Object value, RemotePort remotePort) {
+	public FutureRequest(String id, Object value, Transmitter transmitter,
+			RemotePort remotePort) {
 		this.id = id;
-		this.coding = CodingMethod.HEXABYTES;
+		this.coding = transmitter.getPreferredCodingMethod();
 		this.value = ObjectCoder.encode(coding, (Serializable) value);
 
 		try {

@@ -25,7 +25,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Use this annotation to declare that a callable can only be called locally.
+ * Use this annotation to declare that a callable can only be called locally,
+ * ie. from an actor of the same agency. This allows to share object with an
+ * agency scope without serialize it.
  * 
  * @author Guilhelm Savin
  * 

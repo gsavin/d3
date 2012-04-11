@@ -24,6 +24,15 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Describes a callable that do not have to be executed in the body thread of
+ * the target actor. It can be used to improve performances when the cost of the
+ * callable method is less than the cost of creating a request and when there is
+ * no risk of concurrent modifications of the actor.
+ * 
+ * @author Guilhelm Savin
+ * 
+ */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
