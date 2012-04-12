@@ -45,12 +45,14 @@ public class RAWTCPTransmitter extends Transmitter {
 	public static final byte TYPE_REQUEST = 0x01;
 	public static final byte TYPE_FUTURE_REQUEST = 0x02;
 
-	private ServerSocketChannel channel;
-	private HashMap<Channel, ByteBuffer> buffers;
+	private final ServerSocketChannel channel;
+	private final HashMap<Channel, ByteBuffer> buffers;
 
-	public RAWTCPTransmitter(String id, InetSocketAddress socketAddress)
+	public RAWTCPTransmitter(InetSocketAddress socketAddress)
 			throws IOException {
 		super("raw", Integer.toString(socketAddress.getPort()), socketAddress);
+
+		buffers = new HashMap<Channel, ByteBuffer>();
 
 		channel = ServerSocketChannel.open();
 		channel.configureBlocking(false);
@@ -120,9 +122,11 @@ public class RAWTCPTransmitter extends Transmitter {
 			throw new TransmissionException(e);
 		}
 
-		if (data.hasRemaining()) {
+		if (!data.hasRemaining()) {
 			data.rewind();
 			dataReceived(data);
+			
+			return -1;
 		}
 
 		return r;
@@ -130,10 +134,14 @@ public class RAWTCPTransmitter extends Transmitter {
 
 	protected void dataReceived(ByteBuffer data) throws TransmissionException {
 		byte type;
-
+		
+		//
+		// Skip the 4-bytes size
 		data.getInt();
+		//
+		
 		type = data.get();
-
+		
 		switch (type) {
 		case TYPE_REQUEST:
 			requestDataReceived(data);
@@ -174,7 +182,7 @@ public class RAWTCPTransmitter extends Transmitter {
 		source = URI.create(new String(dataSource));
 		target = URI.create(new String(dataTarget));
 		call = new String(dataCall);
-
+		
 		try {
 			cm = CodingMethod.valueOf(new String(codingMethod));
 		} catch (IllegalArgumentException e) {
@@ -396,11 +404,11 @@ public class RAWTCPTransmitter extends Transmitter {
 		buffer.putInt(dataSource.length);
 		buffer.put(dataSource);
 
-		buffer.putInt(dataCall.length);
-		buffer.put(dataCall);
-
 		buffer.putInt(dataTarget.length);
 		buffer.put(dataTarget);
+
+		buffer.putInt(dataCall.length);
+		buffer.put(dataCall);
 
 		buffer.putInt(dataFuture.length);
 		buffer.put(dataFuture);
